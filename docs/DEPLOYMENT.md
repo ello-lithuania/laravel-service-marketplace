@@ -329,8 +329,17 @@ Patikrinti: `php artisan about` (aplinka, cache būsena, tvarkyklės), `php arti
 - **CSP** (`config/security.php`): pirmą savaitę `CSP_REPORT_ONLY=true` + `CSP_REPORT_URI` (pvz. Sentry) – matysim
   pažeidimus nieko neblokuodami; paskui `false`. Pridėjus išorinį servisą (CDN, Stripe, Google Analytics), jo domeną
   įrašyti `CSP_EXTRA_*`.
-- **Failai:** vieši tik avatarai, logotipai, portfolio (`public` diskas). Žinučių priedai ir skundų įrodymai (Etapas 6)
-  turi būti **privačiame** diske (`local`) ir atiduodami per controller'į su Policy patikra (kaip BDAR archyvai).
+- **Failai (Etapo 8 peržiūra):**
+    - validacija (`App\Concerns\ImageValidationRules`) tinkama: tikrinamas tikras turinys (`File::image()->types(...)`),
+      SVG draudžiamas (jame gali būti JavaScript), dydis ≤ 5 MB, matmenys 200–8000 px; medialibrary kolekcijos dar kartą
+      riboja MIME (`acceptsMimeTypes`); failo vardą medialibrary išvalo (jokių `../`);
+    - vieši tik avatarai, logotipai, portfolio (`public` diskas, URL `/storage/{id}/…` atspėjamas – tai sąmoninga).
+      Žinučių priedai ir skundų įrodymai (Etapas 6) turi būti **privačiame** diske (`local`) ir atiduodami per
+      controller'į su Policy patikra (kaip BDAR archyvai, `PrivacyController::download`);
+    - Nginx `/storage/` atiduoda su `nosniff` ir `sandbox` CSP (8 sk.) – net įkeltas HTML nebūtų vykdomas;
+    - 8000×8000 px nuotraukos miniatiūrai GD prireikia ~256 MB – eilių darbuotojų `memory_limit = 512M` (2 sk.);
+    - Livewire laikini įkėlimai (`/livewire-…/upload-file`) naudojami tik Filament panelėje; numatytos taisyklės
+      `file|max:12288`, pasiekiami tik su Livewire komponento parašu.
 - **Teisės:** kodas priklauso `deploy` vartotojui, `www-data` gali rašyti tik į `storage/` ir `bootstrap/cache/`.
 - **Paslaptys** – tik `.env` (ne Git); atsarginės kopijos šifruojamos (12 sk.).
 - **Administratoriai:** stiprūs slaptažodžiai; ateityje – Filament dviejų faktorių autentifikacija (MFA).
