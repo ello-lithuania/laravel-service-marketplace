@@ -58,19 +58,19 @@ Vartotojas moka PHP ir WordPress, Laravel – tik pagrindus.
 
 ## 5. Stack
 
-| Sritis | Technologija | Pastaba |
-|---|---|---|
-| Backend | Laravel 12 (PHP ≥ 8.2) | |
+| Sritis                  | Technologija                                             | Pastaba                              |
+| ----------------------- | -------------------------------------------------------- | ------------------------------------ |
+| Backend                 | Laravel 12 (PHP ≥ 8.2)                                   |                                      |
 | Vieša dalis ir paskyros | Inertia.js 2 + Vue 3 (`<script setup>`, Composition API) | oficialus Laravel 12 Vue starter kit |
-| Admin panelė | Filament (veikia ant Livewire 3) | `/admin` |
-| CSS | Tailwind CSS 4 | |
-| DB | MySQL 8.4 LTS (prod/staging), SQLite (dev ir testai) | kodas turi veikti abiejose |
-| Failai | spatie/laravel-medialibrary | viena polimorfinė `media` lentelė |
-| Testai | Pest | |
-| Kodo stilius | Laravel Pint | |
-| Eilės | `database` (dev) → Redis (prod) | |
-| Laiškai | `log` / Mailpit (dev) | |
-| Mokėjimai | Paysera (pirmas), Stripe (vėliau) | už savos `PaymentGateway` sąsajos |
+| Admin panelė            | Filament (veikia ant Livewire 3)                         | `/admin`                             |
+| CSS                     | Tailwind CSS 4                                           |                                      |
+| DB                      | MySQL 8.4 LTS (prod/staging), SQLite (dev ir testai)     | kodas turi veikti abiejose           |
+| Failai                  | spatie/laravel-medialibrary                              | viena polimorfinė `media` lentelė    |
+| Testai                  | Pest                                                     |                                      |
+| Kodo stilius            | Laravel Pint                                             |                                      |
+| Eilės                   | `database` (dev) → Redis (prod)                          |                                      |
+| Laiškai                 | `log` / Mailpit (dev)                                    |                                      |
+| Mokėjimai               | Paysera (pirmas), Stripe (vėliau)                        | už savos `PaymentGateway` sąsajos    |
 
 **Pastaba dėl stack'o.** Vartotojas nurodė: „Laravel, Inertia, Livewire, Vue". Interpretacija tokia:
 viešoji dalis ir vartotojų paskyros daromos su **Inertia + Vue**, o **Livewire** naudojamas tik per **Filament**
@@ -80,6 +80,7 @@ Tikslias paketų versijas ir starter kit sprendimus (TypeScript ar JS, maršruta
 ## 6. Konvencijos
 
 ### Kalba
+
 - **Kodas – angliškai**: klasės, metodai, kintamieji, lentelės, stulpeliai, maršrutų vardai (`service-requests.show`).
 - **UI – lietuviškai.** Svetainė vienos kalbos, todėl Vue komponentuose tekstus rašom tiesiai lietuviškai.
   Laravel pusės tekstai (validacija, laiškai, pranešimai) laikomi `lang/lt/*.php`.
@@ -87,6 +88,7 @@ Tikslias paketų versijas ir starter kit sprendimus (TypeScript ar JS, maršruta
 - **Komentarai kode – lietuviškai**, trumpi, paaiškina KODĖL, o ne KĄ.
 
 ### Duomenų bazė
+
 - Tiesos šaltinis – `docs/DB_SCHEMA.md`. Keičiant schemą pirma atnaujinamas dokumentas, tik tada kodas.
 - Lentelės vadinamos daugiskaita, snake_case. Pivot lentelė – abu modeliai vienaskaita, abėcėlės tvarka
   (`category_provider_profile`).
@@ -100,6 +102,7 @@ Tikslias paketų versijas ir starter kit sprendimus (TypeScript ar JS, maršruta
   `DB::getDriverName()` patikra.
 
 ### Laravel kodas
+
 - Controller'iai ploni. Validacija – Form Request (`app/Http/Requests`). Autorizacija – Policy (`app/Policies`).
   Verslo logika – Action klasės (`app/Actions`, vienas viešas metodas `handle()`).
 - Ilgi ar sunkūs darbai – Jobs (eilėse). Pranešimai – Notifications (`mail` + `database` kanalai).
@@ -110,10 +113,12 @@ Tikslias paketų versijas ir starter kit sprendimus (TypeScript ar JS, maršruta
 - Pinigų ir kreditų operacijos vyksta tik `DB::transaction()` viduje.
 
 ### Testai
+
 - Pest. Kiekvienam vartotojo srautui – Feature testas. Testų DB – SQLite `:memory:` + `RefreshDatabase`.
 - Prieš kiekvieną commit'ą: `php artisan test` ir `./vendor/bin/pint`.
 
 ### Git
+
 - Maži commit'ai: vienas loginis pakeitimas = vienas commit'as.
 - Formatas: `tipas(sritis): aprašymas lietuviškai`. Tipai: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `style`.
   Pavyzdys: `feat(pasiulymai): kreditų nurašymas siunčiant pasiūlymą`.
@@ -153,13 +158,13 @@ tests/Feature, tests/Unit
 
 ## 8. Dokumentai
 
-| Failas | Kam |
-|---|---|
-| `ROADMAP.md` | etapai 0–8 su checkbox'ais – kur esam |
-| `docs/DB_SCHEMA.md` | DB schema, ryšiai, indeksai, sprendimai |
-| `docs/SEEDING.md` | testinių duomenų (seed'ų) planas |
-| `docs/LEARNING.md` | mokymosi užrašai: sąvokos, komandos, dažnos klaidos |
-| `docs/STATES.md` | užklausos ir pasiūlymo būsenų perėjimai ir kreditų grąžinimo taisyklės |
+| Failas              | Kam                                                                    |
+| ------------------- | ---------------------------------------------------------------------- |
+| `ROADMAP.md`        | etapai 0–8 su checkbox'ais – kur esam                                  |
+| `docs/DB_SCHEMA.md` | DB schema, ryšiai, indeksai, sprendimai                                |
+| `docs/SEEDING.md`   | testinių duomenų (seed'ų) planas                                       |
+| `docs/LEARNING.md`  | mokymosi užrašai: sąvokos, komandos, dažnos klaidos                    |
+| `docs/STATES.md`    | užklausos ir pasiūlymo būsenų perėjimai ir kreditų grąžinimo taisyklės |
 
 ## 9. Komandos (veiks nuo Etapo 1)
 

@@ -5,6 +5,7 @@ Kiekvienos sesijos pradžioje tęsiam nuo **pirmo nepažymėto etapo**. Etapas b
 **ir vartotojas jį patvirtino**.
 
 Kiekvieno etapo pabaigoje:
+
 - `docs/LEARNING.md` papildomas sąvokomis, komandomis ir dažnomis klaidomis;
 - vartotojui papasakojama, kas padaryta, kaip ir kodėl (be užduočių ir klausimų);
 - daromas commit'as su šio failo pažymėjimais.
@@ -165,4 +166,3 @@ būsenų mašina.
 - [ ] Diegimas: serveris, eilių supervisor, cron (scheduler), CI/CD
 - [ ] Galutinė testų peržiūra
 - [ ] `docs/LEARNING.md`: Etapas 8 + santrauka vartotojui
-
