@@ -89,5 +89,6 @@ test('profilio užklausų skaičius nepriklauso nuo paslaugų, zonų, darbų ir 
     $few = countQueries(fn () => $this->get(route('providers.show', $small))->assertOk());
     $many = countQueries(fn () => $this->get(route('providers.show', $large))->assertOk());
 
-    expect($many)->toBe($few)->toBeLessThanOrEqual(12);
+    // +2 užklausos – medialibrary nuotraukos (profilio logotipas/viršelis ir portfolio)
+    expect($many)->toBe($few)->toBeLessThanOrEqual(14);
 });

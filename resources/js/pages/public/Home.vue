@@ -220,7 +220,9 @@ const steps = [
                 </div>
             </div>
             <Button size="lg" as-child>
-                <Link :href="register()">Tapti teikėju</Link>
+                <Link :href="register({ query: { role: 'provider' } })"
+                    >Tapti teikėju</Link
+                >
             </Button>
         </div>
     </section>

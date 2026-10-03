@@ -60,7 +60,9 @@ class ProviderController extends Controller
             'city:id,name,slug',
             'serviceAreas' => fn (Relation $query) => $query->select(['cities.id', 'cities.name', 'cities.slug']),
             'categories' => fn (Relation $query) => $query->select(['categories.id', 'categories.name', 'categories.slug', 'categories.depth']),
-            'portfolioItems' => fn (Relation $query) => $query->with(['category:id,name', 'city:id,name']),
+            'portfolioItems' => fn (Relation $query) => $query->with(['category:id,name', 'city:id,name', 'media']),
+            // Logotipas ir viršelio nuotrauka (medialibrary)
+            'media' => fn (Relation $query) => $query->whereIn('collection_name', ['logo', 'cover']),
         ]);
 
         $reviews = $providerProfile->reviews()

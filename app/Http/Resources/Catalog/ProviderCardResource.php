@@ -37,8 +37,8 @@ class ProviderCardResource extends JsonResource
             'slug' => $provider->slug,
             'display_name' => $provider->display_name,
             'headline' => $provider->headline,
-            // Etapas 3: logotipas iš medialibrary; kol kas Vue rodo inicialus
-            'logo_url' => null,
+            // Logotipas iš medialibrary (media ryšys užkraunamas užklausoje); nėra – Vue rodo inicialus
+            'logo_url' => $provider->relationLoaded('media') ? $provider->logoUrl() : null,
             'city' => $provider->city->name,
             'serves_whole_country' => $provider->serves_whole_country,
             'is_verified' => $provider->isVerified(),

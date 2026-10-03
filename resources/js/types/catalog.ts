@@ -109,6 +109,7 @@ export type PublicProviderProfile = {
     description: string | null;
     website: string | null;
     logo_url: string | null;
+    cover_url: string | null;
     city: { name: string; slug: string };
     serves_whole_country: boolean;
     service_areas: { name: string; slug: string }[];

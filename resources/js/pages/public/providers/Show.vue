@@ -80,6 +80,14 @@ function bucketPercent(count: number): number {
     <div class="mx-auto max-w-6xl px-4 py-8 md:py-12">
         <Breadcrumbs :breadcrumbs="breadcrumbItems" />
 
+        <!-- Viršelio nuotrauka (jei teikėjas įkėlė) -->
+        <img
+            v-if="provider.cover_url"
+            :src="provider.cover_url"
+            :alt="provider.display_name"
+            class="mt-4 aspect-[3/1] w-full rounded-xl object-cover"
+        />
+
         <!-- Antraštė -->
         <header
             class="mt-4 flex flex-col gap-6 rounded-xl border p-5 md:flex-row md:items-start md:justify-between md:p-6"

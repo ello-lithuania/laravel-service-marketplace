@@ -75,6 +75,8 @@ class ProviderListQuery
             // Eager loading: miestai ir kategorijos visiems puslapio teikėjams – dviem užklausomis, ne 2 × 20
             ->with([
                 'city:id,name,slug',
+                // Tik logotipas (medialibrary „logo" kolekcija) – kortelei kitų failų nereikia
+                'media' => fn (Relation $query) => $query->where('collection_name', 'logo'),
                 'categories' => function (Relation $query) use ($categoryIds): void {
                     $query->select(['categories.id', 'categories.name', 'categories.slug', 'categories.depth'])
                         ->where('categories.is_active', true)

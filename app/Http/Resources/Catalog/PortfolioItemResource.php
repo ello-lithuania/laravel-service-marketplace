@@ -29,8 +29,10 @@ class PortfolioItemResource extends JsonResource
             'completed_date' => $item->completed_date?->toDateString(),
             'category' => $item->category?->name,
             'city' => $item->city?->name,
-            // Etapas 3: nuotraukos iš medialibrary kolekcijos „images" ([{url, thumb_url}]); kol kas tuščia
-            'images' => [],
+            // Nuotraukos iš medialibrary kolekcijos „images" (media ryšys užkraunamas controller'yje)
+            'images' => $item->relationLoaded('media')
+                ? array_map(fn (array $image): array => ['url' => $image['url'], 'thumb_url' => $image['thumb']], $item->imageUrls())
+                : [],
         ];
     }
 }

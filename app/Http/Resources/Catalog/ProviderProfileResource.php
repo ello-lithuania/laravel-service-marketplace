@@ -40,8 +40,9 @@ class ProviderProfileResource extends JsonResource
             'headline' => $provider->headline,
             'description' => $provider->description,
             'website' => $this->safeWebsite($provider->website),
-            // Etapas 3: logotipas iš medialibrary; kol kas Vue rodo inicialus
-            'logo_url' => null,
+            // Logotipas iš medialibrary (media ryšys užkraunamas užklausoje); nėra – Vue rodo inicialus
+            'logo_url' => $provider->relationLoaded('media') ? $provider->logoUrl() : null,
+            'cover_url' => $provider->relationLoaded('media') ? $provider->coverUrl() : null,
             'city' => ['name' => $provider->city->name, 'slug' => $provider->city->slug],
             'serves_whole_country' => $provider->serves_whole_country,
             'service_areas' => $provider->serves_whole_country ? [] : $this->serviceAreas($provider),
