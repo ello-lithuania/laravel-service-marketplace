@@ -100,7 +100,7 @@ function submitReply(id: number): void {
                 Dirbote su klientais ne per platformą? Nusiųskite jiems šią
                 nuorodą – prisijungę jie galės palikti atsiliepimą (pažymimas
                 „Pagal pakvietimą", skelbiamas po administratoriaus peržiūros).
-                Nuoroda galioja iki {{ formatDate(invitation.expires_at) }}.
+                Nuoroda galioja iki {{ formatDate(invitation.expires_at) }}
             </p>
             <div class="flex gap-2">
                 <Input
@@ -137,51 +137,57 @@ function submitReply(id: number): void {
                 class="rounded-xl border bg-card p-4"
             >
                 <ReviewCard :review="review" reply-label="Jūsų atsakymas">
-                    <!-- Netikras ar įžeidžiantis atsiliepimas – pranešti administratoriui -->
-                    <div class="flex justify-end">
-                        <ReportDialog type="review" :id="review.id" />
-                    </div>
-                    <div v-if="review.can.reply" class="pt-1">
-                        <Button
-                            v-if="replyingTo !== review.id"
-                            size="sm"
-                            variant="outline"
-                            data-test="reply-button"
-                            @click="openReply(review.id)"
-                        >
-                            Atsakyti
-                        </Button>
-                        <form
-                            v-else
-                            class="space-y-2"
-                            @submit.prevent="submitReply(review.id)"
-                        >
-                            <FormTextarea
-                                v-model="form.reply"
-                                :rows="3"
-                                :maxlength="2000"
-                                :invalid="!!form.errors.reply"
-                                placeholder="Padėkokite arba paaiškinkite situaciją. Atsakymą matys visi profilio lankytojai."
-                            />
-                            <InputError :message="form.errors.reply" />
-                            <div class="flex gap-2">
-                                <Button
-                                    type="submit"
-                                    size="sm"
-                                    :disabled="form.processing"
-                                >
-                                    Paskelbti atsakymą
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    @click="replyingTo = null"
-                                >
-                                    Atšaukti
-                                </Button>
-                            </div>
-                        </form>
+                    <div
+                        class="flex flex-wrap items-start justify-between gap-2 pt-1"
+                    >
+                        <div v-if="review.can.reply" class="min-w-0 flex-1">
+                            <Button
+                                v-if="replyingTo !== review.id"
+                                size="sm"
+                                variant="outline"
+                                data-test="reply-button"
+                                @click="openReply(review.id)"
+                            >
+                                Atsakyti
+                            </Button>
+                            <form
+                                v-else
+                                class="space-y-2"
+                                @submit.prevent="submitReply(review.id)"
+                            >
+                                <FormTextarea
+                                    v-model="form.reply"
+                                    :rows="3"
+                                    :maxlength="2000"
+                                    :invalid="!!form.errors.reply"
+                                    placeholder="Padėkokite arba paaiškinkite situaciją. Atsakymą matys visi profilio lankytojai."
+                                />
+                                <InputError :message="form.errors.reply" />
+                                <div class="flex gap-2">
+                                    <Button
+                                        type="submit"
+                                        size="sm"
+                                        :disabled="form.processing"
+                                    >
+                                        Paskelbti atsakymą
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        @click="replyingTo = null"
+                                    >
+                                        Atšaukti
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
+                        <!-- Netikras ar įžeidžiantis atsiliepimas – pranešti administratoriui -->
+                        <ReportDialog
+                            type="review"
+                            :id="review.id"
+                            class="ml-auto"
+                        />
                     </div>
                 </ReviewCard>
             </li>

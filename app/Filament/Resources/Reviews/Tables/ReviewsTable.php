@@ -8,6 +8,7 @@ use App\Models\Review;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\ViewAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -35,9 +36,14 @@ class ReviewsTable
                     ->description(fn (Review $record): string => ($record->author->public_name ?? '–').' → '.($record->providerProfile->display_name ?? '–')),
                 // Patvirtintas (yra užklausa) ar pagal pakvietimą
                 IconColumn::make('service_request_id')
-                    ->label('Patvirtintas')
+                    ->label('Tipas')
                     ->state(fn (Review $record): bool => $record->isVerified())
-                    ->boolean(),
+                    ->boolean()
+                    // Pakvietimo atsiliepimas – ne klaida, todėl ne raudonas „X", o pilka „pakviesto" ikona
+                    ->trueIcon(Heroicon::OutlinedShieldCheck)
+                    ->falseIcon(Heroicon::OutlinedUserPlus)
+                    ->falseColor('gray')
+                    ->tooltip(fn (Review $record): string => $record->isVerified() ? 'Užsakyta per platformą' : 'Pagal teikėjo pakvietimą'),
                 TextColumn::make('status')
                     ->label('Būsena')
                     ->badge()

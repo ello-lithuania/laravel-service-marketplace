@@ -182,7 +182,7 @@ function markCompleted(): void {
         >
             <template v-if="review">
                 <h2 class="text-lg font-semibold">Jūsų atsiliepimas</h2>
-                <ReviewCard :review="review" />
+                <ReviewCard :review="review" hide-request-title />
             </template>
             <template v-else>
                 <div>

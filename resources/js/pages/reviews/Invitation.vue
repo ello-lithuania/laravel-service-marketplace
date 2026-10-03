@@ -86,7 +86,7 @@ const page = usePage();
                     nerodoma.
                 </p>
                 <p v-if="expiresAt" class="text-xs text-muted-foreground">
-                    Nuoroda galioja iki {{ formatDate(expiresAt) }}.
+                    Nuoroda galioja iki {{ formatDate(expiresAt) }}
                 </p>
             </div>
             <ReviewForm :action="page.url" submit-label="Siųsti atsiliepimą" />

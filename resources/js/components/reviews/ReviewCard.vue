@@ -6,7 +6,12 @@ import { formatDate } from '@/lib/marketplace';
 import type { AccountReview } from '@/types';
 
 // Vienas atsiliepimas paskyroje. Būsena (pvz. „Laukia moderavimo") rodoma tik kai atsiliepimas dar nepaskelbtas
-defineProps<{ review: AccountReview; replyLabel?: string }>();
+defineProps<{
+    review: AccountReview;
+    replyLabel?: string;
+    /** Užklausos puslapyje darbo pavadinimas jau matomas antraštėje */
+    hideRequestTitle?: boolean;
+}>();
 </script>
 
 <template>
@@ -40,7 +45,7 @@ defineProps<{ review: AccountReview; replyLabel?: string }>();
             </time>
         </div>
         <p
-            v-if="review.service_request_title"
+            v-if="review.service_request_title && !hideRequestTitle"
             class="text-xs text-muted-foreground"
         >
             Darbas: {{ review.service_request_title }}
