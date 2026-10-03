@@ -11,3 +11,7 @@ parameters:
         - routes/
 
     level: 7
+
+    # Modelių cast'ai rašomi casts() metode (Laravel 11+ stilius). Be šio nustatymo Larastan jų nemato
+    # ir mano, kad $profile->status yra string, o ne ProviderStatus enum'as (Etapas 4).
+    parseModelCastsMethod: true

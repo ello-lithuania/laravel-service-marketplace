@@ -344,7 +344,7 @@ Be `timestamps`: žinyninė lentelė keičiasi itin retai (modelyje `public $tim
 Be `timestamps`.
 **Ryšiai:** `belongsTo` Region · `hasMany` User, ProviderProfile (bazinis miestas), ServiceRequest ·
 `belongsToMany` ProviderProfile per `city_provider_profile` (zonos).
-**Indeksai:** `UNIQUE(slug)` – URL `/meistrai/santechnikai/vilnius`. `region_id` – automatiškai (FK).
+**Indeksai:** `UNIQUE(slug)` – URL `/paslaugos/santechnikos-darbai/vilnius`. `region_id` – automatiškai (FK).
 Lentelėje 60 eilučių, ir visa ji laikoma cache.
 
 ---
@@ -425,8 +425,9 @@ Lentelėje 60 eilučių, ir visa ji laikoma cache.
   gaunami be papildomo rūšiavimo.
 - `city_id` – automatiškai (FK).
 - `FULLTEXT(display_name, headline, description)` – paieška tekstu. Tik MySQL: SQLite tokio indekso nepalaiko,
-  todėl migracijoje jį apgaubsim `DB::getDriverName() === 'mysql'` patikra. Etape 4 nuspręsim, ar užteks šito,
-  ar reikės Laravel Scout + Meilisearch.
+  todėl migracijoje jį apgaubsim `DB::getDriverName() === 'mysql'` patikra. Etapas 4: kol kas užtenka FULLTEXT
+  (boolean režimas, scope `ProviderProfile::matchingText`; SQLite – `LIKE`), Scout + Meilisearch – kai prireiks
+  klaidų tolerancijos ar paieškos „kol rašai" (sprendimas – `docs/LEARNING.md`, Etapas 4).
 
 #### `category_provider_profile` (pivot)
 

@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\ReviewStatus;
 use Database\Factories\ReviewFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -60,5 +62,20 @@ class Review extends Model
     public function isVerified(): bool
     {
         return $this->service_request_id !== null;
+    }
+
+    // -------------------------------------------------------------------------
+    // Katalogas (Etapas 4)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Viešai rodomi atsiliepimai (ne paslėpti ir ne laukiantys moderavimo).
+     *
+     * @param  Builder<Review>  $query
+     */
+    #[Scope]
+    protected function published(Builder $query): void
+    {
+        $query->where('reviews.status', ReviewStatus::Published);
     }
 }
