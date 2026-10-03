@@ -3,12 +3,13 @@
 namespace App\Enums;
 
 use App\Enums\Concerns\HasFilamentLabel;
+use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
 /**
  * Mokėjimo būsena.
  */
-enum PaymentStatus: string implements HasLabel
+enum PaymentStatus: string implements HasColor, HasLabel
 {
     use HasFilamentLabel;
 
@@ -29,6 +30,19 @@ enum PaymentStatus: string implements HasLabel
             self::Failed => 'Nepavyko',
             self::Cancelled => 'Atšaukta',
             self::Refunded => 'Grąžinta',
+        };
+    }
+
+    /**
+     * Ženklelio spalva Filament panelėje.
+     */
+    public function getColor(): string
+    {
+        return match ($this) {
+            self::Pending => 'warning',
+            self::Paid => 'success',
+            self::Failed => 'danger',
+            self::Cancelled, self::Refunded => 'gray',
         };
     }
 }

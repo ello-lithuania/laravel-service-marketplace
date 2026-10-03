@@ -4,7 +4,7 @@ import { Menu, X } from '@lucide/vue';
 import { ref } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { Button } from '@/components/ui/button';
-import { dashboard, home, login, register } from '@/routes';
+import { dashboard, home, login, pricing, register } from '@/routes';
 import { index as categoriesIndex } from '@/routes/categories';
 import { index as providersIndex } from '@/routes/providers';
 
@@ -22,6 +22,8 @@ const navLinks = [
     // Pradžios puslapio skiltys – su „/", kad veiktų ir iš kitų puslapių
     { label: 'Kaip tai veikia', href: '/#kaip-tai-veikia', anchor: true },
     { label: 'Teikėjams', href: '/#teikejams', anchor: true },
+    // Etapas 7: kainų puslapis
+    { label: 'Kainos', href: pricing.url(), anchor: false },
 ];
 </script>
 
@@ -154,7 +156,11 @@ const navLinks = [
                             >
                         </li>
                         <li>
-                            <a href="#" class="hover:text-foreground">Kainos</a>
+                            <Link
+                                :href="pricing()"
+                                class="hover:text-foreground"
+                                >Kainos</Link
+                            >
                         </li>
                     </ul>
                 </div>

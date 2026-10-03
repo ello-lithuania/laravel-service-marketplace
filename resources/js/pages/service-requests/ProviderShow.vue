@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Coins, Mail, Phone, User } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate, formatMoney, timeAgo } from '@/lib/marketplace';
+import { index as creditsIndex } from '@/routes/credits';
 import { store, withdraw } from '@/routes/offers';
 import { index as feed } from '@/routes/provider-feed';
 import type { Offer, ServiceRequestDetail } from '@/types';
@@ -207,8 +208,10 @@ function withdrawOffer(): void {
                 v-if="!enoughCredits"
                 class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
             >
-                Nepakanka kreditų šiam pasiūlymui. Kreditų įsigyti galėsite
-                skiltyje „Kainos" (netrukus).
+                Nepakanka kreditų šiam pasiūlymui.
+                <Link :href="creditsIndex()" class="font-medium underline">
+                    Pirkti kreditų
+                </Link>
             </div>
 
             <form class="space-y-5" @submit.prevent="submit">

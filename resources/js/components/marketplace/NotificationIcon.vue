@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import {
     Bell,
+    CalendarClock,
     CircleCheck,
     CircleX,
     ClipboardList,
+    Coins,
     FileText,
     Inbox,
     MessageSquare,
+    Receipt,
     Star,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -31,6 +34,13 @@ const icon = computed(() => {
             return MessageSquare;
         case 'NewReview':
             return Star;
+        // Etapas 7: mokėjimai ir kreditai
+        case 'PaymentSucceeded':
+            return Receipt;
+        case 'SubscriptionExpiring':
+            return CalendarClock;
+        case 'LowCredits':
+            return Coins;
         default:
             return props.type.startsWith('ServiceRequest')
                 ? ClipboardList

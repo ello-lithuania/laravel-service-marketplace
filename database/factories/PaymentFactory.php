@@ -6,6 +6,8 @@ use App\Enums\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Models\CreditPackage;
 use App\Models\Payment;
+use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -49,6 +51,35 @@ class PaymentFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => PaymentStatus::Failed,
             'paid_at' => null,
+        ]);
+    }
+
+    // --- Etapas 7 ---
+
+    /**
+     * Netikro (testinio) tiekėjo mokėjimas.
+     */
+    public function fake(): static
+    {
+        return $this->state(fn (array $attributes) => ['gateway' => PaymentGateway::Fake]);
+    }
+
+    public function forPackage(CreditPackage $package): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'purchasable_type' => 'credit_package',
+            'purchasable_id' => $package->id,
+            'amount_cents' => $package->price_cents,
+        ]);
+    }
+
+    public function forPlan(SubscriptionPlan $plan, ?Subscription $subscription = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'purchasable_type' => 'subscription_plan',
+            'purchasable_id' => $plan->id,
+            'amount_cents' => $plan->price_cents,
+            'subscription_id' => $subscription?->id,
         ]);
     }
 }

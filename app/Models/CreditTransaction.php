@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Enums\CreditTransactionType;
+use App\Observers\CreditTransactionObserver;
 use Database\Factories\CreditTransactionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * Įrašai nekeičiami: klaida taisoma nauja priešinga eilute, todėl updated_at nėra.
  */
 #[Fillable(['amount', 'balance_after', 'type', 'description'])]
+// Etapas 7: LowCredits pranešimas, kai balansas nukrenta žemiau ribos
+#[ObservedBy([CreditTransactionObserver::class])]
 class CreditTransaction extends Model
 {
     /** @use HasFactory<CreditTransactionFactory> */

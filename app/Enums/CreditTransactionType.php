@@ -3,12 +3,13 @@
 namespace App\Enums;
 
 use App\Enums\Concerns\HasFilamentLabel;
+use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
 /**
  * Kreditų operacijos tipas (ledger).
  */
-enum CreditTransactionType: string implements HasLabel
+enum CreditTransactionType: string implements HasColor, HasLabel
 {
     use HasFilamentLabel;
 
@@ -33,6 +34,19 @@ enum CreditTransactionType: string implements HasLabel
             self::Bonus => 'Dovana',
             self::AdminAdjustment => 'Koregavimas',
             self::Expiry => 'Pasibaigė',
+        };
+    }
+
+    /**
+     * Ženklelio spalva Filament panelėje: gauti kreditai – žalia ar mėlyna, išleisti – pilka.
+     */
+    public function getColor(): string
+    {
+        return match ($this) {
+            self::Purchase, self::Subscription => 'success',
+            self::Bonus, self::Refund => 'info',
+            self::AdminAdjustment => 'warning',
+            self::Offer, self::Expiry => 'gray',
         };
     }
 }

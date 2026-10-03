@@ -28,6 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        // --- Etapas 7 ---
+        // Mokėjimų tiekėjo callback'ą siunčia jo SERVERIS, o ne mūsų forma, todėl CSRF žetono jame nėra.
+        // Apsauga čia – tiekėjo parašas (PaymentGateway::handleCallback). https://laravel.com/docs/13.x/csrf#csrf-excluding-uris
+        $middleware->preventRequestForgery(except: ['mokejimai/callback/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
