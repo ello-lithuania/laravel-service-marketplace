@@ -16,6 +16,8 @@
 8. [Dažniausios užklausos → kurį indeksą naudoja](#8-dažniausios-užklausos--kurį-indeksą-naudoja)
 9. [Ko sąmoningai kol kas nededam](#9-ko-sąmoningai-kol-kas-nededam)
 
+BDAR saugojimo taisyklės (Etapas 8) – [2.14 skyrius](#214-bdar-saugojimas-ir-anonimizavimas-etapas-8).
+
 ---
 
 ## 1. Kaip skaityti šį dokumentą
@@ -173,7 +175,8 @@ atsiliepimų būtų lėta. WordPress daro tą patį su `wp_posts.comment_count`.
 `deleted_at`, todėl istorija lieka ir įrašą galima atkurti (WordPress analogas – „Šiukšliadėžė").
 Kitose lentelėse naudojam statusus (pvz. `reviews.status = hidden`).
 Vartotojo ištrynimas pagal BDAR = **anonimizavimas**: vardas tampa „Ištrintas vartotojas", el. paštas –
-`deleted-{id}@example.invalid`. → https://laravel.com/docs/13.x/eloquent#soft-deleting
+`deleted-{id}@example.invalid`. Ką tiksliai pašalinam ir ką paliekam – **2.14 sk.** (Etapas 8).
+→ https://laravel.com/docs/13.x/eloquent#soft-deleting
 
 ### 2.12 ON DELETE taisyklės
 
@@ -191,6 +194,45 @@ Polimorfiniuose stulpeliuose (`*_type`) saugom trumpus vardus (`offer`, `review`
 Tai nustatoma `Relation::enforceMorphMap()` metodu `AppServiceProvider` klasėje. Perkėlus klasę į kitą
 namespace, duomenų DB keisti nereikės.
 → https://laravel.com/docs/13.x/eloquent-relationships#custom-polymorphic-types
+
+### 2.14 BDAR: saugojimas ir anonimizavimas (Etapas 8)
+
+Kodas: `App\Actions\Privacy\AnonymizeUser` (savitarna: Nustatymai → Privatumas → „Ištrinti paskyrą" su slaptažodžiu;
+administratorius: Filament → Vartotojai → „Ištrinti duomenis (BDAR)"), eksportas – `App\Jobs\GenerateUserDataExport`.
+
+**Kodėl anonimizavimas, o ne `DELETE`.** Užklausos, pasiūlymai, žinutės, atsiliepimai ir mokėjimai – kartu ir kitų
+žmonių (teikėjų, klientų) bei buhalterijos įrašai. FK `restrict` neleistų jų ištrinti, o ištrynus kaskada sugriūtų
+kitų istorija ir reitingai. BDAR reikalauja pašalinti tai, kas **identifikuoja žmogų**, – todėl asmens duomenis
+pakeičiam ar ištrinam, o verslo įrašus paliekam be vardo.
+
+| Duomenys                                                          | Kas nutinka                                                                              | Kodėl                                                                                     |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `users`: vardas, pavardė, el. paštas, telefonas, miestas          | „Ištrintas vartotojas", `deleted-{id}@example.invalid`, NULL; slaptažodis – atsitiktinis | asmens duomenys; el. paštas lieka unikalus, tuo pačiu adresu galima registruotis iš naujo |
+| `users` eilutė                                                    | soft delete (`deleted_at`)                                                               | FK iš užklausų, atsiliepimų, mokėjimų; prisijungti neįmanoma                              |
+| `provider_profiles`                                               | pavadinimas „Ištrintas teikėjas", aprašymas, svetainė – NULL, `hidden` + soft delete     | dingsta iš katalogo; pasiūlymai ir atsiliepimai lieka susieti                             |
+| įmonės kodas, PVM kodas                                           | juridiniam asmeniui paliekami, fiziniam – NULL                                           | juridinio asmens duomenys nėra asmens duomenys; individualios veiklos – yra               |
+| `category_provider_profile`, `city_provider_profile`              | ištrinami                                                                                | be profilio nereikalingi                                                                  |
+| `portfolio_items` ir visos nuotraukos (`media`)                   | ištrinami kartu su failais (po DB transakcijos)                                          | nuotraukos – asmens duomenys; failų ištrynimo atšaukti negalima                           |
+| `service_requests.address`                                        | NULL                                                                                     | privatus adresas; pati užklausa lieka teikėjų istorijai                                   |
+| laukiančios / atviros / vykdomos užklausos, laukiantys pasiūlymai | atšaukiami per esamas Actions (kreditai – pagal `docs/STATES.md`)                        | kiti neturi laukti atsakymo iš nebesančio žmogaus                                         |
+| `notifications`, `password_reset_tokens`, DB sesijos              | ištrinami                                                                                | skirti tik šiam žmogui, verslo vertės neturi                                              |
+| BDAR archyvai (`storage/app/private/data-exports/{id}`)           | ištrinami                                                                                | juose visi asmens duomenys                                                                |
+| `messages`, `reviews`, `offers`, `complaints`                     | lieka; autorius rodomas „Ištrintas vartotojas"                                           | pašnekovo ir kitų klientų teisėtas interesas (istorija, ginčai, reitingas)                |
+| `payments`, `credit_transactions`, `subscriptions`                | lieka (aktyvios prenumeratos – `cancelled`, `auto_renew = false`)                        | buhalterinė apskaita – **10 metų** (LR buhalterinės apskaitos įstatymas)                  |
+
+**Saugojimo terminai.**
+
+| Kas                    | Kiek saugom                        | Kaip valoma                                   |
+| ---------------------- | ---------------------------------- | --------------------------------------------- |
+| BDAR eksporto archyvai | 7 d.                               | `php artisan privacy:prune-exports` (kasdien) |
+| Mokėjimai, sąskaitos   | 10 m.                              | rankiniu būdu / būsimas valymo job'as         |
+| Serverio logai         | 14 d. (`LOG_DAILY_DAYS`)           | `daily` log kanalas pats trina senus failus   |
+| Atsarginės DB kopijos  | 7 dienos + 4 savaitės + 6 mėnesiai | `docs/DEPLOYMENT.md` → „Atsarginės kopijos"   |
+
+Pastaba sujungiant su Etapu 7: sąskaitose faktūrose pirkėjo rekvizitai turi būti **įšaldyti** mokėjimo metu
+(pvz. `payments.meta`), nes anonimizavus vartotoją jo vardas ir el. paštas `users` lentelėje pasikeičia, o sąskaita
+turi likti tokia, kokia buvo išrašyta. Atsarginėse kopijose anonimizuoti duomenys išnyksta, kai kopija pasensta
+(BDAR tai leidžia, jei kopijos neatkuriamos be reikalo).
 
 ---
 
@@ -983,24 +1025,24 @@ priežastį ir parodo, kaip keičiama jau esanti lentelė.
 
 ## 8. Dažniausios užklausos → kurį indeksą naudoja
 
-| #   | Kas                             | Užklausa (supaprastinta)                                                                                                       | Indeksas                                                                                                                  |
-| --- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Teikėjo užklausų srautas        | `service_requests WHERE category_id IN (…) AND status='open' ORDER BY published_at DESC` + miesto sąlyga                       | `service_requests(category_id, status, published_at)`                                                                     |
-| 2   | Teikėjai kategorijoje ir mieste | `category_provider_profile WHERE category_id IN (…)` ∩ `city_provider_profile WHERE city_id = ?` (arba `serves_whole_country`) | `(category_id, provider_profile_id)`, `(city_id, provider_profile_id)`                                                    |
-| 3   | Naujos užklausos pranešimai     | tas pats kaip #2, tik vykdoma eilėje (job), dalimis (chunk)                                                                    | kaip #2                                                                                                                   |
-| 4   | Užklausos pasiūlymai            | `offers WHERE service_request_id = ?`                                                                                          | `offers UNIQUE(service_request_id, provider_profile_id)`                                                                  |
-| 5   | Mano pasiūlymai                 | `offers WHERE provider_profile_id = ? ORDER BY created_at DESC`                                                                | `offers(provider_profile_id, created_at)`                                                                                 |
-| 6   | Mano užklausos                  | `service_requests WHERE client_id = ? ORDER BY created_at DESC`                                                                | `service_requests(client_id, created_at)`                                                                                 |
-| 7   | Pokalbio žinutės                | `messages WHERE conversation_id = ? ORDER BY id`                                                                               | `messages(conversation_id)` (+ PK)                                                                                        |
-| 8   | Neperskaitytos žinutės          | `messages WHERE conversation_id = ? AND id > ?`                                                                                | `messages(conversation_id)` (+ PK)                                                                                        |
-| 9   | Profilio atsiliepimai           | `reviews WHERE provider_profile_id = ? AND status='published' ORDER BY published_at DESC`                                      | `reviews(provider_profile_id, status, published_at)`                                                                      |
-| 10  | Geriausiai įvertinti            | `provider_profiles WHERE status='active' ORDER BY rating_avg DESC`                                                             | `provider_profiles(status, deleted_at, rating_avg, reviews_count)` (Etapas 8)                                             |
-| 11  | Kreditų istorija                | `credit_transactions WHERE provider_profile_id = ? ORDER BY id DESC`                                                           | FK indeksas (+ PK)                                                                                                        |
-| 12  | Mokėjimo callback'as            | `payments WHERE uuid = ?` / `WHERE gateway = ? AND gateway_reference = ?`                                                      | `UNIQUE(uuid)`, `UNIQUE(gateway, gateway_reference)`                                                                      |
-| 13  | Skundų eilė                     | `complaints WHERE status='open' ORDER BY created_at`                                                                           | `complaints(status, created_at)`                                                                                          |
-| 14  | Pranešimų varpelis              | `notifications WHERE notifiable_type='user' AND notifiable_id = ? AND read_at IS NULL`                                         | `(notifiable_type, notifiable_id, read_at)` (Etapas 8)                                                                    |
-| 15  | Prenumeratų galiojimas          | `subscriptions WHERE status='active' AND ends_at <= ?`                                                                         | `subscriptions(status, ends_at)`                                                                                          |
-| 16  | Pasibaigusios užklausos         | `service_requests WHERE status='open' AND expires_at <= ?`                                                                     | `(status, expires_at)` (Etapas 8: be jo `chunkById` skenavo visą lentelę pagal PK)                                        |
+| #   | Kas                             | Užklausa (supaprastinta)                                                                                                       | Indeksas                                                                           |
+| --- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| 1   | Teikėjo užklausų srautas        | `service_requests WHERE category_id IN (…) AND status='open' ORDER BY published_at DESC` + miesto sąlyga                       | `service_requests(category_id, status, published_at)`                              |
+| 2   | Teikėjai kategorijoje ir mieste | `category_provider_profile WHERE category_id IN (…)` ∩ `city_provider_profile WHERE city_id = ?` (arba `serves_whole_country`) | `(category_id, provider_profile_id)`, `(city_id, provider_profile_id)`             |
+| 3   | Naujos užklausos pranešimai     | tas pats kaip #2, tik vykdoma eilėje (job), dalimis (chunk)                                                                    | kaip #2                                                                            |
+| 4   | Užklausos pasiūlymai            | `offers WHERE service_request_id = ?`                                                                                          | `offers UNIQUE(service_request_id, provider_profile_id)`                           |
+| 5   | Mano pasiūlymai                 | `offers WHERE provider_profile_id = ? ORDER BY created_at DESC`                                                                | `offers(provider_profile_id, created_at)`                                          |
+| 6   | Mano užklausos                  | `service_requests WHERE client_id = ? ORDER BY created_at DESC`                                                                | `service_requests(client_id, created_at)`                                          |
+| 7   | Pokalbio žinutės                | `messages WHERE conversation_id = ? ORDER BY id`                                                                               | `messages(conversation_id)` (+ PK)                                                 |
+| 8   | Neperskaitytos žinutės          | `messages WHERE conversation_id = ? AND id > ?`                                                                                | `messages(conversation_id)` (+ PK)                                                 |
+| 9   | Profilio atsiliepimai           | `reviews WHERE provider_profile_id = ? AND status='published' ORDER BY published_at DESC`                                      | `reviews(provider_profile_id, status, published_at)`                               |
+| 10  | Geriausiai įvertinti            | `provider_profiles WHERE status='active' ORDER BY rating_avg DESC`                                                             | `provider_profiles(status, deleted_at, rating_avg, reviews_count)` (Etapas 8)      |
+| 11  | Kreditų istorija                | `credit_transactions WHERE provider_profile_id = ? ORDER BY id DESC`                                                           | FK indeksas (+ PK)                                                                 |
+| 12  | Mokėjimo callback'as            | `payments WHERE uuid = ?` / `WHERE gateway = ? AND gateway_reference = ?`                                                      | `UNIQUE(uuid)`, `UNIQUE(gateway, gateway_reference)`                               |
+| 13  | Skundų eilė                     | `complaints WHERE status='open' ORDER BY created_at`                                                                           | `complaints(status, created_at)`                                                   |
+| 14  | Pranešimų varpelis              | `notifications WHERE notifiable_type='user' AND notifiable_id = ? AND read_at IS NULL`                                         | `(notifiable_type, notifiable_id, read_at)` (Etapas 8)                             |
+| 15  | Prenumeratų galiojimas          | `subscriptions WHERE status='active' AND ends_at <= ?`                                                                         | `subscriptions(status, ends_at)`                                                   |
+| 16  | Pasibaigusios užklausos         | `service_requests WHERE status='open' AND expires_at <= ?`                                                                     | `(status, expires_at)` (Etapas 8: be jo `chunkById` skenavo visą lentelę pagal PK) |
 
 ### 8.1 Pavyzdys: teikėjo užklausų srautas
 
