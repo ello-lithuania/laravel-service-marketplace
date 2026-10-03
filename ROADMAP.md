@@ -53,17 +53,17 @@ ledger, idempotencija, seeder, factory, Faker.
 **Sąvokos:** migracijos, Eloquent modeliai, ryšiai, cast'ai, enum'ai, accessor'iai, factories ir būsenos,
 seeder'iai, morph map, masinis įterpimas.
 
-- [ ] PHP enum'ai (`app/Enums`) pagal `DB_SCHEMA.md` 6 sk.
-- [ ] Migracijos pagal `DB_SCHEMA.md` 7 sk. eiliškumą (įskaitant žiedinį FK)
-- [ ] Modeliai: `$fillable`, `casts()`, ryšiai, accessor'iai (`public_name`), morph map, `preventLazyLoading`
-- [ ] Factories su būsenomis (`->completed()`, `->company()`…)
-- [ ] Žinyniniai duomenys `database/data`: apskritys, savivaldybės, kategorijų medis, kreditų paketai, planai
-- [ ] Lietuviškų tekstų bankai seed'ams
-- [ ] Dideli seeder'iai pagal `docs/SEEDING.md` (+ `config/seeding.php`, `SEED_SCALE`)
-- [ ] Vientisumo testai (`SEEDING.md` 8 sk.)
-- [ ] Pilnas seed'as MySQL – išmatuotas laikas įrašytas į `SEEDING.md`
-- [ ] Filament: kategorijų ir savivaldybių CRUD (pirmas susipažinimas su Filament)
-- [ ] `docs/LEARNING.md`: Etapas 2 + santrauka vartotojui
+- [x] PHP enum'ai (`app/Enums`) pagal `DB_SCHEMA.md` 6 sk.
+- [x] Migracijos pagal `DB_SCHEMA.md` 7 sk. eiliškumą (įskaitant žiedinį FK)
+- [x] Modeliai: `#[Fillable]`, `casts()`, ryšiai, accessor'iai (`public_name`), morph map, `preventLazyLoading`
+- [x] Factories su būsenomis (`->completed()`, `->company()`…)
+- [x] Žinyniniai duomenys `database/data`: apskritys, savivaldybės, kategorijų medis, kreditų paketai, planai
+- [x] Lietuviškų tekstų bankai seed'ams
+- [x] Dideli seeder'iai pagal `docs/SEEDING.md` (+ `config/seeding.php`, `SEED_SCALE`)
+- [x] Vientisumo testai (`SEEDING.md` 8 sk.)
+- [x] Pilnas seed'as MySQL – išmatuotas laikas įrašytas į `SEEDING.md` (MySQL 8.0: ~2,5 min., SQLite: ~50 s)
+- [x] Filament: kategorijų ir savivaldybių CRUD (pirmas susipažinimas su Filament)
+- [x] `docs/LEARNING.md`: Etapas 2 + santrauka vartotojui
 
 ---
 
@@ -77,7 +77,7 @@ seeder'iai, morph map, masinis įterpimas.
 - [ ] Starter kit puslapiai (prisijungimas, registracija, paskyra, nustatymai) išversti į lietuvių kalbą
 - [ ] Inertia bendri props: `auth.user` – tik reikalingi laukai (dabar siunčiamas visas `User` modelis)
 - [ ] `role` middleware, Policies pagrindiniams modeliams
-- [ ] Filament prieiga tik `admin` rolei (`canAccessPanel`)
+- [x] Filament prieiga tik `admin` rolei (`canAccessPanel`) – padaryta Etape 2
 - [ ] Teikėjo profilio vedlys: duomenys → kategorijos (3 lygių medis) → zonos (apskritis → savivaldybės, „visa Lietuva") → kainos „nuo"
 - [ ] Profilio redagavimas, logotipas ir avataras (medialibrary)
 - [ ] Portfolio CRUD su nuotraukomis

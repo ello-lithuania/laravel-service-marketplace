@@ -304,3 +304,175 @@ Filament įleidžia tik lokalioje aplinkoje. → https://filamentphp.com/docs
 - **Generatorius paliko nereikalingo kodo** – po automatinių įrankių visada paleisk testus ir PHPStan.
 - **Filament produkcijoje grąžina 403** – nėra `canAccessPanel()` (bus Etape 3).
 - **Pervadintas maršrutas, o Vue jo „nemato"** – Wayfinder failai pergeneruojami paleidus Vite (`npm run dev` / `build`).
+
+---
+
+## Etapas 2 – Duomenų bazė: migracijos, modeliai, seed'ai
+
+### Ką darėm ir kodėl
+
+- **16 PHP enum'ų** (`app/Enums`) visoms rolėms ir statusams, kiekvienas su lietuvišku `label()`.
+- **22 migracijos** pagal `docs/DB_SCHEMA.md`: geografija → katalogas → teikėjai → užklausos → žinutės →
+  atsiliepimai → monetizacija → skundai → pranešimai. Žiedinis FK (`service_requests.accepted_offer_id` ↔ `offers`)
+  pridedamas atskira migracija, kai abi lentelės jau yra.
+- **17 Eloquent modelių** su ryšiais, cast'ais ir accessor'iais, plius **factories su būsenomis** testams.
+- **Žinyniniai duomenys** (`database/data`): 10 apskričių, 60 savivaldybių su vietininkais, 251 kategorija
+  (12 / 49 / 190), 4 kreditų paketai, 3 prenumeratų planai. Seeder'iai idempotentiški.
+- **Dideli demo duomenys** (`DemoDataSeeder` + `database/seeders/Demo/`): ≈ 1,9 mln. eilučių, nuoseklių su verslo
+  taisyklėmis, su `SEED_SCALE` daugikliu. Pilnas seed'as: SQLite ~50 s, MySQL ~2,5 min.
+- **Vientisumo testas** – 10 patikrinimų, ar seed'ai laikosi taisyklių (praeina SQLite ir MySQL).
+- **Filament**: prieiga tik administratoriams (`canAccessPanel`), kategorijų ir savivaldybių valdymas.
+
+### Išmoktos sąvokos
+
+#### 1. Migracijos: FK, ON DELETE ir indeksai
+
+```php
+$table->foreignId('client_id')->constrained('users')->restrictOnDelete();
+$table->index(['category_id', 'status', 'published_at']);
+```
+
+`constrained()` sukuria FK, o `restrictOnDelete()` / `cascadeOnDelete()` / `nullOnDelete()` nusako, kas nutinka
+ištrynus tėvą (`DB_SCHEMA.md` 2.12). MySQL FK stulpeliui indeksą sukuria pats, o SQLite – ne, todėl indeksus,
+pagal kuriuos ieškom, rašom aiškiai. Sudėtinio indekso stulpelių tvarka svarbi: pirmiausia tie, pagal kuriuos
+filtruojam lygybe, paskui – rikiavimo stulpelis. → https://laravel.com/docs/13.x/migrations#foreign-key-constraints
+
+#### 2. Laravel 13 modelių atributai
+
+Vietoj savybių (`protected $fillable = [...]`) Laravel 13 leidžia rašyti PHP atributus virš klasės:
+
+```php
+#[Fillable(['first_name', 'last_name', 'email'])]
+#[Hidden(['password', 'remember_token'])]
+class User extends Authenticatable
+```
+
+Abu būdai veikia vienodai. `role` sąmoningai nėra `Fillable`: rolę keičiam tik kode (`forceFill`), kad jos
+nebūtų galima „atsiųsti" per formą (mass assignment apsauga). → https://laravel.com/docs/13.x/eloquent#mass-assignment
+
+#### 3. Cast'ai ir enum'ai
+
+`casts()` metode `'status' => ServiceRequestStatus::class` – iš DB gaunam ne eilutę, o enum'ą, todėl
+`$request->status === ServiceRequestStatus::Open`, o klaidingos reikšmės neįmanoma įrašyti. DB lieka paprastas
+`string` stulpelis (`DB_SCHEMA.md` 2.6). → https://laravel.com/docs/13.x/eloquent-mutators#enum-casting
+
+#### 4. Ryšiai ir grąžinami tipai
+
+`belongsTo`, `hasMany`, `hasOne`, `belongsToMany` (su pivot ir `withPivot()`), `hasManyThrough`
+(`User → ProviderProfile → Offer`), polimorfiniai `morphTo` / `morphMany` (skundai, pranešimai). Grąžinamą tipą
+rašom aiškiai (`: BelongsTo`), o PHPDoc'e – generikus (`BelongsTo<City, $this>`), kad PHPStan žinotų, koks modelis
+grįš. → https://laravel.com/docs/13.x/eloquent-relationships
+
+#### 5. Morph map
+
+Polimorfiniuose stulpeliuose (`reportable_type`) saugom trumpą vardą `review`, o ne `App\Models\Review`.
+`Relation::enforceMorphMap([...])` `AppServiceProvider` faile: pervadinus klasę DB duomenys nesulūžta, o pamiršus
+modelį įrašyti į sąrašą gaunam klaidą. → https://laravel.com/docs/13.x/eloquent-relationships#custom-polymorphic-types
+
+#### 6. `preventLazyLoading` ir N+1
+
+`Model::preventLazyLoading(! production)`: jei kode parašai `$category->parent->name`, nors ryšys neužkrautas,
+dev'e ir testuose gauni išimtį, o ne 100 papildomų SQL užklausų. Sprendimas – `->with('parent')` (eager loading).
+Dėl to ir `Category` „saving" hook'e tėvo lygį skaitom užklausa, o ne per `$category->parent`.
+→ https://laravel.com/docs/13.x/eloquent-relationships#preventing-lazy-loading
+
+#### 7. Accessor'iai ir scope'ai
+
+`name()` grąžina `Attribute::get(fn () => ...)` – „virtualus" stulpelis `$user->name`, kurio DB nėra.
+`#[Scope] protected function active(Builder $query)` leidžia rašyti `Category::active()->get()`.
+→ https://laravel.com/docs/13.x/eloquent-mutators#accessors-and-mutators · https://laravel.com/docs/13.x/eloquent#local-scopes
+
+#### 8. Factories ir būsenos
+
+`ServiceRequest::factory()->completed()->create()` – būsena (`state`) pakeičia kelis laukus, o `afterCreating`
+gali sukurti susijusius įrašus (priimtą pasiūlymą ir `accepted_offer_id`). Factories naudojam testuose.
+→ https://laravel.com/docs/13.x/eloquent-factories#factory-states
+
+#### 9. Seeder'iai: idempotentiški ir masiniai
+
+- Žinyniniai seeder'iai naudoja `updateOrCreate()` pagal slug ar el. paštą: paleidus antrą kartą nieko
+  nedubliuoja (kaip WordPress `dbDelta()`).
+- `use WithoutModelEvents;` – seed'o metu nevykdomi model events (observeriai, pranešimai).
+- Dideli duomenys – **masinis įterpimas** `DB::table('offers')->insert($rows)` po 1 000 eilučių vienoje
+  transakcijoje, su **savais ID** (1…N), kad ryšius galėtume sudėlioti atmintyje be papildomų `SELECT`.
+- **PHP generatoriai** (`yield`): eilutės kuriamos po vieną, todėl 300 000 eilučių vienu metu atmintyje nėra.
+- **Deterministinis atsitiktinumas**: `mt_srand(2026)` + `fake()->seed(2026)` – tas pats rezultatas kiekvieną
+  kartą. `random_int()` ir `Str::uuid()` „užsėti" negalima, todėl seed'e jų nenaudojam.
+  → https://laravel.com/docs/13.x/seeding · https://laravel.com/docs/13.x/queries#insert-statements
+
+#### 10. Konfigūracija seed'ams
+
+`config/seeding.php` skaito `SEED_SCALE`, `SEED_DEMO` ir kt. iš `.env`. Kodas kviečia `config('seeding.scale')`,
+o ne `env()` (žr. Etapo 1 sąvoką apie `.env`). Testuose šias reikšmes perrašo `phpunit.xml`.
+
+#### 11. Denormalizuoti skaitliukai ir `UPDATE … (SELECT …)`
+
+`reviews_count`, `rating_avg`, `offers_count` saugomi lentelėse greičiui. Seed'o pabaigoje jie perskaičiuojami
+vienu sakiniu kiekvienai lentelei:
+
+```sql
+UPDATE service_requests SET offers_count = (
+    SELECT COUNT(*) FROM offers WHERE offers.service_request_id = service_requests.id AND offers.status <> 'withdrawn'
+)
+```
+
+Tai **koreliuota subužklausa**: vidinė užklausa vykdoma kiekvienai išorinės lentelės eilutei. Veikia ir MySQL, ir SQLite.
+
+#### 12. Model events (`saving`)
+
+```php
+protected static function booted(): void
+{
+    static::saving(function (Category $category) { $category->depth = ...; });
+}
+```
+
+Kodas vykdomas prieš kiekvieną įrašymą, kad ir iš kur jis būtų (Filament forma, tinker, kodas). WordPress analogas –
+`save_post` hook'as. → https://laravel.com/docs/13.x/eloquent#events
+
+#### 13. Filament resource
+
+Resource – vieno modelio admin CRUD: **forma** (`Schema` su laukais `TextInput`, `Select`, `Toggle`, sekcijomis),
+**lentelė** (`Table` su stulpeliais, filtrais, veiksmais) ir **puslapiai** (List / Create / Edit). „Simple" resource
+(`--simple`) – vienas puslapis su modaliniais langais, tinka mažiems žinynams (savivaldybėms).
+`php artisan make:filament-resource Category --generate` sugeneruoja pradinį kodą pagal DB stulpelius, o mes jį
+pritaikom: lietuviški užrašai, validacija (`unique(ignoreRecord: true)`), `relationship()` su sąlyga,
+`modifyQueryUsing(fn ($q) => $q->with('parent'))` prieš N+1. → https://filamentphp.com/docs/5.x/resources/overview
+
+#### 14. `canAccessPanel()`
+
+`User implements FilamentUser` ir metodas `canAccessPanel(Panel $panel): bool` nusprendžia, kas įleidžiamas į
+`/admin`: tik `admin` rolė su patvirtintu el. paštu ir be blokavimo. Be šio metodo Filament ne lokalioje aplinkoje
+neįleistų nieko. → https://filamentphp.com/docs/5.x/users/overview
+
+#### 15. Testai: datasets ir Livewire
+
+- **Dataset** – tas pats testas su keliais duomenų rinkiniais: `test(...)->with(['klientas' => fn () => ..., ...])`.
+  → https://pestphp.com/docs/datasets
+- Filament puslapiai yra Livewire komponentai, todėl testuojami per `Livewire::test(CreateCategory::class)
+->fillForm([...])->call('create')->assertHasNoFormErrors()`.
+
+### Naudingos komandos
+
+| Komanda                                            | Ką daro                                            |
+| -------------------------------------------------- | -------------------------------------------------- |
+| `php artisan migrate:fresh --seed`                 | DB iš naujo su visais seed'ais                     |
+| `SEED_SCALE=0.05 php artisan migrate:fresh --seed` | mažas greitas seed'as (≈ 95 000 eilučių, ~4 s)     |
+| `SEED_DEMO=false php artisan migrate:fresh --seed` | tik žinyniniai duomenys                            |
+| `php artisan db:seed --class=CategorySeeder`       | vienas seeder'is                                   |
+| `php artisan db:show --counts`                     | lentelės ir jų eilučių skaičiai                    |
+| `php artisan db:table offers`                      | lentelės stulpeliai, indeksai, FK                  |
+| `php artisan model:show ServiceRequest`            | modelio stulpeliai, ryšiai, cast'ai                |
+| `php artisan make:filament-resource City --simple` | Filament resource                                  |
+| `php artisan tinker`                               | konsolė: `ServiceRequest::with('offers')->first()` |
+
+### Dažnos klaidos
+
+- **`LazyLoadingViolationException`** – ryšys naudojamas neužkrautas. Pridėk `->with('ryšys')`.
+- **FK klaida įterpiant** – vaikas įterpiamas anksčiau nei tėvas, arba žiedinis FK. Tvarka ir atskiras `UPDATE`.
+- **`Safety level may not be changed inside a transaction`** – SQLite `PRAGMA` negalima keisti transakcijos viduje
+  (testuose `RefreshDatabase` viską vykdo transakcijoje).
+- **Tylus mass assignment ignoravimas** – laukas ne `Fillable`, todėl `create()` jo neįrašo. Rolę nustatom per `forceFill()`.
+- **`env()` seeder'yje** – po `config:cache` grąžins `null`; skaityk per `config()`.
+- **Per mažas `SEED_SCALE`** – teikėjų per mažai, kad pasiekti tikslinį pasiūlymų kiekį (seeder'is įspėja).
+- **Filament užrašai lietuviškai „Sukurti kategorija"** – Filament įstato vardininką, todėl kai kur rašom savus užrašus („Nauja kategorija").

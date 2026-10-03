@@ -1,6 +1,7 @@
 # Seed'ų (testinių duomenų) planas
 
-> **Etapas 0 · būsena: planas.** Seeder'ius rašysim Etape 2 pagal šį dokumentą ir `docs/DB_SCHEMA.md`.
+> **Etapas 2 · būsena: įgyvendinta.** Kodas – `database/seeders/DemoDataSeeder.php` ir `database/seeders/Demo/`.
+> Kiekiai ir laikai lentelėse – išmatuoti (2026-10-03).
 
 **Sąvokos:**
 
@@ -42,33 +43,36 @@
 Kiekiai **pagrindinėse** lentelėse yra tikslūs (padauginti iš `SEED_SCALE`). Kitose jie išplaukia iš taisyklių,
 todėl nurodyti apytiksliai (≈).
 
-| Lentelė                     |         `SEED_SCALE=1` | `SEED_SCALE=0.05` | Pastaba                                                          |
-| --------------------------- | ---------------------: | ----------------: | ---------------------------------------------------------------- |
-| `regions`                   |                     10 |                10 | vieši administraciniai duomenys (ne asmens)                      |
-| `cities`                    |                     60 |                60 | vieši administraciniai duomenys (ne asmens)                      |
-| `categories`                |        ≈ 12 / 80 / 450 |          tiek pat | **mūsų** sugalvotas medis (ranka rašytas failas)                 |
-| `credit_packages`           |                      4 |                 4 |                                                                  |
-| `subscription_plans`        |                      3 |                 3 |                                                                  |
-| `users` – administratoriai  |                      3 |                 3 |                                                                  |
-| `users` – klientai          |             **60 000** |             3 000 |                                                                  |
-| `users` – teikėjai          |             **20 000** |             1 000 |                                                                  |
-| `provider_profiles`         |             **20 000** |             1 000 |                                                                  |
-| `category_provider_profile` |              ≈ 120 000 |           ≈ 6 000 | vidutiniškai 6 kategorijos teikėjui                              |
-| `city_provider_profile`     |               ≈ 80 000 |           ≈ 4 000 | vid. 4–5 savivaldybės; 10 % – „visa Lietuva" (be eilučių)        |
-| `portfolio_items`           |               ≈ 50 000 |           ≈ 2 500 | 60 % teikėjų turi 1–8 darbus                                     |
-| `service_requests`          |            **100 000** |             5 000 |                                                                  |
-| `offers`                    |            **300 000** |            15 000 |                                                                  |
-| `conversations`             |               ≈ 80 000 |           ≈ 4 000 |                                                                  |
-| `conversation_user`         |              ≈ 160 000 |           ≈ 8 000 | po 2 dalyvius                                                    |
-| `messages`                  |            **200 000** |            10 000 |                                                                  |
-| `reviews`                   |            **100 000** |             5 000 | ≈ 55 800 patvirtintų + ≈ 44 200 pakvietimo (žr. 4 sk.)           |
-| `subscriptions`             |                ≈ 3 000 |             ≈ 150 | 15 % teikėjų, ≈ pusė aktyvios dabar                              |
-| `payments`                  |               ≈ 27 000 |           ≈ 1 350 | kreditų paketai + prenumeratų laikotarpiai                       |
-| `credit_transactions`       |              ≈ 350 000 |          ≈ 17 500 | po vieną kiekvienam pasiūlymui + pirkimai, dovanos, prenumeratos |
-| `notifications`             |              ≈ 100 000 |           ≈ 5 000 | tik paskutinių 60 dienų                                          |
-| `complaints`                |                ≈ 3 000 |             ≈ 150 |                                                                  |
-| `media`                     |                      0 |                 0 | tik su `SEED_MEDIA=true` (7 sk.)                                 |
-| **Iš viso**                 | **≈ 1,8 mln. eilučių** |          ≈ 90 000 |                                                                  |
+| Lentelė                     | `SEED_SCALE=1` | `SEED_SCALE=0.05` | Pastaba                                                          |
+| --------------------------- | -------------: | ----------------: | ---------------------------------------------------------------- |
+| `regions`                   |             10 |                10 | vieši administraciniai duomenys (ne asmens)                      |
+| `cities`                    |             60 |                60 | vieši administraciniai duomenys (ne asmens)                      |
+| `categories`                |  12 / 49 / 190 |          tiek pat | **mūsų** sugalvotas medis (`database/data/categories.php`)       |
+| `credit_packages`           |              4 |                 4 |                                                                  |
+| `subscription_plans`        |              3 |                 3 |                                                                  |
+| `users` – administratoriai  |              3 |                 3 |                                                                  |
+| `users` – klientai          |     **60 000** |             3 000 |                                                                  |
+| `users` – teikėjai          |     **20 000** |             1 000 |                                                                  |
+| `provider_profiles`         |     **20 000** |             1 000 |                                                                  |
+| `category_provider_profile` |      ≈ 104 700 |           ≈ 5 300 | vid. 5–6 kategorijos teikėjui (15 % – viena visa 2 lygio)        |
+| `city_provider_profile`     |       ≈ 69 800 |           ≈ 3 500 | vid. 4 savivaldybės; 10 % – „visa Lietuva" (be eilučių)          |
+| `portfolio_items`           |       ≈ 53 900 |           ≈ 2 750 | 60 % teikėjų turi 1–8 darbus                                     |
+| `service_requests`          |    **100 000** |             5 000 |                                                                  |
+| `offers`                    |    **300 000** |            15 000 |                                                                  |
+| `conversations`             |         80 000 |             4 000 | 68 000 priimtų + 12 000 su klausimu                              |
+| `conversation_user`         |        160 000 |             8 000 | po 2 dalyvius                                                    |
+| `messages`                  |    **200 000** |            10 000 |                                                                  |
+| `reviews`                   |    **100 000** |             5 000 | 55 800 patvirtintų + 44 200 pakvietimo (žr. 4 sk.)               |
+| `subscriptions`             |        ≈ 2 800 |             ≈ 130 | 15 % teikėjų, ≈ pusė aktyvios dabar                              |
+| `payments`                  |       ≈ 30 900 |           ≈ 1 550 | kreditų paketai + prenumeratų laikotarpiai                       |
+| `credit_transactions`       |      ≈ 368 000 |          ≈ 18 600 | po vieną kiekvienam pasiūlymui + pirkimai, dovanos, prenumeratos |
+| `notifications`             |      ≈ 230 000 |          ≈ 10 500 | tik paskutinių 60 dienų įvykiai                                  |
+| `complaints`                |          3 000 |               150 |                                                                  |
+| `media`                     |              0 |                 0 | lentelė atsiras Etape 3                                          |
+| **Iš viso**                 | **≈ 1,9 mln.** |          ≈ 95 000 |                                                                  |
+
+Pranešimų išėjo daugiau nei planuota (≈ 100 000): paskutinėmis 60 dienomis yra visos atviros ir vykdomos
+užklausos, todėl ir pasiūlymų bei žinučių apie jas daug. Tai realistiška, todėl palikom.
 
 ---
 
@@ -76,26 +80,40 @@ todėl nurodyti apytiksliai (≈).
 
 Tvarka atitinka FK priklausomybes: tėvas visada sukuriamas anksčiau nei vaikas.
 
-| #   | Seeder                                          | Ką daro                                                                                                                               |
-| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `RegionSeeder`, `CitySeeder`                    | apskritys ir savivaldybės iš `database/data/cities.php` (su vietininku, koordinatėmis ir gyventojų „svoriu" atsitiktiniam parinkimui) |
-| 2   | `CategorySeeder`                                | 3 lygių medis iš `database/data/categories.php` (su populiarumo svoriu ir `offer_cost_credits`)                                       |
-| 3   | `CreditPackageSeeder`, `SubscriptionPlanSeeder` | 4 paketai, 3 planai (kainos sugalvotos)                                                                                               |
-| 4   | `AdminSeeder`                                   | 3 administratoriai: `admin1@example.test`…                                                                                            |
-| 5   | `ClientSeeder`                                  | 60 000 klientų                                                                                                                        |
-| 6   | `ProviderSeeder`                                | 20 000 teikėjų paskyrų + `provider_profiles` + kategorijų ir zonų pivot'ai                                                            |
-| 7   | `PortfolioSeeder`                               | portfolio darbai                                                                                                                      |
-| 8   | `ServiceRequestSeeder`                          | 100 000 užklausų (statusai, datos)                                                                                                    |
-| 9   | `OfferSeeder`                                   | 300 000 pasiūlymų. Kiekvienai `in_progress`/`completed` užklausai nustato `accepted_offer_id`                                         |
-| 10  | `ConversationSeeder`                            | pokalbiai, dalyviai ir 200 000 žinučių                                                                                                |
-| 11  | `ReviewSeeder`                                  | 100 000 atsiliepimų                                                                                                                   |
-| 12  | `MonetizationSeeder`                            | prenumeratos, mokėjimai ir kreditų ledger (chronologiškai kiekvienam teikėjui)                                                        |
-| 13  | `NotificationSeeder`                            | pranešimai apie paskutinių 60 dienų įvykius                                                                                           |
-| 14  | `ComplaintSeeder`                               | skundai                                                                                                                               |
-| 15  | `CounterSyncSeeder`                             | perskaičiuoja visus denormalizuotus skaitliukus (`DB_SCHEMA.md` 2.10)                                                                 |
-| 16  | `MediaSeeder` (nebūtinas)                       | tik su `SEED_MEDIA=true`                                                                                                              |
+**Žinyniniai duomenys** (`DatabaseSeeder`, visada pilni, nepriklausomai nuo `SEED_SCALE`):
 
-Žinyniniai duomenys (1–3) visada sukuriami pilni, nepriklausomai nuo `SEED_SCALE`.
+| #   | Seeder                                          | Ką daro                                                                                  |
+| --- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 1   | `GeographySeeder`                               | apskritys ir savivaldybės iš `database/data/cities.php` (su vietininku ir koordinatėmis) |
+| 2   | `CategorySeeder`                                | 3 lygių medis iš `database/data/categories.php` (su `offer_cost_credits`)                |
+| 3   | `CreditPackageSeeder`, `SubscriptionPlanSeeder` | 4 paketai, 3 planai iš `database/data/monetization.php`                                  |
+| 4   | `AdminSeeder`                                   | 3 administratoriai: `admin1@example.test`…                                               |
+
+Visi jie **idempotentiški** (`updateOrCreate` pagal slug ar el. paštą): paleidus antrą kartą nieko nedubliuoja.
+
+**Demo duomenys** (`DemoDataSeeder`, tik kai `SEED_DEMO=true`). Vietoj 12 atskirų seeder'ių – vienas seeder'is ir
+generatorių klasės `database/seeders/Demo/`. Jis dirba dviem fazėmis:
+
+1. **Planavimas atmintyje.** Kas, kada ir kam – be DB. Taip galima, pavyzdžiui, teikėjo registracijos datą
+   parinkti _pagal jo pirmą pasiūlymą_, o kliento – pagal pirmą užklausą.
+2. **Įrašymas FK tvarka** masiniais `INSERT`.
+
+| #   | Klasė                     | Ką daro                                                                                                       |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1   | `DemoContext`             | bendra būsena (skaičių masyvai), žinyniniai duomenys, atsitiktinumas, tekstai, `insert()` dalimis             |
+| 2   | `ProviderGenerator`       | teikėjai: statusas, miestas, zonos, kategorijos, aktyvumas (Pareto); paskyros, profiliai, pivot'ai, portfolio |
+| 3   | `ClientGenerator`         | klientai; registracijos data – prieš pirmą užklausą                                                           |
+| 4   | `ServiceRequestGenerator` | užklausos: tikslūs statusų kiekiai, datos pagal statusą, kategorija ir miestas su tinkamais teikėjais         |
+| 5   | `OfferGenerator`          | pasiūlymai tik tinkamų teikėjų, statusai ir peržiūros, priėmimas, grąžinimai, `accepted_offer_id`             |
+| 6   | `ConversationGenerator`   | pokalbiai, dalyviai ir žinutės (pakaitomis, 8–21 val.)                                                        |
+| 7   | `ReviewGenerator`         | patvirtinti ir pakvietimo atsiliepimai                                                                        |
+| 8   | `MonetizationGenerator`   | prenumeratos, mokėjimai ir kreditų ledger – chronologiškai kiekvienam teikėjui                                |
+| 9   | `NotificationGenerator`   | pranešimai apie paskutinių 60 dienų įvykius                                                                   |
+| 10  | `ComplaintGenerator`      | skundai                                                                                                       |
+| 11  | `CounterSync`             | perskaičiuoja denormalizuotus skaitliukus (`DB_SCHEMA.md` 2.10) vienu `UPDATE` lentelei                       |
+| –   | `WeightedPicker`          | svertinis atsitiktinis parinkimas (miestai pagal gyventojus, kategorijos pagal populiarumą)                   |
+
+Paveikslėlių (`MediaSeeder`, `SEED_MEDIA`) dar nėra – `media` lentelė atsiras Etape 3.
 
 ---
 
@@ -206,8 +224,11 @@ Laravel'yje lokalė nustatoma `.env` faile: `APP_FAKER_LOCALE=lt_LT`. Tada `fake
 ### Savi tekstų bankai
 
 Lietuviškiems sakiniams darom šablonų bankus `database/data/texts/*.php`. Kiekviena 1 lygio sritis turi savo
-frazes, kurios jungiamos atsitiktinai su vietos rezervavimo laukais (`{plotas}`, `{kiekis}`, `{terminas}`,
-`{miestas_vietininkas}`). Iš 20 pradžių × 30 detalių × 15 pabaigų gaunama tūkstančiai skirtingų tekstų.
+frazes, kurios jungiamos atsitiktinai su vietos rezervavimo laukais (`{paslauga}`, `{miestas}` – vietininkas,
+`{plotas}`, `{kiekis}`, `{patalpa}`, `{terminas}`, `{metai}`). Bankai kol kas nedideli (užklausoms – 7 pavadinimai,
+6 pradžios, po 5 detales kiekvienai sričiai, 4 medžiagų, 4 terminų ir 5 pabaigų frazės), bet su 190 paslaugų
+ir 60 savivaldybių pavadinimais tai jau tūkstančiai skirtingų tekstų. Bankus galima pildyti nekeičiant kodo.
+Kreipinys su kableliu („Sveiki,") atskiriamas nauja eilute, kaip laiške.
 
 | Bankas                           | Pavyzdžiai                                                                                                                                             |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -258,44 +279,59 @@ Jei kiekvieną įrašą kurtume per `Model::create()`, tai užtruktų valandas. 
 | `fake()->unique()` 80 000 kartų lėtėja ir gali „išsekti"                  | unikalumui naudojam eilės numerį (`teikejas{n}@…`)                                                                                                       |
 | SQLite riboja kintamųjų skaičių vienoje užklausoje                        | 1 000 eilučių × ~16 stulpelių ≈ 16 000 < 32 766 (SQLite ≥ 3.32 riba)                                                                                     |
 
-**Factory ir masinio seed'o derinimas.** Factory – vieno įrašo receptas: testuose kviečiamas
-`ServiceRequest::factory()->completed()->create()`. Dideliame seed'e naudojam tą patį receptą per
-`ServiceRequest::factory()->raw([...])`: gaunam masyvą, kuris nieko nerašo į DB, ir įterpiam masiškai.
-Svarbu žinoti:
+**Factory ar tiesioginis eilučių generavimas?** Factory – vieno įrašo receptas: testuose kviečiamas
+`ServiceRequest::factory()->completed()->create()`. Planavome dideliame seed'e naudoti `factory()->raw()`, bet
+įgyvendinant pasirinkom generuoti eilutes tiesiogiai generatoriuose (`yield [...]`):
 
-- `raw()` **nepritaiko cast'ų**, todėl enum'ą reikia paversti `->value`, masyvą – `json_encode()`, datą – eilute;
-- FK laukus, kurie factory apibrėžti kaip `User::factory()`, **būtina perrašyti** konkrečiu ID. Kitaip `raw()`
-  sukurs papildomus tėvinius įrašus.
-  → https://laravel.com/docs/13.x/eloquent-factories#factory-states
+- beveik visi laukai vis tiek priklauso nuo plano (ID, datos, statusai, ryšiai), todėl factory reikšmes reikėtų
+  perrašyti, o `raw()` dar ir sukurtų tėvinius įrašus FK laukams, apibrėžtiems kaip `User::factory()`;
+- `raw()` nepritaiko cast'ų (enum'ą reikia paversti `->value`, masyvą – `json_encode()`), o generatoriuje tai
+  matosi iš karto;
+- generatorius (`yield`) grąžina po vieną eilutę, todėl 300 000 eilučių vienu metu atmintyje nėra.
+
+Factories liko testams. → https://laravel.com/docs/13.x/eloquent-factories · https://www.php.net/manual/en/language.generators.overview.php
 
 **Atkartojamumas.** Atsitiktinumą valdo `fake()->seed(SEED_FAKER_SEED)` ir `mt_srand(SEED_FAKER_SEED)`.
 Seeder'iuose nenaudojam `random_int()` ir `Str::random()`, nes jie kriptografiški ir jų „užsėti" negalima.
 
-**Tikslinis laikas** (išmatuosim Etape 2 ir įrašysim čia): pilnas seed'as MySQL ≤ 10 min., `SEED_SCALE=0.05`
-SQLite ≤ 1 min.
+**Išmatuotas laikas** (tikslas buvo: pilnas seed'as MySQL ≤ 10 min., `SEED_SCALE=0.05` SQLite ≤ 1 min.):
 
-**`SEED_MEDIA=true`:** prie ≈ 1 000 portfolio darbų ir ≈ 500 profilių prisegami paveikslėliai iš
-`database/data/images/`. Pagal nutylėjimą išjungta: medialibrary kiekvienam įrašui kopijuoja failą ir daro
-miniatiūras, o tai lėta ir užima vietos.
+| DB                             | `SEED_SCALE` | Demo duomenys | Visas `migrate:fresh --seed` | Atminties pikas |
+| ------------------------------ | -----------: | ------------: | ---------------------------: | --------------: |
+| SQLite                         |         0.05 |         2,2 s |                        4,4 s |           70 MB |
+| SQLite                         |            1 |          50 s |                         52 s |          365 MB |
+| MySQL 8.0, numatyti nustatymai |            1 |         147 s |                      2,5 min |          365 MB |
+
+Matuota Claude cloud konteineryje. MySQL – 8.0 iš Ubuntu saugyklos (8.4 LTS ten nėra), be jokio derinimo, todėl
+produkcijos serveryje bus panašiai arba greičiau. Lėčiausios vietos – lentelės su daugiausia indeksų
+(`service_requests`, `offers`, `notifications`): kiekvienas indeksas – papildomas įrašas kiekvienai eilutei.
+
+**SQLite pagreitinimas seed'o metu:** `PRAGMA synchronous = OFF` (nelaukti disko po kiekvieno įrašo) ir
+`PRAGMA cache_size` (256 MB DB puslapių atmintyje). Be jų pilnas seed'as truko 71 s. Seed'ui patikimumas
+nesvarbus – jei kompiuteris užlūš, DB vis tiek kuriama iš naujo. `memory_limit` seed'o metu pakeliamas iki 2 GB.
+
+**`SEED_MEDIA=true`** (bus Etape 3 kartu su medialibrary): prie ≈ 1 000 portfolio darbų ir ≈ 500 profilių
+prisegami paveikslėliai iš `database/data/images/`. Pagal nutylėjimą išjungta: medialibrary kiekvienam įrašui
+kopijuoja failą ir daro miniatiūras, o tai lėta ir užima vietos.
 
 ---
 
 ## 8. Patikrinimai po seed'inimo
 
-Etape 2 tai bus Pest testas (`tests/Feature/Seeding/SeedIntegrityTest.php`), paleidžiamas su mažu `SEED_SCALE`.
+Pest testas `tests/Feature/Seeding/SeedIntegrityTest.php`, paleidžiamas su `SEED_SCALE=0.01` (praeina ir su SQLite, ir su MySQL).
 
-- [ ] Pagrindinių lentelių kiekiai = tiksliniai × `SEED_SCALE`.
-- [ ] Kiekvieno pasiūlymo teikėjas tinka užklausai (kategorija su tėvais + zona arba „visa Lietuva", `active`).
-- [ ] Kiekviena `in_progress`/`completed` užklausa turi `accepted_offer_id`. Tas pasiūlymas yra `accepted` ir
+- [x] Pagrindinių lentelių kiekiai = tiksliniai × `SEED_SCALE`.
+- [x] Kiekvieno pasiūlymo teikėjas tinka užklausai (kategorija su tėvais + zona arba „visa Lietuva", `active`).
+- [x] Kiekviena `in_progress`/`completed` užklausa turi `accepted_offer_id`. Tas pasiūlymas yra `accepted` ir
       priklauso tai pačiai užklausai. Kitos užklausos `accepted_offer_id` neturi.
-- [ ] `open` užklausų `expires_at` ateityje, `pending` – `published_at IS NULL`.
-- [ ] Patvirtintas atsiliepimas: užklausa `completed`, autorius = užklausos klientas, teikėjas = priimto
+- [x] `open` užklausų `expires_at` ateityje, `pending` – `published_at IS NULL`.
+- [x] Patvirtintas atsiliepimas: užklausa `completed`, autorius = užklausos klientas, teikėjas = priimto
       pasiūlymo teikėjas, sukurtas po `completed_at`.
-- [ ] Kiekvienam teikėjui `SUM(amount) = credits_balance`, joks `balance_after` nėra neigiamas.
-- [ ] `refund` įrašai yra tik ten, kur juos leidžia `docs/STATES.md` 3 sk., ir už vieną pasiūlymą – ne daugiau kaip vienas.
-- [ ] `rating_avg`, `reviews_count`, `completed_jobs_count`, `offers_count`, `last_message_at` sutampa su perskaičiuotais.
-- [ ] Žinutės siuntėjas yra pokalbio dalyvis, žinučių laikas didėja.
-- [ ] Visi el. paštai baigiasi `@example.test`, visi telefonai prasideda `+3700`.
+- [x] Kiekvienam teikėjui `SUM(amount) = credits_balance`, joks `balance_after` nėra neigiamas.
+- [x] `refund` įrašai yra tik ten, kur juos leidžia `docs/STATES.md` 3 sk., ir už vieną pasiūlymą – ne daugiau kaip vienas.
+- [x] `rating_avg`, `reviews_count`, `completed_jobs_count`, `offers_count`, `last_message_at` sutampa su perskaičiuotais.
+- [x] Žinutės siuntėjas yra pokalbio dalyvis, žinučių laikas didėja.
+- [x] Visi el. paštai baigiasi `@example.test`, visi telefonai prasideda `+3700`.
 
 ---
 
@@ -303,18 +339,20 @@ Etape 2 tai bus Pest testas (`tests/Feature/Seeding/SeedIntegrityTest.php`), pal
 
 | `.env` kintamasis            | Numatyta | Ką reiškia                                                 |
 | ---------------------------- | -------- | ---------------------------------------------------------- |
-| `SEED_SCALE`                 | `1`      | kiekių daugiklis (`0.05` – greitam dev'ui)                 |
+| `SEED_SCALE`                 | `1`      | kiekių daugiklis; `.env.example` – `0.05` greitam dev'ui   |
 | `SEED_CHUNK`                 | `1000`   | kiek eilučių įterpiama vienu INSERT                        |
 | `SEED_FAKER_SEED`            | `2026`   | atsitiktinumo „sėkla" atkartojamumui                       |
-| `SEED_MEDIA`                 | `false`  | ar prisegti paveikslėlius                                  |
+| `SEED_DEMO`                  | `true`   | ar kurti demo duomenis (`false` – tik žinyniniai)          |
+| `SEED_MEDIA`                 | `false`  | ar prisegti paveikslėlius (Etapas 3)                       |
 | `SEED_VERIFIED_REVIEW_RATIO` | `0.9`    | kokia dalis atliktų užklausų gauna patvirtintą atsiliepimą |
 
-Kintamieji bus skaitomi per `config/seeding.php`. Kode niekada nekviečiam `env()` tiesiogiai už config failų ribų,
+Kintamieji skaitomi per `config/seeding.php`. Testuose (`phpunit.xml`) – `SEED_DEMO=false`, `SEED_SCALE=0.01`. Kode niekada nekviečiam `env()` tiesiogiai už config failų ribų,
 nes po `php artisan config:cache` `env()` grąžina `null`.
 
 ```bash
 php artisan migrate:fresh --seed                     # pilnas seed'as (MySQL)
 SEED_SCALE=0.05 php artisan migrate:fresh --seed     # mažas ir greitas (SQLite dev)
+SEED_DEMO=false php artisan migrate:fresh --seed     # tik žinyniniai duomenys
 php artisan db:seed --class=CategorySeeder           # vienas seeder'is (kai priklausomybės jau yra)
 php artisan db:show --counts                         # visos lentelės su eilučių skaičiumi
 php artisan db:table service_requests                # lentelės stulpeliai, indeksai, FK

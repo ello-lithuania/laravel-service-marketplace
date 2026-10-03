@@ -113,8 +113,8 @@ Vartotojas moka PHP ir WordPress, Laravel – tik pagrindus.
 - Controller'iai ploni. Validacija – Form Request (`app/Http/Requests`). Autorizacija – Policy (`app/Policies`).
   Verslo logika – Action klasės (`app/Actions`, vienas viešas metodas `handle()`).
 - Ilgi ar sunkūs darbai – Jobs (eilėse). Pranešimai – Notifications (`mail` + `database` kanalai).
-- Modeliuose naudojam `$fillable` (ne `$guarded = []`), cast'us per `casts()` metodą, ryšiams nurodom
-  grąžinamą tipą (`: BelongsTo`).
+- Modeliuose naudojam Laravel 13 atributą `#[Fillable([...])]` (ne `$guarded = []`), cast'us per `casts()` metodą,
+  ryšiams nurodom grąžinamą tipą (`: BelongsTo`) ir PHPDoc generikus (`BelongsTo<City, $this>`).
 - `Model::preventLazyLoading(! app()->isProduction())`, kad N+1 klaidos išlįstų jau dev'e.
 - Į Inertia props siunčiam tik reikalingus laukus (API Resource arba `->only()`), niekada viso modelio.
 - Pinigų ir kreditų operacijos vyksta tik `DB::transaction()` viduje.
@@ -212,4 +212,9 @@ Claude Code cloud konteineryje yra apribojimų, kurių vartotojo kompiuteryje n�
 - **Dirbama kaip root**, todėl Composer skriptams reikia `COMPOSER_ALLOW_SUPERUSER=1`.
 - **`laravel/pao`** AI agentams rodo sutrumpintą JSON išvestį. Įprastą išvestį grąžina `PAO_DISABLE=1`
   (reikėjo, pvz., Pest Drift įrankiui).
+- **MySQL konteineryje nėra**, bet jį galima įdiegti: `apt-get update && apt-get install -y mysql-server-8.0`,
+  `service mysql start` (8.4 LTS Ubuntu saugykloje nėra, 8.0 patikrai pakanka). Testai prieš MySQL:
+  `DB_CONNECTION=mysql DB_DATABASE=laravel_test DB_USERNAME=… DB_PASSWORD=… DB_URL= php artisan test`.
+- **`pestphp/pest-plugin-livewire` neįdiegtas** – Filament/Livewire testuose naudok `Livewire::test(...)`.
+- **`ui-avatars.com` užblokuotas** – Filament avatarai konteineryje nerodomi (vartotojo kompiuteryje veikia).
 - **`fonts.bunny.net` užblokuotas.** Dėl to (ir dėl lietuviškų raidžių) šriftas imamas per Fontsource iš npm.
