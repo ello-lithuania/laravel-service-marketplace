@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\EnsureUserIsNotBanned;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -27,6 +28,12 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+        ]);
+
+        // --- Etapas 8 ---
+        // Užblokuotas vartotojas atjungiamas prie kito paspaudimo (BanUser, docs/DEPLOYMENT.md → saugumas)
+        $middleware->web(append: [
+            EnsureUserIsNotBanned::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

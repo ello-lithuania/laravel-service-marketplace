@@ -247,4 +247,14 @@ class User extends Authenticatable implements FilamentUser, HasMedia, MustVerify
 
         return $url !== '' ? $url : null;
     }
+
+    // --- Etapas 8: moderavimas ---------------------------------------------------
+
+    /**
+     * Užblokuotas administratoriaus (BanUser): negali prisijungti, teikėjo profilis – suspended.
+     */
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
+    }
 }
