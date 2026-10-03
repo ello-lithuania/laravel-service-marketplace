@@ -205,3 +205,14 @@ test('produkcijoje testinio tiekėjo nėra: callback\'as ir puslapis – 404', f
 
     expect($payment->refresh()->status)->toBe(PaymentStatus::Pending);
 });
+
+test('„ištrintos" (soft delete) paskyros mokėjimas vis tiek apdorojamas ir sąskaita išrašoma', function () {
+    $payment = Payment::factory()->fake()->pending()->forPackage($this->package)->for($this->provider)->create();
+    $this->provider->delete();
+
+    $this->post('/mokejimai/callback/fake', Billing::callbackPayload($payment))->assertOk();
+
+    expect($payment->refresh()->status)->toBe(PaymentStatus::Paid)
+        ->and($payment->billing_details['buyer']['email'])->toBe($this->provider->email)
+        ->and(CreditTransaction::query()->count())->toBe(1);
+});

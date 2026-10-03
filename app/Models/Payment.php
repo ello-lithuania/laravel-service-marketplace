@@ -47,10 +47,15 @@ class Payment extends Model
         ];
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Mokėtojas. withTrashed (Etapas 7): finansiniai įrašai ir sąskaitos turi rasti mokėtoją,
+     * net jei jo paskyra „ištrinta" (soft delete) – kitaip callback'as ar sąskaita lūžtų.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     /**

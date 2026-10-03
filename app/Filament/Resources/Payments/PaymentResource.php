@@ -63,13 +63,10 @@ class PaymentResource extends Resource
     }
 
     /**
-     * Mokėtojas (ir „ištrintas" – soft delete) bei pirkinys užkraunami iš karto – be N+1.
+     * Mokėtojas (Payment::user apima ir „ištrintus") bei pirkinys užkraunami iš karto – be N+1.
      */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with([
-            'user' => fn ($query) => $query->withTrashed(),
-            'purchasable',
-        ]);
+        return parent::getEloquentQuery()->with(['user', 'purchasable']);
     }
 }
