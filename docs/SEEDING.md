@@ -5,9 +5,9 @@
 **Sąvokos:**
 
 - **Seeder** – klasė, kuri užpildo DB duomenimis (WordPress analogas – demo turinio importas, tik generuojamas
-  kodu). → https://laravel.com/docs/12.x/seeding
+  kodu). → https://laravel.com/docs/13.x/seeding
 - **Factory** – vieno modelio įrašo „receptas" su netikrais duomenimis. Naudojamas testuose ir seeder'iuose.
-  → https://laravel.com/docs/12.x/eloquent-factories
+  → https://laravel.com/docs/13.x/eloquent-factories
 - **Faker** – biblioteka, generuojanti netikrus vardus, adresus, telefonus. → https://fakerphp.org
 
 ## Turinys
@@ -250,7 +250,7 @@ Jei kiekvieną įrašą kurtume per `Model::create()`, tai užtruktų valandas. 
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Model::create()` = 1 SQL užklausa + model events kiekvienai eilutei      | **masinis įterpimas**: `DB::table('offers')->insert($rows)` po 1 000 eilučių (`SEED_CHUNK`)                                                              |
 | `Hash::make()` (bcrypt) užtrunka ~50–100 ms. 80 000 kartų – virš valandos | slaptažodžio hash'as **suskaičiuojamas vieną kartą** ir naudojamas visiems                                                                               |
-| Observeriai ir pranešimai seed'o metu išsiųstų 300 000 laiškų             | `use WithoutModelEvents;` `DatabaseSeeder` klasėje (jei skeletone jo dar nėra, pridedam). → https://laravel.com/docs/12.x/seeding#muting-model-events    |
+| Observeriai ir pranešimai seed'o metu išsiųstų 300 000 laiškų             | `use WithoutModelEvents;` `DatabaseSeeder` klasėje (jei skeletone jo dar nėra, pridedam). → https://laravel.com/docs/13.x/seeding#muting-model-events    |
 | SQLite be transakcijos kiekvieną INSERT rašo į diską atskirai             | kiekviena dalis (chunk) įterpiama `DB::transaction()` viduje                                                                                             |
 | Kad žinotume naujų įrašų ID, reikėtų `SELECT`                             | **ID priskiriam patys** (1…N iš eilės). Taip ryšius galima sudėlioti atmintyje be papildomų užklausų. Veikia, nes seed'inam tuščią DB (`migrate:fresh`). |
 | 300 000 Eloquent objektų netelpa į atmintį                                | atmintyje laikom tik skaičių masyvus (pvz. „kategorija → teikėjų ID"), o eilutes generuojam dalimis                                                      |
@@ -266,7 +266,7 @@ Svarbu žinoti:
 - `raw()` **nepritaiko cast'ų**, todėl enum'ą reikia paversti `->value`, masyvą – `json_encode()`, datą – eilute;
 - FK laukus, kurie factory apibrėžti kaip `User::factory()`, **būtina perrašyti** konkrečiu ID. Kitaip `raw()`
   sukurs papildomus tėvinius įrašus.
-  → https://laravel.com/docs/12.x/eloquent-factories#factory-states
+  → https://laravel.com/docs/13.x/eloquent-factories#factory-states
 
 **Atkartojamumas.** Atsitiktinumą valdo `fake()->seed(SEED_FAKER_SEED)` ir `mt_srand(SEED_FAKER_SEED)`.
 Seeder'iuose nenaudojam `random_int()` ir `Str::random()`, nes jie kriptografiški ir jų „užsėti" negalima.

@@ -39,7 +39,7 @@ Vartotojas moka PHP ir WordPress, Laravel – tik pagrindus.
 
 ### Kaip tai taikyti praktiškai
 
-- Dokumentacijos nuorodos – į **Laravel 12.x**: `https://laravel.com/docs/12.x/...`.
+- Dokumentacijos nuorodos – į **Laravel 13.x**: `https://laravel.com/docs/13.x/...`.
   Kitiems įrankiams – oficialios svetainės (žr. 10 sk.).
 - Naują sąvoką pirmą kartą aiškink paprastais žodžiais. Kai tinka, palygink su WordPress
   (migracija ≈ `dbDelta()`, Eloquent ≈ `$wpdb`/`WP_Query`, events ≈ hooks, scheduler ≈ `wp_cron`,
@@ -58,24 +58,30 @@ Vartotojas moka PHP ir WordPress, Laravel – tik pagrindus.
 
 ## 5. Stack
 
-| Sritis                  | Technologija                                             | Pastaba                              |
-| ----------------------- | -------------------------------------------------------- | ------------------------------------ |
-| Backend                 | Laravel 12 (PHP ≥ 8.2)                                   |                                      |
-| Vieša dalis ir paskyros | Inertia.js 2 + Vue 3 (`<script setup>`, Composition API) | oficialus Laravel 12 Vue starter kit |
-| Admin panelė            | Filament (veikia ant Livewire 3)                         | `/admin`                             |
-| CSS                     | Tailwind CSS 4                                           |                                      |
-| DB                      | MySQL 8.4 LTS (prod/staging), SQLite (dev ir testai)     | kodas turi veikti abiejose           |
-| Failai                  | spatie/laravel-medialibrary                              | viena polimorfinė `media` lentelė    |
-| Testai                  | Pest                                                     |                                      |
-| Kodo stilius            | Laravel Pint                                             |                                      |
-| Eilės                   | `database` (dev) → Redis (prod)                          |                                      |
-| Laiškai                 | `log` / Mailpit (dev)                                    |                                      |
-| Mokėjimai               | Paysera (pirmas), Stripe (vėliau)                        | už savos `PaymentGateway` sąsajos    |
+| Sritis                  | Technologija                                         | Pastaba                                                                               |
+| ----------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Backend                 | Laravel 13 (PHP ≥ 8.3)                               |                                                                                       |
+| Vieša dalis ir paskyros | Inertia 3 + Vue 3 (`<script setup>`, TypeScript)     | oficialus Laravel Vue starter kit                                                     |
+| Autentifikacija         | Laravel Fortify                                      | el. pašto patvirtinimas, registracija, slaptažodžio patvirtinimas; be 2FA ir passkeys |
+| Maršrutai Vue pusėje    | Laravel Wayfinder                                    | `import { home } from '@/routes'`; sugeneruoti failai Git'e ignoruojami               |
+| Admin panelė            | Filament 5 (veikia ant Livewire 4)                   | `/admin`                                                                              |
+| CSS ir UI               | Tailwind CSS 4 + shadcn-vue komponentai              | `resources/js/components/ui`                                                          |
+| Frontend įrankiai       | Vite+ (`vp`)                                         | build, lint, formatavimas (`npm run check`)                                           |
+| Šriftas                 | Instrument Sans per Fontsource                       | su `latin-ext` rinkiniu (lietuviškos raidės)                                          |
+| DB                      | MySQL 8.4 LTS (prod/staging), SQLite (dev ir testai) | kodas turi veikti abiejose                                                            |
+| Failai                  | spatie/laravel-medialibrary                          | viena polimorfinė `media` lentelė (Etapas 3)                                          |
+| Testai                  | Pest 4                                               |                                                                                       |
+| Kodo kokybė             | Laravel Pint + PHPStan (Larastan)                    | `composer test`                                                                       |
+| Eilės                   | `database` (dev) → Redis (prod)                      |                                                                                       |
+| Laiškai                 | `log` / Mailpit (dev)                                |                                                                                       |
+| Mokėjimai               | Paysera (pirmas), Stripe (vėliau)                    | už savos `PaymentGateway` sąsajos                                                     |
 
-**Pastaba dėl stack'o.** Vartotojas nurodė: „Laravel, Inertia, Livewire, Vue". Interpretacija tokia:
-viešoji dalis ir vartotojų paskyros daromos su **Inertia + Vue**, o **Livewire** naudojamas tik per **Filament**
-admin panelę (Filament pastatytas ant Livewire). Viešoje dalyje dviejų frontend technologijų nemaišom.
-Tikslias paketų versijas ir starter kit sprendimus (TypeScript ar JS, maršrutai Vue pusėje) užfiksuosim Etape 1.
+**Sprendimai dėl stack'o (Etapas 1):**
+
+- **Laravel 13**, ne 12: taip nusprendė vartotojas Etapo 1 pradžioje. 13 yra naujausia versija, o 12 gauna tik saugumo pataisas iki 2027 m. vasario.
+- **Livewire** naudojamas tik per **Filament** admin panelę. Viešoje dalyje ir paskyrose – **Inertia + Vue**. Dviejų frontend technologijų nemaišom.
+- **TypeScript** paliktas, nes tai starter kit standartas, o tipai daugiausia lengvi (`defineProps<{ ... }>()`). Alternatyva būtų rankinis Inertia + JavaScript, bet tada negautume oficialaus starter kit kodo ir atnaujinimų.
+- **Wayfinder**, ne Ziggy: starter kit standartas. Vue komponentuose maršrutai yra tipizuotos funkcijos, todėl klaidą maršruto pavadinime parodo kompiliatorius.
 
 ## 6. Konvencijos
 
@@ -124,36 +130,38 @@ Tikslias paketų versijas ir starter kit sprendimus (TypeScript ar JS, maršruta
   Pavyzdys: `feat(pasiulymai): kreditų nurašymas siunčiant pasiūlymą`.
 - Etapo pabaigoje daromas atskiras commit'as su `ROADMAP.md` pažymėjimais.
 
-## 7. Struktūra (planuojama; galutinė – po Etapo 1)
+## 7. Struktūra
 
 ```
 app/
-  Actions/            verslo logika (SendOffer, AcceptOffer, PurchaseCredits…)
-  Enums/              rolės ir statusai (UserRole, OfferStatus…)
-  Filament/           admin panelės resursai
+  Actions/            verslo logika (SendOffer, AcceptOffer…); Actions/Fortify – registracija, slaptažodžio atkūrimas
+  Enums/              rolės ir statusai (UserRole, OfferStatus…)              ← nuo Etapo 2
+  Filament/           admin panelės resursai                                  ← nuo Etapo 2
   Http/
     Controllers/      ploni controller'iai (Inertia::render)
-    Middleware/
+    Middleware/       HandleInertiaRequests – bendri props visiems puslapiams
     Requests/         Form Request validacija
-  Jobs/               eilių darbai (NotifyMatchingProviders…)
-  Models/
-  Notifications/
-  Observers/
-  Policies/
-  Services/Payments/  mokėjimų sąsaja + Paysera / Stripe
+  Jobs/  Models/  Notifications/  Observers/  Policies/
+  Providers/          AppServiceProvider, FortifyServiceProvider, Filament/AdminPanelProvider
+  Services/Payments/  mokėjimų sąsaja + Paysera / Stripe                     ← Etapas 7
 database/
   data/               žinyniniai duomenys (apskritys, savivaldybės, kategorijos, tekstų bankai)
-  factories/
-  migrations/
-  seeders/
-docs/                 DB_SCHEMA.md, SEEDING.md, LEARNING.md
-lang/lt/              Laravel tekstai lietuviškai
-resources/js/
-  pages/              Inertia puslapiai
-  components/
-  layouts/
-routes/web.php
-tests/Feature, tests/Unit
+  factories/  migrations/  seeders/
+docs/                 DB_SCHEMA.md, SEEDING.md, STATES.md, LEARNING.md
+lang/lt/, lang/lt.json  Laravel tekstai lietuviškai
+resources/
+  css/app.css         Tailwind + šriftas
+  js/
+    app.ts            Inertia paleidimas; išdėstymas parenkamas pagal puslapio pavadinimą
+    pages/public/     viešos svetainės puslapiai (PublicLayout)
+    pages/auth/       prisijungimas, registracija… (AuthLayout)
+    pages/settings/   paskyros nustatymai (AppLayout + settings/Layout)
+    layouts/          PublicLayout, AppLayout, AuthLayout
+    components/       savi komponentai; components/ui – shadcn-vue
+    routes/, actions/ Wayfinder sugeneruoti failai (Git'e ignoruojami)
+  views/app.blade.php vienintelis Blade šablonas – Inertia „kevalas"
+routes/web.php, routes/settings.php
+tests/Feature, tests/Unit, tests/Pest.php
 ```
 
 ## 8. Dokumentai
@@ -166,20 +174,23 @@ tests/Feature, tests/Unit
 | `docs/LEARNING.md`  | mokymosi užrašai: sąvokos, komandos, dažnos klaidos                    |
 | `docs/STATES.md`    | užklausos ir pasiūlymo būsenų perėjimai ir kreditų grąžinimo taisyklės |
 
-## 9. Komandos (veiks nuo Etapo 1)
+## 9. Komandos
 
 ```bash
-composer run dev                                  # serveris + eilės + Vite + logai
-php artisan migrate:fresh --seed                  # DB iš naujo su testiniais duomenimis
-SEED_SCALE=0.05 php artisan migrate:fresh --seed  # greitas mažas seed'as dev'ui
-php artisan test                                  # testai (Pest)
-./vendor/bin/pint                                 # kodo stilius
+composer setup                                    # pirmas paleidimas: priklausomybės, .env, raktas, migracijos, build
+composer run dev                                  # serveris http://localhost:8000 + eilės + Vite + logai
+composer test                                     # Pint + PHPStan + Pest testai
+npm run check                                     # frontend lint ir formatavimas (check:fix – pataiso)
+npm run types:check                               # TypeScript tipų patikra
+php artisan test                                  # tik testai
+php artisan migrate:fresh --seed                  # DB iš naujo su testiniais duomenimis (nuo Etapo 2)
+SEED_SCALE=0.05 php artisan migrate:fresh --seed  # greitas mažas seed'as dev'ui (nuo Etapo 2)
 php artisan tinker                                # interaktyvi konsolė
 ```
 
 ## 10. Oficiali dokumentacija
 
-- Laravel 12: https://laravel.com/docs/12.x
+- Laravel 13: https://laravel.com/docs/13.x
 - Inertia: https://inertiajs.com
 - Vue 3: https://vuejs.org/guide/introduction.html
 - Tailwind CSS: https://tailwindcss.com/docs
@@ -187,3 +198,17 @@ php artisan tinker                                # interaktyvi konsolė
 - Pest: https://pestphp.com/docs
 - Laravel Media Library: https://spatie.be/docs/laravel-medialibrary
 - Faker: https://fakerphp.org
+
+## 11. Pastabos Claude cloud sesijoms
+
+Claude Code cloud konteineryje yra apribojimų, kurių vartotojo kompiuteryje nėra:
+
+- **GitHub API kitiems repozitorijams užblokuotas**, todėl Composer negali parsisiųsti paketų ZIP archyvų.
+  Naudok `composer install --prefer-install=source`: paketai klonuojami per `git`, ir tai veikia.
+- **`phpstan/phpstan` platinamas tik ZIP archyvu.** Parsisiųsk reikiamą commit'ą
+  (`git fetch --depth 1 https://github.com/phpstan/phpstan.git <ref iš composer.lock>`) ir `git archive --format=zip`
+  įdėk į `~/.cache/composer/files/phpstan/phpstan/<sha1(dist url)>.zip`. Tada `composer install` jį paims iš cache.
+- **Dirbama kaip root**, todėl Composer skriptams reikia `COMPOSER_ALLOW_SUPERUSER=1`.
+- **`laravel/pao`** AI agentams rodo sutrumpintą JSON išvestį. Įprastą išvestį grąžina `PAO_DISABLE=1`
+  (reikėjo, pvz., Pest Drift įrankiui).
+- **`fonts.bunny.net` užblokuotas.** Dėl to (ir dėl lietuviškų raidžių) šriftas imamas per Fontsource iš npm.

@@ -17,7 +17,7 @@ Tada atsiranda nelogiški duomenys: atsiliepimas neatliktam darbui, dvigubai nur
 
 _Alternatyva:_ paketas `spatie/laravel-model-states`, kuriame kiekviena būsena ir perėjimas yra atskira klasė.
 Jis galingas, bet mūsų 6 + 4 būsenoms per sudėtingas. Enum metodas + Action klasės yra paprasčiau ir aiškiau.
-→ https://laravel.com/docs/12.x/eloquent-mutators#enum-casting · https://laravel.com/docs/12.x/database#database-transactions
+→ https://laravel.com/docs/13.x/eloquent-mutators#enum-casting · https://laravel.com/docs/13.x/database#database-transactions
 
 ---
 

@@ -24,11 +24,11 @@
 
 | Sąvoka                   | Paprastai                                                                                                                                                        | Dokumentacija                                                    |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **Migracija**            | PHP klasė, aprašanti lentelės sukūrimą ar pakeitimą. DB schema versijuojama per Git kaip ir kodas (WordPress analogas – `dbDelta()`, tik su atšaukimu `down()`). | https://laravel.com/docs/12.x/migrations                         |
-| **Eloquent modelis**     | PHP klasė vienai lentelei: `ServiceRequest` ↔ `service_requests`.                                                                                                | https://laravel.com/docs/12.x/eloquent                           |
-| **Eloquent ryšys**       | Modelio metodas, kuris grąžina susijusius įrašus: `$request->offers`.                                                                                            | https://laravel.com/docs/12.x/eloquent-relationships             |
-| **Indeksas**             | Papildoma surikiuota struktūra (B-medis), padedanti DB rasti eilutes nenuskaitant visos lentelės.                                                                | https://laravel.com/docs/12.x/migrations#indexes                 |
-| **Išorinis raktas (FK)** | Stulpelis, rodantis į kitos lentelės `id`. DB pati saugo, kad nuoroda būtų teisinga.                                                                             | https://laravel.com/docs/12.x/migrations#foreign-key-constraints |
+| **Migracija**            | PHP klasė, aprašanti lentelės sukūrimą ar pakeitimą. DB schema versijuojama per Git kaip ir kodas (WordPress analogas – `dbDelta()`, tik su atšaukimu `down()`). | https://laravel.com/docs/13.x/migrations                         |
+| **Eloquent modelis**     | PHP klasė vienai lentelei: `ServiceRequest` ↔ `service_requests`.                                                                                                | https://laravel.com/docs/13.x/eloquent                           |
+| **Eloquent ryšys**       | Modelio metodas, kuris grąžina susijusius įrašus: `$request->offers`.                                                                                            | https://laravel.com/docs/13.x/eloquent-relationships             |
+| **Indeksas**             | Papildoma surikiuota struktūra (B-medis), padedanti DB rasti eilutes nenuskaitant visos lentelės.                                                                | https://laravel.com/docs/13.x/migrations#indexes                 |
+| **Išorinis raktas (FK)** | Stulpelis, rodantis į kitos lentelės `id`. DB pati saugo, kad nuoroda būtų teisinga.                                                                             | https://laravel.com/docs/13.x/migrations#foreign-key-constraints |
 
 ### Žymėjimai lentelėse
 
@@ -127,7 +127,7 @@ Patogumui yra `User::offers()` – `hasManyThrough` ryšys per `ProviderProfile`
 - SQLite `ENUM` tipo neturi.
 - PHP backed enum duoda tipų saugumą, lietuvišką pavadinimą (metodas `label()`) ir Eloquent cast'ą.
 
-→ https://laravel.com/docs/12.x/eloquent-mutators#enum-casting
+→ https://laravel.com/docs/13.x/eloquent-mutators#enum-casting
 
 ### 2.7 Pinigai – sveikais centais
 
@@ -143,8 +143,8 @@ Visų pinigų stulpelių pavadinimai baigiasi `_cents`, valiuta – EUR.
 - Balansas keičiamas tik `DB::transaction()` viduje, su `lockForUpdate()`. Taip du vienu metu siunčiami
   pasiūlymai negali nurašyti daugiau kreditų, nei teikėjas turi.
 
-→ https://laravel.com/docs/12.x/database#database-transactions ·
-https://laravel.com/docs/12.x/queries#pessimistic-locking
+→ https://laravel.com/docs/13.x/database#database-transactions ·
+https://laravel.com/docs/13.x/queries#pessimistic-locking
 
 ### 2.9 Failai – `spatie/laravel-medialibrary`
 
@@ -173,7 +173,7 @@ atsiliepimų būtų lėta. WordPress daro tą patį su `wp_posts.comment_count`.
 `deleted_at`, todėl istorija lieka ir įrašą galima atkurti (WordPress analogas – „Šiukšliadėžė").
 Kitose lentelėse naudojam statusus (pvz. `reviews.status = hidden`).
 Vartotojo ištrynimas pagal BDAR = **anonimizavimas**: vardas tampa „Ištrintas vartotojas", el. paštas –
-`deleted-{id}@example.invalid`. → https://laravel.com/docs/12.x/eloquent#soft-deleting
+`deleted-{id}@example.invalid`. → https://laravel.com/docs/13.x/eloquent#soft-deleting
 
 ### 2.12 ON DELETE taisyklės
 
@@ -190,7 +190,7 @@ Vartotojo ištrynimas pagal BDAR = **anonimizavimas**: vardas tampa „Ištrinta
 Polimorfiniuose stulpeliuose (`*_type`) saugom trumpus vardus (`offer`, `review`), o ne `App\Models\Offer`.
 Tai nustatoma `Relation::enforceMorphMap()` metodu `AppServiceProvider` klasėje. Perkėlus klasę į kitą
 namespace, duomenų DB keisti nereikės.
-→ https://laravel.com/docs/12.x/eloquent-relationships#custom-polymorphic-types
+→ https://laravel.com/docs/13.x/eloquent-relationships#custom-polymorphic-types
 
 ---
 
@@ -433,7 +433,7 @@ Lentelėje 60 eilučių, ir visa ji laikoma cache.
 | price_unit          | `string(20)?`                     | enum `PriceUnit`: `hour`, `job`, `m2`, `m`, `unit` |
 
 Pavadinimas sudarytas pagal Laravel konvenciją: abu modeliai vienaskaita, abėcėlės tvarka
-(`Category` + `ProviderProfile`). → https://laravel.com/docs/12.x/eloquent-relationships#many-to-many
+(`Category` + `ProviderProfile`). → https://laravel.com/docs/13.x/eloquent-relationships#many-to-many
 
 **Indeksai ir kodėl:**
 
@@ -706,7 +706,7 @@ kasdienis job'as pratęsia arba užbaigia prenumeratas · `subscription_plan_id`
 
 _Kodėl ne Laravel Cashier:_ Cashier – oficialus paketas Stripe ir Paddle prenumeratoms, su savo lentelėmis.
 Lietuvoje populiari Paysera, kuriai Cashier nėra. Todėl darom savas lenteles, o mokėjimo tiekėją slepiam už
-sąsajos (interface), kad vėliau būtų galima pridėti Stripe. → https://laravel.com/docs/12.x/billing
+sąsajos (interface), kad vėliau būtų galima pridėti Stripe. → https://laravel.com/docs/13.x/billing
 
 #### `credit_transactions` (ledger)
 
@@ -802,7 +802,7 @@ Planuojami tipai: `NewMatchingRequest`, `NewOffer`, `OfferAccepted`, `OfferDecli
 `ReviewReplied`, `LowCredits`, `SubscriptionExpiring`, `PaymentSucceeded`, `ComplaintResolved`.
 **Indeksai:** `(notifiable_type, notifiable_id)` sukuriamas automatiškai. Jei neperskaitytų skaičiavimas sulėtės,
 pridėsim į indeksą `read_at` (spręsim pagal `EXPLAIN`).
-→ https://laravel.com/docs/12.x/notifications#database-notifications
+→ https://laravel.com/docs/13.x/notifications#database-notifications
 
 #### `media` (spatie/laravel-medialibrary)
 
@@ -960,7 +960,7 @@ ServiceRequest::query()
 **Kodėl `whereIn` su paruoštu sąrašu, o ne JOIN su pivot lentelėmis.** Teikėjo kategorijų ir zonų būna dešimtys,
 o jos jau žinomos (užkraunamos kartu su profiliu). Todėl paprasčiau ir greičiau perduoti jas kaip sąrašą.
 `whereExists` su pivot lentelėmis tiktų, jei sąrašai būtų labai dideli arba norėtume visko vienoje SQL užklausoje.
-→ https://laravel.com/docs/12.x/queries#where-clauses
+→ https://laravel.com/docs/13.x/queries#where-clauses
 
 **Kurį indeksą naudoja.** MySQL rinksis tarp `(category_id, status, published_at)` ir `(city_id, status, published_at)`
 pagal tai, kuris sąrašas atsijoja daugiau eilučių. Kiekvienai `category_id` reikšmei eilutės su `status = 'open'`
