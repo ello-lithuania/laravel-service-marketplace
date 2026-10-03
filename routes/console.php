@@ -25,3 +25,17 @@ Schedule::command('service-requests:expire')
     // Jei ankstesnis paleidimas dar nebaigė – naujo nepradedam (kitaip abu imtų tas pačias užklausas)
     ->withoutOverlapping()
     ->onOneServer();
+
+// --- Etapas 7: prenumeratos ---
+// Kasdien ryte (Lietuvos laiku): pasibaigusios → past_due / expired, artėjančioms – pratęsimo mokėjimas ir priminimas
+Schedule::command('subscriptions:renew')
+    ->dailyAt('08:00')
+    ->timezone('Europe/Vilnius')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Kas valandą: kreditai už prasidėjusius apmokėtus laikotarpius (idempotentiška – dvigubai nesuteiks)
+Schedule::command('subscriptions:grant-credits')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();
