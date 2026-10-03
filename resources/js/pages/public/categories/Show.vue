@@ -47,7 +47,20 @@ const props = defineProps<{
     seo: SeoMeta;
 }>();
 
-const createRequestUrl = '/uzklausos/nauja';
+// 3 lygio paslaugos puslapyje užklausos forma atsidaro su jau parinkta paslauga (ir miestu)
+const createRequestUrl = computed(() => {
+    if (props.category.depth !== 3) {
+        return '/uzklausos/nauja';
+    }
+
+    const query = new URLSearchParams({ kategorija: props.category.slug });
+
+    if (props.city) {
+        query.set('miestas', props.city.slug);
+    }
+
+    return `/uzklausos/nauja?${query.toString()}`;
+});
 
 const heading = computed(() =>
     props.city
