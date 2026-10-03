@@ -11,14 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Schema: docs/DB_SCHEMA.md → users. city_id pridedamas atskira migracija,
+        // kai jau bus cities lentelė (FK gali rodyti tik į esančią lentelę).
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            // Migracijoje – tekstas, ne UserRole enum: migracija neturi priklausyti nuo besikeičiančio kodo
+            $table->string('role', 20)->default('client');
+            $table->string('first_name', 60);
+            $table->string('last_name', 80);
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
+            $table->string('phone', 20)->nullable();
             $table->string('password');
+            $table->json('notification_settings')->nullable();
+            $table->timestamp('last_seen_at')->nullable();
+            $table->timestamp('banned_at')->nullable();
+            $table->string('ban_reason')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
+
+            // Admin sąrašai „naujausi teikėjai": role viena per mažai selektyvi, kartu su rikiavimu – naudinga
+            $table->index(['role', 'created_at']);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

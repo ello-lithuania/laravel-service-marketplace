@@ -18,7 +18,8 @@ test('profile information can be updated', function () {
     $response = $this
         ->actingAs($user)
         ->patch(route('profile.update'), [
-            'name' => 'Test User',
+            'first_name' => 'Jonas',
+            'last_name' => 'Petraitis',
             'email' => 'test@example.com',
         ]);
 
@@ -28,7 +29,8 @@ test('profile information can be updated', function () {
 
     $user->refresh();
 
-    expect($user->name)->toBe('Test User');
+    expect($user->name)->toBe('Jonas Petraitis');
+    expect($user->public_name)->toBe('Jonas P.');
     expect($user->email)->toBe('test@example.com');
     expect($user->email_verified_at)->toBeNull();
 });
@@ -39,7 +41,8 @@ test('email verification status is unchanged when the email address is unchanged
     $response = $this
         ->actingAs($user)
         ->patch(route('profile.update'), [
-            'name' => 'Test User',
+            'first_name' => 'Jonas',
+            'last_name' => 'Petraitis',
             'email' => $user->email,
         ]);
 
@@ -64,7 +67,8 @@ test('user can delete their account', function () {
         ->assertRedirect(route('home'));
 
     $this->assertGuest();
-    expect($user->fresh())->toBeNull();
+    // Soft deletes: įrašas lieka DB su deleted_at (istorija), bet prisijungti nebegalima
+    $this->assertSoftDeleted($user);
 });
 
 test('correct password must be provided to delete account', function () {

@@ -1,5 +1,9 @@
 export type User = {
     id: number;
+    role: 'client' | 'provider' | 'admin';
+    first_name: string;
+    last_name: string;
+    /** Skaičiuojamas laukas (accessor) „Vardas Pavardė" */
     name: string;
     email: string;
     avatar?: string;

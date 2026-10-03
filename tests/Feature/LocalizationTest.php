@@ -8,7 +8,8 @@ test('aplikacijos kalba yra lietuvių', function () {
 
 test('validacijos klaidos rodomos lietuviškai su lietuviškais laukų pavadinimais', function () {
     $this->post(route('register.store'), [
-        'name' => 'Jonas',
+        'first_name' => 'Jonas',
+        'last_name' => 'Petraitis',
         'email' => 'ne-el-pastas',
         'password' => 'password',
         'password_confirmation' => 'password',

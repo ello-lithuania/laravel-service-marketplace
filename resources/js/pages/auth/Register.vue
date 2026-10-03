@@ -32,19 +32,34 @@ defineOptions({
         class="flex flex-col gap-6"
     >
         <div class="grid gap-6">
-            <div class="grid gap-2">
-                <Label for="name">Name</Label>
-                <Input
-                    id="name"
-                    type="text"
-                    required
-                    v-focus
-                    :tabindex="1"
-                    autocomplete="name"
-                    name="name"
-                    placeholder="Full name"
-                />
-                <InputError :message="errors.name" />
+            <div class="grid grid-cols-2 gap-4">
+                <div class="grid gap-2">
+                    <Label for="first_name">First name</Label>
+                    <Input
+                        id="first_name"
+                        type="text"
+                        required
+                        v-focus
+                        :tabindex="1"
+                        autocomplete="given-name"
+                        name="first_name"
+                        placeholder="Jonas"
+                    />
+                    <InputError :message="errors.first_name" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="last_name">Last name</Label>
+                    <Input
+                        id="last_name"
+                        type="text"
+                        required
+                        :tabindex="1"
+                        autocomplete="family-name"
+                        name="last_name"
+                        placeholder="Petraitis"
+                    />
+                    <InputError :message="errors.last_name" />
+                </div>
             </div>
 
             <div class="grid gap-2">
