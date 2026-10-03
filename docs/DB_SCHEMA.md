@@ -249,6 +249,7 @@ erDiagram
     offers |o--o{ credit_transactions : "source (morph)"
     credit_packages |o--o{ payments : "purchasable (morph)"
     subscription_plans |o--o{ payments : "purchasable (morph)"
+    subscriptions |o--o{ payments : "subscription_id (laikotarpiai)"
     users |o--o{ complaints : "reporter_id"
     users |o--o{ complaints : "handled_by_id"
     users ||--o{ notifications : "notifiable (morph)"
@@ -301,17 +302,19 @@ todėl naujam vartotojui nieko įrašyti nereikia, o pridėjus naują grupę sen
     "offer_updates": { "mail": false, "database": true },
     "new_offers": { "mail": true, "database": true },
     "request_updates": { "mail": true, "database": true },
-    "messages": { "mail": true, "database": true }
+    "messages": { "mail": true, "database": true },
+    "billing": { "mail": true, "database": true }
 }
 ```
 
-| Grupė             | Kam      | Notification klasės                                         |
-| ----------------- | -------- | ----------------------------------------------------------- |
-| `new_requests`    | teikėjui | `NewMatchingRequest`                                        |
-| `offer_updates`   | teikėjui | `OfferAccepted`, `OfferDeclined`, `ServiceRequestCancelled` |
-| `new_offers`      | klientui | `NewOffer`                                                  |
-| `request_updates` | klientui | `ServiceRequestPublished`, `ServiceRequestRejected`         |
-| `messages`        | abiem    | `NewMessage` (Etapas 6)                                     |
+| Grupė             | Kam      | Notification klasės                                                 |
+| ----------------- | -------- | ------------------------------------------------------------------- |
+| `new_requests`    | teikėjui | `NewMatchingRequest`                                                |
+| `offer_updates`   | teikėjui | `OfferAccepted`, `OfferDeclined`, `ServiceRequestCancelled`         |
+| `new_offers`      | klientui | `NewOffer`                                                          |
+| `request_updates` | klientui | `ServiceRequestPublished`, `ServiceRequestRejected`                 |
+| `messages`        | abiem    | `NewMessage` (Etapas 6)                                             |
+| `billing`         | teikėjui | `PaymentSucceeded`, `SubscriptionExpiring`, `LowCredits` (Etapas 7) |
 
 Kodas: `App\Support\NotificationSettings` (numatytosios reikšmės, skaitymas, grupės pagal rolę). El. laiškas
 nesiunčiamas, kol vartotojas nepatvirtino el. pašto – nepatvirtintu adresu laiškų nesiunčiam.
@@ -741,20 +744,52 @@ Indeksų nereikia: lentelėje kelios eilutės.
 
 #### `subscriptions`
 
-| Stulpelis            | Tipas                               | Pastaba                                                |
-| -------------------- | ----------------------------------- | ------------------------------------------------------ |
-| id                   | `id`                                |                                                        |
-| provider_profile_id  | `FK → provider_profiles`, restrict  |                                                        |
-| subscription_plan_id | `FK → subscription_plans`, restrict |                                                        |
-| status               | `string(20)`                        | enum `SubscriptionStatus`                              |
-| starts_at            | `timestamp`                         |                                                        |
-| ends_at              | `timestamp`                         | dabartinio laikotarpio pabaiga (pratęsiant pastumiama) |
-| cancelled_at         | `timestamp?`                        |                                                        |
-| auto_renew           | `bool` = true                       |                                                        |
-|                      | `timestamps`                        |                                                        |
+| Stulpelis             | Tipas                               | Pastaba                                                   |
+| --------------------- | ----------------------------------- | --------------------------------------------------------- |
+| id                    | `id`                                |                                                           |
+| provider_profile_id   | `FK → provider_profiles`, restrict  |                                                           |
+| subscription_plan_id  | `FK → subscription_plans`, restrict |                                                           |
+| status                | `string(20)`                        | enum `SubscriptionStatus`                                 |
+| starts_at             | `timestamp`                         |                                                           |
+| ends_at               | `timestamp`                         | dabartinio laikotarpio pabaiga (pratęsiant pastumiama)    |
+| cancelled_at          | `timestamp?`                        |                                                           |
+| auto_renew            | `bool` = true                       |                                                           |
+| credits_granted_until | `timestamp?`                        | **Etapas 7**: iki kada kreditai jau suteikti (žr. žemiau) |
+|                       | `timestamps`                        |                                                           |
 
 **Indeksai:** `(provider_profile_id, status)` – „ar teikėjas turi aktyvią prenumeratą?" · `(status, ends_at)` –
 kasdienis job'as pratęsia arba užbaigia prenumeratas · `subscription_plan_id` – automatiškai (FK).
+
+**Kaip veikia (Etapas 7).** Viena eilutė = viena prenumerata, kuri gali turėti daug apmokėtų laikotarpių.
+Laikotarpiai eina vienas po kito: `[starts_at; starts_at + 1 laikotarpis)`, kitas – nuo ankstesnio pabaigos.
+
+- `ends_at` – iki kada apmokėta. Apmokėjus pratęsimą, `ends_at` pastumiamas vienu laikotarpiu (mėnesiu ar metais).
+- `credits_granted_until` – iki kada kreditai jau suteikti (paskutinio „apmokėto" laikotarpio, už kurį kreditai
+  gauti, pabaiga). `NULL` – dar nesuteikta nė už vieną laikotarpį. Kreditus suteikia `GrantSubscriptionCredits`:
+  užrakina eilutę ir, jei kitas laikotarpis jau prasidėjo (`credits_granted_until ?? starts_at <= now`) ir yra
+  apmokėtas (`< ends_at`), įrašo ledger eilutę ir pastumia `credits_granted_until`. Antras kvietimas tam pačiam
+  laikotarpiui nieko nedaro – **idempotencija be atskiros lentelės**.
+- Kodėl kreditai neduodami iškart apmokėjus: pratęsimą galima apmokėti iš anksto (7 d. iki pabaigos), o naujo plano
+  prenumerata gali prasidėti tik pasibaigus dabartinei. Kreditai už laikotarpį suteikiami jam prasidėjus –
+  tai daro kas valandą vykdoma komanda `subscriptions:grant-credits`.
+- Seed'ų prenumeratoms `credits_granted_until = ends_at` (visi laikotarpiai jau „gavo" kreditus ledger'yje).
+
+Būsenų perėjimai (`SubscriptionStatus::allowedTransitions()`):
+
+| Iš → į                  | Kada                                                              | Kas daro                                      |
+| ----------------------- | ----------------------------------------------------------------- | --------------------------------------------- |
+| (nauja) → `active`      | apmokėtas plano mokėjimas                                         | `ActivateSubscription`                        |
+| `active` → `cancelled`  | teikėjas ar administratorius atšaukia; nuperkamas kitas planas    | `CancelSubscription`                          |
+| `active` → `past_due`   | `ends_at` praėjo, pratęsimas neapmokėtas                          | `subscriptions:renew` (kasdien)               |
+| `past_due` → `active`   | apmokėtas pratęsimas per malonės laikotarpį (3 d.)                | `RenewSubscription`                           |
+| `cancelled` → `active`  | atšauktai, bet dar galiojančiai prenumeratai apmokėtas pratęsimas | `RenewSubscription`                           |
+| `past_due` → `expired`  | malonės laikotarpis baigėsi arba nuperkamas naujas planas         | `subscriptions:renew`, `ActivateSubscription` |
+| `cancelled` → `expired` | `ends_at` praėjo                                                  | `subscriptions:renew`                         |
+
+Teikėjas vienu metu turi ne daugiau kaip vieną **galiojančią** prenumeratą (`active` / `cancelled` / `past_due`,
+`starts_at <= now`). Nupirkus kitą planą, naujoji prenumerata prasideda, kai baigiasi dabartinė (`starts_at` =
+dabartinės `ends_at`), o dabartinė atšaukiama (`auto_renew = false`). Tai užtikrina `ActivateSubscription`,
+užrakinusi teikėjo eilutę (`lockForUpdate`).
 
 _Kodėl ne Laravel Cashier:_ Cashier – oficialus paketas Stripe ir Paddle prenumeratoms, su savo lentelėmis.
 Lietuvoje populiari Paysera, kuriai Cashier nėra. Todėl darom savas lenteles, o mokėjimo tiekėją slepiam už
@@ -784,21 +819,23 @@ seną.
 
 **Paskirtis:** visi mokėjimai: kreditų paketai ir prenumeratų laikotarpiai.
 
-| Stulpelis                        | Tipas                           | Pastaba                                      |
-| -------------------------------- | ------------------------------- | -------------------------------------------- |
-| id                               | `id`                            |                                              |
-| uuid                             | `uuid` UNIQUE                   | viešas užsakymo numeris (siunčiamas Paysera) |
-| user_id                          | `FK → users`, restrict          | kas mokėjo                                   |
-| gateway                          | `string(20)`                    | enum `PaymentGateway`                        |
-| gateway_reference                | `string(100)?`                  | mokėjimo tiekėjo transakcijos ID             |
-| purchasable_type, purchasable_id | `nullableMorphs('purchasable')` | CreditPackage / SubscriptionPlan             |
-| amount_cents                     | `uint`                          |                                              |
-| currency                         | `char(3)` = `EUR`               |                                              |
-| status                           | `string(20)` = `pending`        | enum `PaymentStatus`                         |
-| paid_at                          | `timestamp?`                    |                                              |
-| invoice_number                   | `string(30)?` UNIQUE            | sąskaitos faktūros numeris                   |
-| meta                             | `json?`                         | tiekėjo atsakymas (be asmens duomenų)        |
-|                                  | `timestamps`                    |                                              |
+| Stulpelis                        | Tipas                            | Pastaba                                                       |
+| -------------------------------- | -------------------------------- | ------------------------------------------------------------- |
+| id                               | `id`                             |                                                               |
+| uuid                             | `uuid` UNIQUE                    | viešas užsakymo numeris (siunčiamas Paysera)                  |
+| user_id                          | `FK → users`, restrict           | kas mokėjo                                                    |
+| gateway                          | `string(20)`                     | enum `PaymentGateway`                                         |
+| gateway_reference                | `string(100)?`                   | mokėjimo tiekėjo transakcijos ID                              |
+| purchasable_type, purchasable_id | `nullableMorphs('purchasable')`  | CreditPackage / SubscriptionPlan                              |
+| subscription_id                  | `FK → subscriptions ?`, restrict | **Etapas 7**: kurios prenumeratos laikotarpis (žr. žemiau)    |
+| amount_cents                     | `uint`                           |                                                               |
+| currency                         | `char(3)` = `EUR`                |                                                               |
+| status                           | `string(20)` = `pending`         | enum `PaymentStatus`                                          |
+| paid_at                          | `timestamp?`                     |                                                               |
+| invoice_number                   | `string(30)?` UNIQUE             | sąskaitos faktūros numeris                                    |
+| billing_details                  | `json?`                          | **Etapas 7**: pardavėjo ir pirkėjo rekvizitai apmokėjimo metu |
+| meta                             | `json?`                          | tiekėjo atsakymas (be asmens duomenų)                         |
+|                                  | `timestamps`                     |                                                               |
 
 **Indeksai ir kodėl:**
 
@@ -808,6 +845,37 @@ seną.
 - `(user_id, created_at)` – „Mano mokėjimai".
 - `(status, created_at)` – admin ataskaitos (pajamos per laikotarpį).
 - `UNIQUE(invoice_number)`.
+- `subscription_id` – automatiškai (FK): „ar šiai prenumeratai jau sukurtas laukiantis pratęsimo mokėjimas?".
+
+**Etapo 7 papildymai:**
+
+- `subscription_id` – pirmo plano pirkimo metu `NULL` (prenumeratos dar nėra), apmokėjus įrašomas sukurtos
+  prenumeratos ID. Pratęsimo mokėjimas jį turi nuo sukūrimo – taip žinom, kurią prenumeratą pratęsti.
+- `billing_details` – sąskaitos faktūros duomenų **„nuotrauka" (snapshot)** apmokėjimo momentu: pardavėjo rekvizitai,
+  pirkėjo vardas / įmonė, kodas, PVM kodas, PVM tarifas. Teikėjui vėliau pakeitus profilį, jau išrašyta sąskaita
+  nesikeičia (sąskaitos faktūros keisti negalima). `meta` lieka tiekėjo atsakymui (be vardo ir el. pašto).
+- **Kaip apsaugota nuo dvigubo užskaitymo** (`ProcessPaymentResult`): DB transakcijoje mokėjimo eilutė užrakinama
+  (`lockForUpdate`), ir jei ji jau `paid` – nieko nedaroma; antram callback'ui atsakoma „OK". Paskutinė apsauga –
+  `UNIQUE(gateway, gateway_reference)` ir ledger'is (kreditų paketas užskaitomas su `source = payment`).
+- **Sąskaitos numeris** – `SF-{metai}-{6 skaitmenys}`, pvz. `SF-2026-000123`, metai – pagal apmokėjimo datą Lietuvos
+  laiku. Numeris imamas iš `invoice_sequences` toje pačioje transakcijoje, kurioje mokėjimas tampa `paid`, todėl
+  numeracija ištisinė (be tarpų) ir nesikartoja. Seed'ų numeriai naudoja mokėjimo ID (`SF-2025-001234`), todėl
+  pirmą kartą metų skaitiklis pradedamas nuo didžiausio jau esančio tų metų numerio.
+
+#### `invoice_sequences` (Etapas 7)
+
+**Paskirtis:** sąskaitų faktūrų numerių skaitiklis kiekvieniems metams.
+
+| Stulpelis   | Tipas          | Pastaba                             |
+| ----------- | -------------- | ----------------------------------- |
+| year        | `usmallint` PK | 2026                                |
+| last_number | `uint` = 0     | paskutinis išduotas tų metų numeris |
+|             | `timestamps`   |                                     |
+
+**Kodėl atskira lentelė, o ne `MAX(invoice_number) + 1`:** dvi vienu metu apmokamos sąskaitos abi perskaitytų tą patį
+`MAX` ir gautų tą patį numerį. Skaitiklio eilutė užrakinama (`lockForUpdate`), todėl antroji transakcija palaukia,
+kol pirmoji baigsis, ir gauna kitą numerį. Jei transakcija atšaukiama, atšaukiamas ir skaitiklio padidinimas – tarpų
+numeracijoje nelieka.
 
 ---
 
@@ -919,7 +987,7 @@ Visi enum'ai bus `app/Enums` kataloge, backed `string`, su metodu `label()` (lie
 | `BillingPeriod`         | `month` (Mėnuo), `year` (Metai)                                                                                                                                            |
 | `SubscriptionStatus`    | `active` (Aktyvi), `cancelled` (Atšaukta – galioja iki pabaigos), `past_due` (Nesumokėta), `expired` (Pasibaigusi)                                                         |
 | `CreditTransactionType` | `purchase` (Pirkimas), `subscription` (Prenumerata), `offer` (Pasiūlymas), `refund` (Grąžinimas), `bonus` (Dovana), `admin_adjustment` (Koregavimas), `expiry` (Pasibaigė) |
-| `PaymentGateway`        | `paysera`, `stripe`, `manual`                                                                                                                                              |
+| `PaymentGateway`        | `paysera`, `stripe`, `manual`, `fake` (Testinis – tik dev'e ir testuose, Etapas 7)                                                                                         |
 | `PaymentStatus`         | `pending` (Laukiama), `paid` (Apmokėta), `failed` (Nepavyko), `cancelled` (Atšaukta), `refunded` (Grąžinta)                                                                |
 | `ComplaintReason`       | `spam` (Šlamštas), `fraud` (Sukčiavimas), `offensive` (Įžeidžiantis turinys), `fake_review` (Netikras atsiliepimas), `wrong_info` (Klaidinga informacija), `other` (Kita)  |
 | `ComplaintStatus`       | `open` (Naujas), `in_review` (Nagrinėjamas), `resolved` (Išspręstas), `rejected` (Atmestas)                                                                                |
@@ -963,6 +1031,9 @@ datą failo pavadinime.
 | 25  | `create_notifications_table`                           | `php artisan make:notifications-table`                                                |
 | 26  | `create_media_table`                                   | publikuota iš medialibrary paketo Etape 3 (`2026_10_03_170615_…`)                     |
 | 27  | `add_cancellation_reason_to_service_requests_table`    | **Etapas 5**: atmetimo / atšaukimo priežastis                                         |
+| 28  | `add_billing_columns_to_payments_table`                | **Etapas 7**: `subscription_id`, `billing_details`                                    |
+| 29  | `add_credits_granted_until_to_subscriptions_table`     | **Etapas 7**: kreditų suteikimo idempotencija                                         |
+| 30  | `create_invoice_sequences_table`                       | **Etapas 7**: sąskaitų numerių skaitiklis                                             |
 
 **Kodėl `city_id` pridedam atskirai:** numatytoji `users` migracija turi seniausią datą (`0001_01_01_…`), todėl
 vykdoma pirma, kai `cities` dar nėra. Galima būtų pakeisti datas, bet atskira `add_…` migracija aiškiau parodo
@@ -1048,5 +1119,5 @@ Etape 8 tai patikrinsim su `EXPLAIN` pilnoje MySQL DB.
 | `category_questions` – kategorijai specifiniai klausimai formoje („kiek m²?") | pirmai versijai pakanka laisvo aprašymo                                            |
 | Mikrorajonai (`districts`)                                                    | savivaldybių tikslumo užtenka                                                      |
 | Mokamos TOP pozicijos kataloge                                                | galima įjungti per `subscription_plans.features` vėliau                            |
-| Atskira `invoices` lentelė                                                    | kol kas užtenka `payments.invoice_number`                                          |
+| Atskira `invoices` lentelė                                                    | kol kas užtenka `payments.invoice_number` + `billing_details` (Etapas 7)           |
 | Nuolaidų kodai, CMS puslapiai, tinklaraštis, veiksmų žurnalas (activity log)  | ne platformos šerdis                                                               |
