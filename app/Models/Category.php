@@ -27,6 +27,21 @@ class Category extends Model
 
     public const MAX_DEPTH = 3;
 
+    /**
+     * Lygis (depth) visada skaičiuojamas iš tėvo, kad nesiderintų su medžiu (pvz. kuriant per Filament).
+     * Užklausa, o ne $category->parent, nes preventLazyLoading neleidžia tyliai užkrauti ryšio.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Category $category): void {
+            $parentDepth = $category->parent_id === null
+                ? 0
+                : max(0, (int) static::query()->whereKey($category->parent_id)->value('depth'));
+
+            $category->depth = $parentDepth + 1;
+        });
+    }
+
     protected function casts(): array
     {
         return [
