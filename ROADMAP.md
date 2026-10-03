@@ -109,7 +109,7 @@ seeder'iai, morph map, masinis įterpimas.
 **Sąvokos:** daugiažingsnė forma, Actions, DB transakcijos ir užraktai, eilės (Jobs), Notifications, Scheduler,
 būsenų mašina.
 
-- [ ] Užklausos kūrimo forma (keli žingsniai, nuotraukos), Form Request validacija – forma ir validacija atliktos, nuotraukos – kartu su Etapu 6
+- [x] Užklausos kūrimo forma (keli žingsniai, nuotraukos), Form Request validacija (nuotraukos – kartu su Etapu 6)
 - [x] Moderavimas (`pending` → `open`) Filament'e + automatinės taisyklės
 - [x] Atitikimas: job randa teikėjus (kategorija su tėvais, zona arba „visa Lietuva") ir siunčia pranešimus
       (mail + database) pagal `notification_settings`
@@ -128,14 +128,14 @@ būsenų mašina.
 **Tikslas:** klientas ir teikėjas susirašinėja, po darbo paliekamas atsiliepimas, netinkamas turinys skundžiamas.
 **Sąvokos:** `belongsToMany` su pivot laukais, observers, rate limiting, (pasirinktinai) broadcasting.
 
-- [ ] Pokalbiai ir žinutės, neperskaitytų skaičius (`last_read_message_id`), priedai
-- [ ] Atnaujinimas realiu laiku: pradžioje polling, paskui sprendimas dėl Laravel Reverb + Echo
-- [ ] Atsiliepimai po darbo, pakvietimo nuoroda buvusiems klientams, teikėjo atsakymas
-- [ ] Reitingo perskaičiavimas (observer → job)
-- [ ] Skundo mygtukas (užklausa, pasiūlymas, atsiliepimas, žinutė, profilis) + nagrinėjimas Filament'e
-- [ ] Rate limiting: žinutės, skundai, užklausos
-- [ ] Testai
-- [ ] `docs/LEARNING.md`: Etapas 6 + santrauka vartotojui
+- [x] Pokalbiai ir žinutės, neperskaitytų skaičius (`last_read_message_id`), priedai
+- [x] Atnaujinimas realiu laiku: pradžioje polling, paskui sprendimas dėl Laravel Reverb + Echo
+- [x] Atsiliepimai po darbo, pakvietimo nuoroda buvusiems klientams, teikėjo atsakymas
+- [x] Reitingo perskaičiavimas (observer → job)
+- [x] Skundo mygtukas (užklausa, pasiūlymas, atsiliepimas, žinutė, profilis) + nagrinėjimas Filament'e
+- [x] Rate limiting: žinutės, skundai, užklausos
+- [x] Testai
+- [x] `docs/LEARNING.md`: Etapas 6 + santrauka vartotojui
 
 ---
 
@@ -144,14 +144,14 @@ būsenų mašina.
 **Tikslas:** teikėjai perka kreditus ir prenumeratas, mokėjimai patikimi ir idempotentiški.
 **Sąvokos:** service container ir interfeisai, callback'ai ir webhook'ai, idempotencija, ledger, Scheduler, PDF.
 
-- [ ] Kainų puslapis: kreditų paketai ir planai
-- [ ] `PaymentGateway` sąsaja + Paysera įgyvendinimas (parašo tikrinimas, idempotencija)
-- [ ] Kreditų ledger paslauga, balansas, istorijos puslapis
-- [ ] Prenumeratos: pirkimas, kreditai kas laikotarpį (Scheduler), pratęsimas, atšaukimas, pasibaigimas
-- [ ] Sąskaitos faktūros (numeracija, PDF)
-- [ ] Filament: mokėjimai, kreditų operacijos, rankinis koregavimas
-- [ ] Testai su netikru mokėjimų tiekėju
-- [ ] `docs/LEARNING.md`: Etapas 7 + santrauka vartotojui
+- [x] Kainų puslapis: kreditų paketai ir planai
+- [x] `PaymentGateway` sąsaja + Paysera įgyvendinimas (parašo tikrinimas, idempotencija)
+- [x] Kreditų ledger paslauga, balansas, istorijos puslapis
+- [x] Prenumeratos: pirkimas, kreditai kas laikotarpį (Scheduler), pratęsimas, atšaukimas, pasibaigimas
+- [x] Sąskaitos faktūros (numeracija, PDF)
+- [x] Filament: mokėjimai, kreditų operacijos, rankinis koregavimas
+- [x] Testai su netikru mokėjimų tiekėju
+- [x] `docs/LEARNING.md`: Etapas 7 + santrauka vartotojui
 
 ---
 

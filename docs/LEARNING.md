@@ -1263,3 +1263,587 @@ Larastan pagal nutylėjimą žiūri tik į `casts()` metodo grąžinamą tipą (
   `npm run build` (arba `npm run dev`).
 - **Notification `type` pervadinimas** – DB saugomas klasės vardas (`App\Notifications\NewOffer`); pervadinus klasę
   seni pranešimai „pasimestų". Tipą galima užfiksuoti metodu `databaseType()`.
+
+---
+
+## Etapas 6 – Žinutės, atsiliepimai, skundai
+
+> Atlikta lygiagrečiai su Etapais 7 ir 8. Kartu padaryti du darbai iš Etapo 5: užklausos nuotraukos ir
+> `STATES.md` papildomos taisyklės (teikėjo prašymas pažymėti darbą atliktu, 60 d. priminimas).
+> Sąmoningai nepadaryta: Laravel Reverb (tik sprendimas), skundų įrodymų failai, ilgų pokalbių puslapiavimas.
+
+### Ką darėm ir kodėl
+
+- **Pokalbiai** (`/zinutes`, `/zinutes/{id}`): pokalbis priklauso pasiūlymui (`UNIQUE(offer_id)`). Klientas gali
+  pradėti pokalbį dėl bet kurio savo užklausos pasiūlymo, teikėjas – tik kai jo pasiūlymas priimtas (kitaip jis
+  galėtų „užversti" klientą žinutėmis; jo prisistatymas – pasiūlymas). Rašyti galima, kol pasiūlymas laukia atviroje
+  užklausoje, o priimtam – visada (garantija, papildomi darbai). Administratorius pokalbį gali skaityti (skundams).
+  Taisyklės – `ConversationPolicy`, mygtukas „Rašyti žinutę" – `App\Support\OfferMessaging` + `MessageButton.vue`
+  (pasiūlymo, kliento užklausos ir teikėjo užklausos puslapiuose).
+- **Neperskaitytos** – per `conversation_user.last_read_message_id`: sąraše kiekvienam pokalbiui (`withCount`),
+  meniu – bendras Inertia prop'as `inbox.unread_count` (closure, vienas `COUNT` su `JOIN`). Atidarius pokalbį (ir
+  kiekvieno automatinio atnaujinimo metu) jis pažymimas perskaitytu, o jo `NewMessage` pranešimai varpelyje –
+  perskaitytais.
+- **Priedai** – nuotraukos (Etapo 3 taisyklės) ir PDF iki 10 MB, iki 5 žinutėje. **Privačiame diske**: failą atiduoda
+  `PrivateMediaController` (`/failai/{media}`), patikrinęs savininko Policy (`view`). Tas pats controller'is atiduoda
+  ir užklausų nuotraukas.
+- **`NewMessage` be šlamšto**: pranešama tik apie pirmą neperskaitytą žinutę; varpelis – iš karto, laiškas – po 5 min.
+  ir tik jei žinutė vis dar neperskaityta (`withDelay()` + `shouldSend()`).
+- **Atnaujinimas** – Inertia polling: pokalbis kas 10 s (`only: ['messages', 'can', 'inbox']`), sąrašas kas 30 s.
+- **Atsiliepimai.** Užbaigus darbą klientas gauna `ReviewInvitation`, o užklausos puslapyje ir „Mano paskyra" – formą
+  / priminimą. Patvirtintas atsiliepimas: tik užklausos klientas, vieną kartą, per 60 d., paskelbiamas iš karto, teikėjui
+  – `NewReview`. **Pakvietimo nuoroda** (`/paskyra/atsiliepimai`): pasirašytas URL 30 d.; atsiliepimą gali palikti tik
+  klientas, ne savo profiliui, vieną tam pačiam teikėjui per 12 mėn.; jis laukia administratoriaus (`pending`), o UI
+  pažymimas „Pagal pakvietimą". Teikėjas į atsiliepimą atsako vieną kartą (`ReviewReplied` autoriui).
+- **Reitingas** – `ReviewObserver` → eilės job'as `RecalculateProviderRating` (ta pati formulė kaip seed'ų `CounterSync`).
+- **Skundai** – „Pranešti" (`ReportDialog.vue`) prie teikėjo užklausos, pasiūlymo, žinutės, atsiliepimo ir profilio;
+  `reportable` – polimorfinis ryšys. Vienas neužbaigtas skundas tam pačiam įrašui iš to paties žmogaus.
+  Filament `/admin/skundai`: eilė (nauji, nagrinėjami – seniausi viršuje), „Imti nagrinėti", „Išspręsti" (galima iš
+  karto paslėpti atsiliepimą ar žinutę), „Atmesti"; pranešėjui – `ComplaintResolved`.
+- **Atsiliepimų moderavimas** – Filament `/admin/atsiliepimai`: „Laukia moderavimo", „Su skundais", filtrai, paskelbimas /
+  paslėpimas (ir masinis).
+- **Dažnio ribos** – pavadinti limiter'iai `messages`, `complaints`, `service-requests` (be Precognition užklausų),
+  `reviews`; lietuviškas atsakymas (`App\Support\TooManyAttempts`).
+- **Užklausos nuotraukos** (iš Etapo 5) – iki 8, formos paskutiniame žingsnyje ir užklausos puslapyje; mato klientas ir
+  tinkami teikėjai; teikėjo sraute – nuotraukų skaičius.
+- **Darbo užbaigimo priminimai** (iš Etapo 5) – teikėjo mygtukas „Paprašyti pažymėti atliktu" (kas 3 d.) ir kasdienė
+  komanda `service-requests:remind-completion` (60+ d., vieną kartą). Nauja migracija
+  `add_completion_reminders_to_service_requests_table`.
+- **Dokumentai**: `DB_SCHEMA.md` (naujų stulpelių, `media` kolekcijų, taisyklių aprašymai), `STATES.md` 1 ir 4 sk.
+
+**Kaip išbandyti:** `php artisan migrate:fresh --seed`, `composer run dev`. Klientas `klientas1@example.test`, teikėjas
+`teikejas1@example.test`, administratorius `admin1@example.test` (slaptažodis `password`). Žinutės – meniu „Žinutės";
+pakvietimo nuoroda – teikėjo „Atsiliepimai"; skundai ir atsiliepimai – `/admin`. Laiškai – `storage/logs/laravel.log`
+(`NewMessage` laiškas ateis po 5 min., todėl eilės darbuotojas turi veikti).
+
+### Išmoktos sąvokos
+
+#### 1. `belongsToMany` su pivot laukais
+
+`conversation_user` – ne tik „kas su kuo susijęs", bet ir **papildomas laukas** `last_read_message_id`. Ryšyje jį reikia
+paminėti, kitaip Eloquent jo neskaito:
+
+```php
+public function participants(): BelongsToMany
+{
+    return $this->belongsToMany(User::class)->withPivot('last_read_message_id');
+}
+
+$conversation->participants()->syncWithoutDetaching([$clientId, $providerUserId]); // idempotentiškai įrašo dalyvius
+$conversation->participants()->updateExistingPivot($user->id, ['last_read_message_id' => $message->id]);
+$participant->pivot->last_read_message_id;                                           // reikšmė perskaitant
+```
+
+Kadangi `$user->conversations()` užklausa jau prijungia `conversation_user`, koreliuotoje subužklausoje galima naudoti
+pivot stulpelį: `->withCount(['messages as unread_count' => fn ($q) => $q->whereRaw('messages.id > COALESCE(conversation_user.last_read_message_id, 0)')])`.
+WordPress analogas – `wp_term_relationships` su papildomu `term_order` stulpeliu.
+→ https://laravel.com/docs/13.x/eloquent-relationships#retrieving-intermediate-table-columns ·
+https://laravel.com/docs/13.x/eloquent-relationships#updating-a-record-on-the-intermediate-table
+
+#### 2. `createOrFirst()` ir „vienas iš daugelio" ryšys
+
+- `Conversation::createOrFirst(['offer_id' => …])` pirma bando `INSERT`, o jei `UNIQUE` jau užimtas (dvigubas paspaudimas,
+  abu dalyviai vienu metu) – paima esamą. `firstOrCreate()` daro atvirkščiai (`SELECT`, tada `INSERT`), ir tarp jų
+  lygiagreti užklausa gali spėti įterpti. → https://laravel.com/docs/13.x/eloquent#retrieving-or-creating-models
+- `hasOne(Message::class)->latestOfMany()` – paskutinė žinutė kiekvienam pokalbiui viena užklausa visam sąrašui.
+  → https://laravel.com/docs/13.x/eloquent-relationships#has-one-of-many
+
+#### 3. Pranešimai be šlamšto: `withDelay()`, `shouldSend()`
+
+```php
+public function withDelay(object $notifiable, string $channel): ?DateTimeInterface
+{
+    return $channel === 'mail' ? now()->addMinutes(5) : null;   // varpelis – iš karto
+}
+
+public function shouldSend(object $notifiable, string $channel): bool
+{
+    // kviečiama eilės job'e, jau po uždelsimo: perskaitė svetainėje – laiško nebereikia
+}
+```
+
+Plius taisyklė `SendMessage` veiksme: pranešti tik tiems, kurie buvo perskaitę viską iki šios žinutės. `deleteWhenMissingModels`
+– jei kol job'as laukė, žinutė buvo paslėpta (soft delete), job'as tyliai išmetamas, o ne kartojamas.
+→ https://laravel.com/docs/13.x/notifications#delaying-notifications ·
+https://laravel.com/docs/13.x/notifications#determining-if-the-queued-notification-should-be-sent
+
+#### 4. Privatūs failai
+
+`public` diske failas pasiekiamas kiekvienam, kas žino URL (`/storage/{media_id}/{failas}`, o `media_id` didėja iš eilės).
+Todėl žinučių priedai ir užklausų nuotraukos – `local` diske (`storage/app/private`), o atiduoda controller'is:
+
+```php
+Gate::authorize('view', $media->model);   // Message → MessagePolicy, ServiceRequest → ServiceRequestPolicy
+return Storage::disk($media->disk)->response($media->getPathRelativeToRoot($conversion), $media->file_name, [...], 'inline');
+```
+
+Medialibrary kolekcijoje – `->useDisk('local')`. Antraštė `X-Content-Type-Options: nosniff` neleidžia naršyklei „spėti"
+tipo, PDF atiduodamas atsisiuntimui. Failo tipą (nuotrauka ar PDF) Form Request nustato pagal **turinį**
+(`getMimeType()`), ne plėtinį. WordPress analogas – failų apsauga per PHP „proxy" vietoj nuorodos į `wp-content/uploads`.
+→ https://laravel.com/docs/13.x/filesystem#downloading-files · https://spatie.be/docs/laravel-medialibrary
+
+#### 5. Pasirašyti URL (signed URLs)
+
+```php
+URL::temporarySignedRoute('reviews.invitation.show', now()->addDays(30), ['providerProfile' => $profile]);
+// /atsiliepimas/jonas-1?expires=1793646943&signature=96237a…
+
+Route::get('atsiliepimas/{providerProfile:slug}', …)->middleware('signed');
+```
+
+Parašas – HMAC (su `APP_KEY`) nuo viso URL, įskaitant `expires`. Pakeitus slug'ą, datą ar parašą – 403
+(`lang/lt.json`: „Nuoroda neteisinga arba jos galiojimas baigėsi."). Neprisijungusį `auth` nukreipia prisijungti ir po to
+grąžina į tą pačią nuorodą su parašu (`redirect()->intended()`). Forma siunčiama į tą patį URL – `signed` tikrina ir POST.
+Pasirašytas URL ≠ slaptas: kas jį turi, tas gali naudoti, todėl papildomai – Policy (tik klientai, vienas per 12 mėn.) ir
+moderavimas. WordPress analogas – slaptažodžio atkūrimo `key` arba `wp_nonce_url()`.
+→ https://laravel.com/docs/13.x/urls#signed-urls
+
+#### 6. Observers
+
+```php
+#[ObservedBy(ReviewObserver::class)]
+class Review extends Model { … }
+
+class ReviewObserver implements ShouldHandleEventsAfterCommit
+{
+    public function updated(Review $review): void
+    {
+        if ($review->wasChanged(['status', 'rating', 'provider_profile_id'])) {
+            RecalculateProviderRating::dispatch($review->provider_profile_id);
+        }
+    }
+}
+```
+
+Observer reaguoja, kad ir kur modelis būtų išsaugotas: Action, Filament veiksmas, tinker. `ShouldHandleEventsAfterCommit` –
+tik po sėkmingos transakcijos. **Masinis** `Review::query()->update([...])` įvykių nekelia – todėl Filament masinis
+veiksmas keičia kiekvieną įrašą per modelį. WordPress analogas – `add_action('save_post', …)`.
+→ https://laravel.com/docs/13.x/eloquent#observers
+
+#### 7. Eilės: unikalūs job'ai
+
+`RecalculateProviderRating implements ShouldBeUniqueUntilProcessing` su `uniqueId()` = teikėjo ID: kol to paties teikėjo
+job'as laukia eilėje, naujas neįdedamas (jis vis tiek perskaitys naujausius duomenis). Kodėl ne `ShouldBeUnique`: jis
+laiko užraktą iki job'o **pabaigos**, todėl pakeitimas, įvykęs skaičiavimo metu, būtų prarastas. Laravel 13 dar turi
+`#[DebounceFor(10)]` – job'as atidedamas ir paleidžiamas tik paskutinis per laikotarpį; tiktų, jei perskaičiavimas būtų
+brangus, bet reitingas tada atsinaujintų pavėluotai. Job'ui perduodam ID, o ne modelį – profilis gali būti „ištrintas".
+→ https://laravel.com/docs/13.x/queues#unique-jobs
+
+#### 8. Polimorfiniai ryšiai praktikoje
+
+`complaints.reportable_type` + `reportable_id` – skundas gali būti dėl penkių skirtingų modelių. Morph map'as (Etapas 2)
+saugo trumpus vardus, o enum `ReportableType` jais naudojasi validacijai ir modelio paieškai.
+
+- `$complaint->reportable()->associate($review)` – įrašo abu stulpelius;
+- `Complaint::query()->whereMorphedTo('reportable', $review)` – „skundai dėl šio įrašo";
+- eager loading su sąlygomis kiekvienam tipui: `MorphTo::constrain([Message::class => fn ($q) => $q->withTrashed()])` –
+  administratorius mato ir jau paslėptą žinutę.
+
+WordPress analogas – `wp_comments.comment_post_ID`, kai „post" gali būti bet kokio tipo.
+→ https://laravel.com/docs/13.x/eloquent-relationships#polymorphic-relationships ·
+https://laravel.com/docs/13.x/eloquent-relationships#custom-polymorphic-types
+
+#### 9. Rate limiting
+
+```php
+RateLimiter::for('messages', fn (Request $request) => [
+    Limit::perMinute(15)->by('messages:60:'.$request->user()->id)->response(…),
+    Limit::perDay(500)->by('messages:86400:'.$request->user()->id)->response(…),
+]);
+
+Route::post('zinutes/{conversation}', …)->middleware('throttle:messages');
+```
+
+- Kelios ribos vienu metu – kiekviena su **savo raktu** (`by`), kitaip jos dalytųsi skaitliuku.
+- `Limit::none()` – neribojama: užklausos formos **Precognition** žingsnių tikrinimas eina į tą patį `POST /uzklausos`,
+  todėl limiter'is tikrina `$request->isPrecognitive()` (veikia, nes `HandlePrecognitiveRequests` middleware prioritetų
+  sąraše eina prieš `ThrottleRequests`).
+- `->response()` – savas atsakymas: JSON – 429 su lietuvišku tekstu, Inertia – atgal su klaida ir toast (429 Inertia'i
+  atrodytų kaip klaidos langas), kita – 429 puslapis.
+- Skaitliukai – cache'e (dev – DB, prod – Redis). WordPress analogas – „Limit Login Attempts" įskiepis su transient'ais.
+
+Kodėl teikėjo prašymui „pažymėti atliktu" naudojam **ne** `RateLimiter`, o stulpelį `completion_requested_at`: tai verslo
+taisyklė, kuri turi išlikti išvalius cache, o puslapis rodo „Paskutinį kartą prašėte prieš 2 d.".
+→ https://laravel.com/docs/13.x/routing#rate-limiting · https://laravel.com/docs/13.x/rate-limiting
+
+#### 10. Form Request: `after()` ir taisyklės kiekvienam failui
+
+- `after()` – papildoma patikra po pagrindinių taisyklių (pvz. „ar skundžiamas įrašas dar egzistuoja").
+  → https://laravel.com/docs/13.x/validation#performing-additional-validation-on-form-requests
+- Taisyklės gali būti skaičiuojamos: `foreach ($this->file('attachments') as $i => $file) $rules["attachments.$i"] = …` –
+  nuotraukai vienos, PDF – kitos (`dimensions` PDF'ui visada nepavyktų).
+- `authorize()` grąžina `Gate::inspect(...)` – vartotojas mato priežastį.
+
+#### 11. Polling su Inertia
+
+```ts
+usePoll(10_000, { only: ['messages', 'can', 'inbox'] });
+```
+
+Kas 10 s – dalinis perkrovimas: serveris vykdo tą patį controller'į, bet skaičiuoja tik prašytus props (todėl jie –
+closure'ai). Fone (kitas skirtukas) Inertia užklausas retina pati. Paprasta, nereikia papildomų serverių, veikia per
+įprastą HTTP. Trūkumas – vėlavimas iki 10 s ir užklausos net tada, kai nieko naujo. → https://inertiajs.com/polling
+
+#### 12. Sprendimas: kada Laravel Reverb + Echo
+
+**Dabar – polling.** 1 000 vienu metu atidarytų pokalbių = ~100 mažų užklausų per sekundę (dalinis perkrovimas, vienas
+`SELECT` žinutėms) – pirmai versijai to užtenka, o diegimas paprastas.
+
+**Pereiti į Reverb, kai:** vienu metu pokalbiuose – šimtai ar tūkstančiai žmonių ir polling apkrova tampa pastebima;
+reikia „rašo…" indikatoriaus, „perskaityta" varnelių ar momentinio varpelio; norim mažinti vėlavimą iki sekundės dalies.
+
+**Kas pasikeistų:**
+
+1. `composer require laravel/reverb` ir `php artisan install:broadcasting` (įdiegia `laravel-echo`, `pusher-js`,
+   `@laravel/echo-vue`), `.env`: `BROADCAST_CONNECTION=reverb`, `REVERB_*`.
+2. Serveryje – nuolat veikiantis `php artisan reverb:start` procesas (supervisor), nginx – WebSocket proxy, prod – Redis
+   (keli serveriai dalijasi įvykiais).
+3. Įvykis `MessageSent implements ShouldBroadcast` su `PrivateChannel('conversations.'.$id)`; `SendMessage` jį paskelbia
+   po transakcijos. Antras kanalas – vartotojo `App.Models.User.{id}` meniu ženkleliui.
+4. `routes/channels.php` – kanalo autorizacija (ta pati taisyklė kaip `ConversationPolicy::view`).
+5. Vue: `useEcho('conversations.'+id, 'MessageSent', () => router.reload({ only: ['messages'] }))`; polling lieka kaip
+   atsarginis variantas su retesniu intervalu (pvz. 60 s), jei WebSocket ryšys nutrūksta.
+
+Alternatyvos: Pusher / Ably (mokamos paslaugos, nereikia savo serverio), Soketi (atviro kodo Pusher protokolas).
+Reverb – oficialus Laravel, nemokamas, bet tai dar vienas procesas, kurį reikia diegti ir stebėti (Etapas 8).
+→ https://laravel.com/docs/13.x/broadcasting · https://laravel.com/docs/13.x/reverb
+
+#### 13. Filament: masiniai veiksmai, filtrai, rikiavimas
+
+- `BulkAction::make('hideSelected')->action(fn (Collection $records) => …)` – veiksmas pažymėtiems įrašams.
+- `TernaryFilter` – trijų būsenų filtras (visi / patvirtinti / pagal pakvietimą) su `->queries(true: …, false: …)`.
+- `->defaultSort(fn (Builder $query) => $query->orderByRaw('CASE status …')->orderBy('created_at'))` – eilė.
+- Veiksmų formos (`->schema([Textarea::make('note')->required(), Toggle::make('hide_content')])`), `->visible()`,
+  `->authorize('handle')` – teisės iš Policy.
+- Testai: `Livewire::test(ListComplaints::class)->callAction(TestAction::make('reject')->table($complaint), [...])`,
+  `->selectTableRecords([...])->callAction(TestAction::make('hideSelected')->table()->bulk())`, `->assertActionHidden()`.
+  → https://filamentphp.com/docs/5.x/actions/overview · https://filamentphp.com/docs/5.x/tables/filters/ternary
+
+#### 14. Scheduler su laiko juosta
+
+`Schedule::command('service-requests:remind-completion')->dailyAt('09:00')->timezone('Europe/Vilnius')` – DB ir serveris
+dirba UTC, o laiškas turi ateiti 9 val. Lietuvos laiku (ir vasarą, ir žiemą). → https://laravel.com/docs/13.x/scheduling#timezones
+
+#### 15. Testai
+
+- `Storage::fake('local')` + `UploadedFile::fake()->image('a.jpg', 800, 600)`; PDF – `createWithContent('a.pdf', "%PDF-1.4 …")`
+  (medialibrary tipą tikrina pagal turinį, tuščias netikras failas būtų „application/x-empty").
+- `Notification::assertSentToTimes($user, NewMessage::class, 1)`; jei `via()` grąžina `[]`, pranešimas visai
+  nesiunčiamas – tada `assertNotSentTo`.
+- `Queue::fake()` + unikalūs job'ai: antras `dispatch()` su tuo pačiu `uniqueId()` į eilę nepatenka.
+- Pasirašyti URL: `URL::temporarySignedRoute(...)`, suklastotas slug'as ir `$this->travel(2)->days()` – 403.
+- Rate limiting: 15 užklausų, 16-a – klaida; `$this->travel(61)->seconds()` – vėl galima; Precognition – `postJson(...,
+['Precognition' => 'true', 'Precognition-Validate-Only' => 'title'])` niekada neribojama.
+- N+1: `DB::enableQueryLog()` – 1 ir 6 nuotraukų užklausų puslapis daro tiek pat SQL užklausų.
+
+### Naudingos komandos
+
+| Komanda                                                   | Ką daro                                                             |
+| --------------------------------------------------------- | ------------------------------------------------------------------- |
+| `php artisan route:list --path=zinutes`                   | pokalbių maršrutai (taip pat `--path=atsiliepim`, `--path=skundai`) |
+| `php artisan make:observer ReviewObserver --model=Review` | naujas observer'is                                                  |
+| `php artisan make:job RecalculateProviderRating`          | naujas job'as                                                       |
+| `php artisan make:filament-resource Complaint --view`     | Filament resource su peržiūros puslapiu                             |
+| `php artisan service-requests:remind-completion`          | rankiniu būdu išsiunčia 60 d. priminimus                            |
+| `php artisan schedule:list`                               | suplanuotos užduotys (matysis ir 9:00 priminimas)                   |
+| `php artisan queue:work`                                  | vykdo eilę: pranešimus, uždelstus laiškus, miniatiūras, reitingą    |
+| `php artisan cache:clear`                                 | išvalo ir rate limiting skaitliukus (dev'e)                         |
+| `php artisan tinker` → `URL::temporarySignedRoute(…)`     | pasirašytos nuorodos generavimas bandymams                          |
+
+### Dažnos klaidos
+
+- **Masinis `update()` ir observer'iai.** `Review::query()->whereIn(...)->update(['status' => 'hidden'])` neiškviečia
+  `updated()` – reitingas nepersiskaičiuos. Keisk per modelį arba po masinio pakeitimo paleisk job'ą pats.
+- **`ShouldBeUnique` vietoj `ShouldBeUniqueUntilProcessing`** – pakeitimas, įvykęs job'o vykdymo metu, prarandamas.
+- **Bendro Inertia prop'o ir puslapio prop'o vardų sutapimas.** Puslapio `messages` perrašytų bendrą `messages` – todėl
+  meniu skaitliukas vadinasi `inbox`.
+- **Rate limiting ir Precognition.** Ribojant visą `POST /uzklausos`, daugiažingsnė forma „užstrigtų" po kelių žingsnių.
+- **Kelios ribos su tuo pačiu `by` raktu** dalijasi skaitliuku – minutės riba suvalgo paros ribą.
+- **Privatūs failai `public` diske** – URL atspėjamas. Jautrius failus – į `local` ir per controller'į su Policy.
+- **Pasirašytas URL ir kitas domenas.** Parašas apima ir host'ą: nuoroda, sugeneruota su `APP_URL=http://localhost:8000`,
+  neveiks per `127.0.0.1:8106`. Tinker'yje – `URL::forceRootUrl(...)`; jei reikia nepriklausyti nuo domeno –
+  `->middleware('signed:relative')` + `URL::signedRoute(..., absolute: false)`.
+- **Pest pagalbinės funkcijos vardas** sutapo su Laravel helper'iu `report()` – „Cannot redeclare". Testų failuose
+  funkcijoms duok konkrečius vardus.
+- **`$this->travel(1)->days()->...`** – ne grandinė: `days()` grąžina ne `Wormhole`, todėl kiekvienam žingsniui – atskiras `travel()`.
+- **Filament veiksmas, kurio `visible()` jau false**, teste tiesiog neįvykdomas – lenktynes (kitas administratorius
+  užbaigė skundą) tikrink Action lygiu (`ComplaintAlreadyHandledException`).
+- **`vp check --fix` formatuoja ir Markdown** – po `docs/*.md` pakeitimų paleisk jį prieš commit'ą, kitaip CI `npm run check`
+  nepraeis.
+- **Larastan ir ryšio closure'ai** `with(['x' => fn (MorphTo $m) => …])` – tipas turi būti `Relation`, o `MorphTo` tikrinti
+  `instanceof` viduje.
+
+---
+
+## Etapas 7 – Kreditai, prenumeratos, mokėjimai
+
+> Sąmoningai nepadaryta: automatinis kortelės nuskaitymas (Paysera mūsų sąrankoje to nedaro – pratęsimas =
+> priminimas su nuoroda apmokėti), pinigų grąžinimo veiksmas ir kreditinės sąskaitos, planų privalumų
+> įgyvendinimas (`max_categories`), Stripe tiekėjas (sąsaja paruošta).
+
+### Ką darėm ir kodėl
+
+- **Schema pirma** (`DB_SCHEMA.md`): `payments.subscription_id` (kurios prenumeratos laikotarpis apmokamas),
+  `payments.billing_details` (sąskaitos rekvizitų snapshot'as), `subscriptions.credits_granted_until` (kreditų
+  suteikimo idempotencija), nauja lentelė `invoice_sequences`. Trys naujos migracijos, senos nekeistos.
+  Seed'ai papildyti: prenumeratų mokėjimai susieti su prenumerata, kreditai pažymėti suteiktais.
+- **Mokėjimų tiekėjai už sąsajos**: `App\Services\Payments\PaymentGateway` (interface) ir du įgyvendinimai –
+  `PayseraGateway` ir `FakeGateway`. Kurį naudoti, sprendžia `PaymentGatewayManager` pagal `config('payments.default')`.
+  Bindings – atskirame `PaymentServiceProvider` (`bootstrap/providers.php`).
+- **Pirkimo eiga**: „Pirkti" → `PurchaseCreditPackage` / `PurchaseSubscriptionPlan` sukuria **laukiantį** mokėjimą →
+  `Inertia::location()` nukreipia į tiekėją → tiekėjo serveris kviečia **callback'ą** → `ProcessPaymentResult`
+  (idempotentiškai) → `CompletePayment`: kreditai per `CreditLedger`, prenumerata, sąskaitos numeris, snapshot'as →
+  po transakcijos `PaymentSucceeded`. Pirkėjas grįžta į `/mokejimai/{uuid}` – puslapis laukia patvirtinimo (`usePoll`).
+- **Prenumeratos**: `ActivateSubscription`, `RenewSubscription`, `CancelSubscription`, `CreateRenewalPayment`,
+  `EndSubscriptionPeriod`, `GrantSubscriptionCredits`; būsenų perėjimai – `SubscriptionStatus::allowedTransitions()`,
+  lentelė – `DB_SCHEMA.md` → subscriptions.
+- **Sąskaitos**: `InvoiceNumberGenerator` (užrakinamas metų skaitiklis), `BillingDetails` (snapshot),
+  `InvoicePdf` + `resources/views/invoices/invoice.blade.php` (dompdf, DejaVu Sans). PVM – konfigūruojamas
+  (`INVOICE_VAT_PAYER`, `INVOICE_VAT_RATE`): kainos DB laikomos galutinėmis, PVM išskiriamas iš jų.
+- **Pranešimai**: `PaymentSucceeded`, `SubscriptionExpiring` (ir „nesumokėta" variantas), `LowCredits` – nauja
+  nustatymų grupė `billing`. `LowCredits` siunčia `CreditTransactionObserver`, todėl pasiūlymų kodo keisti nereikėjo.
+- **Puslapiai**: `/kainos`, `/teikejas/kreditai`, `/teikejas/mokejimai`, `/mokejimai/{uuid}`, testinio tiekėjo puslapis;
+  „Nepakanka kreditų" dabar veda pirkti; meniu – „Kreditai" ir „Mokėjimai".
+- **Filament** („Finansai"): mokėjimai (filtrai, paieška, PDF, pajamų suvestinė), kreditų operacijos (tik skaityti +
+  „Koreguoti kreditus"), prenumeratos (atšaukti).
+
+### Kaip išbandyti lokaliai
+
+1. `.env` – `PAYMENT_GATEWAY=fake` (numatyta). `php artisan migrate`, `npm run build`, `composer run dev`.
+2. Prisijunkite `teikejas1@example.test` / `password` → „Kreditai" → „Pirkti". Atsidarys **testinis tiekėjas**:
+   „Apmokėti" / „Mokėjimas nepavyko" / „Atšaukti". Po apmokėjimo – kreditai, sąskaita PDF „Mokėjimai" skiltyje.
+3. Prenumerata: `/kainos` → „Prenumeruoti". Laiko „sukimui" – `php artisan subscriptions:renew` ir
+   `php artisan subscriptions:grant-credits` (arba `php artisan schedule:work`).
+4. **Paysera testinis režimas**: Paysera savitarnoje sukurkite projektą, `.env` – `PAYMENT_GATEWAY=paysera`,
+   `PAYSERA_PROJECT_ID`, `PAYSERA_SIGN_PASSWORD`, `PAYSERA_TEST=true`. Paysera serveris `localhost` nepasiekia, todėl
+   callback'ui reikia tunelio (`ngrok http 8000`) ir `PAYSERA_CALLBACK_URL=https://….ngrok.app/mokejimai/callback/paysera`.
+   Viešąjį raktą parsiųskite `php artisan payments:paysera-key`.
+
+**Produkcijoje:** `PAYMENT_GATEWAY=paysera`, `PAYSERA_TEST=false`, `php artisan payments:paysera-key` diegiant,
+cron su `php artisan schedule:run` kas minutę, eilės darbuotojas (laiškai). Testinis tiekėjas produkcijoje uždraustas
+dviem saugikliais (`PaymentGatewayManager` ir 404 maršrute).
+
+---
+
+### Išmoktos sąvokos
+
+#### 1. Service container ir sąsaja (interface)
+
+Sąsaja – „sutartis": kokius metodus klasė privalo turėti, bet ne kaip juos įgyvendinti.
+
+```php
+interface PaymentGateway
+{
+    public function type(): GatewayType;                          // kas įrašoma į payments.gateway
+    public function startPayment(Payment $payment): string;       // kur nukreipti pirkėją
+    public function handleCallback(Request $request): PaymentResult; // patikrinti parašą → mūsų DTO
+    public function acknowledge(PaymentResult $result): Response; // Paysera laukia „OK"
+}
+```
+
+Controller'is ir Actions žino tik `PaymentGateway`, todėl Stripe pridėti = nauja klasė + vienas metodas manager'yje.
+**Service container** – Laravel „objektų dėžė": paprašius tipo konstruktoriuje, jis pats sukuria objektą. Ko pats
+neatspėja (sąsajai – kuri klasė? Paysera klasei – kokie nustatymai?), nurodom service provider'yje:
+
+```php
+$this->app->singleton(PaymentGatewayManager::class);
+$this->app->bind(PaymentGateway::class, fn ($app) => $app->make(PaymentGatewayManager::class)->gateway());
+```
+
+`bind` – kaskart naujas objektas, `singleton` – vienas visai užklausai. WordPress analogas – WooCommerce
+`WC_Payment_Gateway`, kurią paveldi kiekvienas mokėjimo įskiepis, o WooCommerce kviečia jos `process_payment()`.
+→ https://laravel.com/docs/13.x/container · https://laravel.com/docs/13.x/providers
+
+#### 2. Manager šablonas (drivers)
+
+`PaymentGatewayManager extends Illuminate\Support\Manager` – tas pats šablonas kaip `Cache::store('redis')`,
+`Mail::mailer('ses')`: `create{Vardas}Driver()` metodas kiekvienam tiekėjui, `getDefaultDriver()` – iš config.
+Svarbu: nauji mokėjimai eina per numatytąjį tiekėją, o callback'as ir „Apmokėti dar kartą" – per tą, kuris įrašytas
+mokėjime (`payments.gateway`). Pakeitus numatytąjį, seni laukiantys mokėjimai nesulūžta.
+
+#### 3. Paysera be SDK: kodavimas ir parašai
+
+- **Užklausa**: `data = base64url(http_build_query(parametrai))`, `sign = md5(data + slaptažodis)`, nukreipiam į
+  `https://bank.paysera.com/pay/?data=…&sign=…`. `amount` – centais (kaip mūsų DB), `orderid` – `payments.uuid`.
+- **Callback'as**: tas pats `data` + `ss1` ir `ss2`.
+    - `ss1 = md5(data + slaptažodis)` – patikimas tol, kol slaptažodis slaptas;
+    - `ss2` – RSA (SHA1) parašas Paysera **privačiu** raktu; tikrinam jų **viešuoju** raktu (`openssl_verify`).
+      Net nutekėjus mūsų slaptažodžiui, ss2 suklastoti neįmanoma – todėl jis numatytasis.
+- Viešasis raktas: failas (`payments:paysera-key` jį parsiunčia diegiant) → cache parai → parsiuntimas. Nepavykus –
+  callback'as **atmetamas** („fail closed"), o ne priimamas be patikros.
+- Po parašo dar tikrinam: projekto numerį, ar testinis mokėjimas neatėjo į produkciją, sumą ir valiutą.
+- Lyginimui – `hash_equals()`, ne `===`: laikas nepriklauso nuo sutapusių simbolių skaičiaus („timing" ataka).
+- Kodėl be oficialaus `libwebtopay`: sąsaja paprasta (~100 eilučių), o taip matyti, kas vyksta „po gaubtu".
+  → https://developers.paysera.com/en/checkout/basic · https://www.php.net/manual/en/function.openssl-verify.php
+
+#### 4. Callback'ai ir webhook'ai
+
+Callback'ą (webhook'ą) kviečia **tiekėjo serveris**, ne vartotojo naršyklė. Todėl:
+
+- maršrutas be `auth` ir be CSRF – `bootstrap/app.php`: `$middleware->preventRequestForgery(except: ['mokejimai/callback/*'])`
+  (Laravel 13 pavadinimas; senesnis `validateCsrfTokens` – pasenęs). Vienintelė apsauga – parašas;
+- **accepturl ≠ apmokėjimas**: pirkėjas gali grįžti ir neapmokėjęs, o URL'ą galima suklastoti. Kreditus užskaito tik
+  patikrintas callback'as; grįžimo puslapis rodo „Laukiame patvirtinimo" ir kas 3 s atsinaujina (`usePoll`);
+- atsakymas „OK" – kitaip Paysera kartoja. Klaidos atveju – 400 ir įrašas log'e.
+  → https://laravel.com/docs/13.x/csrf#csrf-excluding-uris
+
+#### 5. Idempotencija – „galima kartoti saugiai"
+
+Tas pats callback'as gali ateiti 2, 5, 10 kartų. `ProcessPaymentResult`:
+
+```php
+DB::transaction(function () use ($result) {
+    $payment = Payment::where('uuid', $result->paymentUuid)->lockForUpdate()->first();
+    if ($payment->status === PaymentStatus::Paid) {
+        return; // jau apdorota – nieko nedarom, bet atsakom „OK"
+    }
+    // … paid, kreditai, sąskaitos numeris – viskas toje pačioje transakcijoje
+});
+```
+
+Trys sluoksniai: (1) užrakinta eilutė – du lygiagretūs callback'ai vyksta po vieną; (2) būsenos patikra;
+(3) DB saugikliai – `UNIQUE(gateway, gateway_reference)` ir ledger'is su `source = payment`.
+Tas pats principas – `GrantSubscriptionCredits` (žr. 8) ir `CreateRenewalPayment` (antro laukiančio mokėjimo nekuria).
+
+#### 6. Ledger'is pakartotinai – nekuriant naujo
+
+Etapo 5 `CreditLedger` (`credit`, `debit`) naudojamas visur: pirkimas (`purchase`, šaltinis – mokėjimas), prenumerata
+(`subscription`, šaltinis – prenumerata), administratoriaus koregavimas (`admin_adjustment`, šaltinis – administratorius,
+neigiamas – per `debit`, todėl balansas negali tapti < 0). `CreditLedger::credit()` turi savo `DB::transaction()`;
+iškvietus kitos transakcijos viduje, tai tampa **savepoint'u** – viskas vis tiek įvyksta kartu arba neįvyksta.
+
+**Užraktų tvarka** visur ta pati: mokėjimas → teikėjas → prenumerata → sąskaitų skaitiklis. Jei viena operacija
+rakintų A → B, o kita B → A, MySQL'e gautume deadlock (Etapo 5 6 sąvoka).
+
+#### 7. Prenumeratos be Cashier: dizainas ir alternatyvos
+
+- Viena eilutė = viena prenumerata, daug laikotarpių; `ends_at` – iki kada apmokėta.
+- **Pratęsimas**: kasdien `subscriptions:renew` likus 7 d. sukuria pratęsimo mokėjimą ir išsiunčia nuorodą
+  (`SubscriptionExpiring`). Apmokėjus – `ends_at` + 1 laikotarpis. Neapmokėjus – `past_due` 3 d. malonės laikotarpiui,
+  tada `expired`. Laikotarpis skaičiuojamas nuo senos pabaigos (vėlavimas „nedovanojamas"), kaip Stripe.
+- **Atšaukimas** – `auto_renew = false`, galioja iki `ends_at` (už laikotarpį sumokėta).
+- **Plano keitimas** paprastas: naujas planas prasideda pasibaigus dabartiniam, dabartinė nebepratęsiama.
+  Vienu metu galioja tik viena prenumerata (užrakinta teikėjo eilutė). Proporcingas perskaičiavimas („proration")
+  būtų sudėtingesnis ir reikalautų dalinių grąžinimų.
+- **Alternatyvos**: _Laravel Cashier_ (Stripe/Paddle) – prenumeratas, korteles, sąskaitas ir webhook'us tvarko pats,
+  turi savo lenteles; Lietuvoje populiarios Paysera jis nepalaiko. _Stripe Billing be Cashier_ – kortelę nuskaito Stripe,
+  mes tik gautume `invoice.paid` webhook'ą ir prailgintume `ends_at` (tas pats `RenewSubscription`). _Paysera
+  pasikartojantys mokėjimai_ – reikia atskiros sutarties ir kitos API. Mūsų sprendimas veikia su bet kuriuo tiekėju,
+  nes pratęsimas – tiesiog dar vienas mokėjimas.
+  → https://laravel.com/docs/13.x/billing
+
+#### 8. Scheduler ir idempotentiški kreditai „kas laikotarpį"
+
+```php
+Schedule::command('subscriptions:renew')->dailyAt('08:00')->timezone('Europe/Vilnius')->withoutOverlapping()->onOneServer();
+Schedule::command('subscriptions:grant-credits')->hourly()->withoutOverlapping()->onOneServer();
+```
+
+Kodėl kreditai ne iškart apmokėjus: pratęsimą galima apmokėti iš anksto, o pakeistas planas prasideda vėliau.
+Kreditai suteikiami laikotarpiui **prasidėjus**. `credits_granted_until` – iki kada jau suteikta:
+
+```php
+$start = $sub->credits_granted_until ?? $sub->starts_at;
+if ($start < $sub->ends_at && $start <= now()) {         // prasidėjęs ir apmokėtas
+    $ledger->credit(...);                                  // + kreditai
+    $sub->credits_granted_until = $period->addTo($start); // toje pačioje transakcijoje
+}
+```
+
+Kartojant (Scheduler kas valandą, rankinis paleidimas) laikotarpis antrą kartą kreditų negauna – be atskiros lentelės.
+Ciklas suteikia ir praleistus laikotarpius, jei Scheduler kurį laiką neveikė. WordPress `wp_cron` priklauso nuo
+lankytojų, o Laravel Scheduler – nuo vieno serverio cron įrašo. → https://laravel.com/docs/13.x/scheduling
+
+#### 9. Sąskaitų numeracija ir „snapshot'as"
+
+- Ištisinė numeracija be tarpų metų viduje: `invoice_sequences` eilutė užrakinama (`lockForUpdate`), numeris
+  išduodamas **toje pačioje** transakcijoje, kurioje mokėjimas tampa `paid`. Atšaukus transakciją, atšaukiamas ir
+  skaitiklis. `MAX(invoice_number) + 1` netinka – du lygiagretūs apmokėjimai gautų tą patį numerį.
+- Pirmą kartą metuose skaitiklis pradedamas nuo didžiausio jau esančio numerio (seed'ai naudoja mokėjimo ID).
+  `insertOrIgnore` – jei kita transakcija ką tik įterpė tą pačią eilutę, klaidos nėra.
+- Metai – pagal **Lietuvos** laiką (gruodžio 31 d. 23:30 UTC jau sausio 1-oji).
+- **Snapshot'as** (`billing_details`): išrašytos sąskaitos keisti negalima, todėl rekvizitai įrašomi apmokėjimo metu,
+  o ne imami iš profilio kaskart generuojant PDF.
+
+#### 10. PDF: Blade + dompdf
+
+```php
+Pdf::loadView('invoices.invoice', $data)->setPaper('a4')->download('SF-2026-000123.pdf');
+```
+
+Dompdf HTML ir CSS paverčia PDF be naršyklės. Supranta tik dalį CSS (be flex/grid – išdėstymas lentelėmis).
+Lietuviškoms raidėms – Unicode šriftas DejaVu Sans (platinamas su dompdf). Alternatyvos: Browsershot (Chrome –
+modernus CSS, bet serveryje reikia Node ir Chromium), Snappy (wkhtmltopdf – nebeprižiūrimas).
+→ https://github.com/barryvdh/laravel-dompdf
+
+#### 11. Observer po COMMIT (`LowCredits`)
+
+```php
+#[ObservedBy([CreditTransactionObserver::class])]
+class CreditTransaction extends Model { … }
+
+class CreditTransactionObserver implements ShouldHandleEventsAfterCommit
+{
+    public function created(CreditTransaction $t): void { /* balansas perėjo ribą → LowCredits */ }
+}
+```
+
+Observer reaguoja į modelio įvykius (kaip WordPress `save_post`), todėl `SendOffer` neliestas. `ShouldHandleEventsAfterCommit`
+– vykdoma tik transakcijai pavykus. Pranešimas – tik **perėjus** ribą (3 → 2), ne po kiekvieno pasiūlymo.
+→ https://laravel.com/docs/13.x/eloquent#observers-and-database-transactions
+
+#### 12. Inertia: išorinis nukreipimas ir polling
+
+- `Inertia::location($url)` – Inertia užklausai grąžina 409 + `X-Inertia-Location`, ir naršyklė atidaro Paysera visu
+  langu (paprastas redirect'as būtų bandomas įkelti kaip Inertia puslapis). → https://inertiajs.com/redirects
+- `usePoll(3000, { only: ['payment'] }, { autoStart })` – kas 3 s perkrauna tik vieną prop'ą; sustabdom, kai būsena
+  pasikeičia arba po 2 min. → https://inertiajs.com/polling
+
+#### 13. Filament: veiksmas su forma, widget'as, filtrai
+
+- „Koreguoti kreditus" – `Action::make()->schema([Select, TextInput, Textarea])->requiresConfirmation()->action(...)`;
+  teikėjų tūkstančiai, todėl `Select::getSearchResultsUsing()` ieško serveryje.
+- `Filter::make('created_at')->schema([DatePicker…])->query(...)` – datų intervalas.
+- `StatsOverviewWidget` – pajamų suvestinė (`getHeaderWidgets()` sąrašo puslapyje). Widget'ai krauna „tingiai" (lazy).
+- Policies be `create`/`update`/`delete` metodų → Filament tų mygtukų ir puslapių nerodo.
+- Lietuviški pavadinimai: Filament „Title Case" (`Kreditų Operacijos`) – perrašom `getTitleCasePluralModelLabel()`.
+
+#### 14. Testai be tinklo
+
+- `Http::preventStrayRequests()` + `Http::fake([...])` – jokių tikrų užklausų į paysera.com.
+- Paysera ss2 – testuose sugeneruojam RSA porą (`openssl_pkey_new`), pasirašom privačiu raktu, viešąjį įrašom į laikiną
+  failą (`tests/Support/PayseraKeys`).
+- `$this->travelTo('2026-04-11 08:00')` + `$this->artisan('subscriptions:renew')` – prenumeratos ciklas per kelias
+  „dienas" vienu testu.
+- Idempotencija: tas pats callback'as POST + POST + GET → vienas ledger įrašas, vienas pranešimas.
+- `app()->detectEnvironment(fn () => 'production')` – patikrina, kad testinio tiekėjo produkcijoje nėra.
+- Filament – `Livewire::test(ListCreditTransactions::class)->callAction('adjustCredits', [...])`.
+
+### Naudingos komandos
+
+| Komanda                                             | Ką daro                                                      |
+| --------------------------------------------------- | ------------------------------------------------------------ |
+| `php artisan subscriptions:renew`                   | pasibaigusios → past_due / expired, pratęsimo mokėjimai      |
+| `php artisan subscriptions:grant-credits`           | kreditai už prasidėjusius apmokėtus laikotarpius             |
+| `php artisan payments:paysera-key`                  | parsiunčia Paysera viešąjį raktą (ss2)                       |
+| `php artisan schedule:list` / `schedule:work`       | suplanuotos užduotys / vykdyti dev'e                         |
+| `php artisan route:list --path=mokejimai`           | mokėjimų maršrutai                                           |
+| `php artisan make:filament-resource Payment --view` | Filament resource su peržiūra                                |
+| `composer require barryvdh/laravel-dompdf`          | PDF paketas (cloud konteineryje – `--prefer-install=source`) |
+
+### Dažnos klaidos
+
+- **Kreditai užskaitomi accepturl'e** (kai pirkėjas grįžta) – URL'ą galima atidaryti ir neapmokėjus. Tik callback'as.
+- **Callback'as be idempotencijos** – antras „status=1" padvigubina kreditus. Užraktas + būsenos patikra.
+- **Callback'as su CSRF** – Paysera gauna 419 ir kartoja be galo. Išimtis `preventRequestForgery(except: …)`.
+- **Testinis Paysera mokėjimas produkcijoje** – `test=1` callback'as turi būti atmestas, kai `PAYSERA_TEST=false`.
+- **Netikras tiekėjas produkcijoje** = nemokami kreditai. Du saugikliai: manager'is ir 404 maršrute.
+- **`MAX() + 1` sąskaitos numeriui** – lygiagrečiai gaunami vienodi numeriai; ir sąskaitos numeris už transakcijos ribų
+  palieka tarpus numeracijoje.
+- **`isPast()` lyginant su „dabar"** – tą pačią sekundę sukurta prenumerata (`starts_at == now`) nėra „praeityje";
+  naudok `! isFuture()`.
+- **Ryšys į soft-deleted vartotoją** grąžina `null` – finansiniams įrašams `belongsTo(User::class)->withTrashed()`.
+- **Pinigų formatas be centų** – `Intl.NumberFormat` su `minimumFractionDigits: 0` rodo „9,9 €"; mūsų puslapiai
+  naudoja `formatPrice()` (`lib/format.ts`). Pastaba: Etapo 5 `formatMoney()` (`lib/marketplace.ts`) turi tą pačią
+  problemą (pvz. „320,5 €") – verta pataisyti sujungus.
+- **`withHeader('X-Inertia', 'true')` testuose išlieka** kitoms tos pačios testo užklausoms – `flushHeaders()`.
