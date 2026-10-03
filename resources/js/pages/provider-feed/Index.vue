@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Coins, MapPin, MessageSquareText } from '@lucide/vue';
+import { Camera, Coins, MapPin, MessageSquareText } from '@lucide/vue';
 import { reactive, watch } from 'vue';
 import PaginationLinks from '@/components/marketplace/PaginationLinks.vue';
 import { Label } from '@/components/ui/label';
@@ -217,6 +217,14 @@ const selectClass =
                             <span class="inline-flex items-center gap-1">
                                 <Coins class="size-3.5" />
                                 {{ request.category?.offer_cost_credits }} kred.
+                            </span>
+                            <!-- Etapas 6: užklausa su nuotraukomis -->
+                            <span
+                                v-if="request.photos_count"
+                                class="inline-flex items-center gap-1"
+                            >
+                                <Camera class="size-3.5" />
+                                {{ request.photos_count }} nuotr.
                             </span>
                         </div>
                     </Link>

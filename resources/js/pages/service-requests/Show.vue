@@ -4,6 +4,7 @@ import { BadgeCheck, Mail, Phone, Star } from '@lucide/vue';
 import { ref } from 'vue';
 import CancelRequestDialog from '@/components/marketplace/CancelRequestDialog.vue';
 import RequestDetails from '@/components/marketplace/RequestDetails.vue';
+import RequestPhotosManager from '@/components/marketplace/RequestPhotosManager.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
 import MessageButton from '@/components/messages/MessageButton.vue';
 import ReviewCard from '@/components/reviews/ReviewCard.vue';
@@ -33,8 +34,14 @@ const props = defineProps<{
         phone: string | null;
         email: string;
     } | null;
-    can: { cancel: boolean; complete: boolean; review: boolean };
+    can: {
+        cancel: boolean;
+        complete: boolean;
+        review: boolean;
+        updatePhotos: boolean;
+    };
     review: AccountReview | null;
+    maxPhotos: number;
 }>();
 
 defineOptions({
@@ -105,7 +112,16 @@ function markCompleted(): void {
             {{ serviceRequest.cancellation_reason }}
         </div>
 
-        <RequestDetails :service-request="serviceRequest" />
+        <RequestDetails :service-request="serviceRequest">
+            <!-- Etapas 6: klientas gali pridėti / pašalinti nuotraukas, kol užklausa laukia -->
+            <template v-if="can.updatePhotos" #photos>
+                <RequestPhotosManager
+                    :slug="serviceRequest.slug"
+                    :photos="serviceRequest.photos"
+                    :max="maxPhotos"
+                />
+            </template>
+        </RequestDetails>
 
         <section
             v-if="acceptedContact"

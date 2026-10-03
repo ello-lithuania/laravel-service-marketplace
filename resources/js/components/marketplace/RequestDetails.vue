@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { CalendarClock, Coins, Lock, MapPin } from '@lucide/vue';
+import PhotoGallery from '@/components/marketplace/PhotoGallery.vue';
 import { formatBudget, formatDate } from '@/lib/marketplace';
 import type { ServiceRequestDetail } from '@/types';
 
@@ -69,5 +70,13 @@ defineProps<{
                 </div>
             </div>
         </dl>
+
+        <!-- Etapas 6: nuotraukos. Slot'u klientas gali įdėti valdymą (pridėti / pašalinti) -->
+        <slot name="photos">
+            <div v-if="serviceRequest.photos?.length" class="space-y-2">
+                <p class="text-sm text-muted-foreground">Nuotraukos</p>
+                <PhotoGallery :photos="serviceRequest.photos" />
+            </div>
+        </slot>
     </section>
 </template>

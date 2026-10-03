@@ -5,6 +5,7 @@ import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import CategoryPicker from '@/components/marketplace/CategoryPicker.vue';
 import FormTextarea from '@/components/marketplace/FormTextarea.vue';
+import PhotoPicker from '@/components/marketplace/PhotoPicker.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +22,7 @@ const props = defineProps<{
     cities: City[];
     startPreferences: Choice[];
     defaults: { category_id: number | null; city_id: number | null };
+    maxPhotos: number;
 }>();
 
 defineOptions({
@@ -48,6 +50,8 @@ const form = useForm(store(), {
     start_date: '',
     budget_min: '',
     budget_max: '',
+    // Etapas 6: nuotraukos (neprivalomos). Precognition žingsnių tikrinimas failų nesiunčia – jie tikrinami išsiunčiant
+    photos: [] as File[],
 }).setValidationTimeout(300);
 
 type Field = keyof ReturnType<typeof form.data>;
@@ -59,7 +63,10 @@ const steps: { title: string; fields: Field[] }[] = [
         title: 'Vieta ir laikas',
         fields: ['city_id', 'address', 'start_preference', 'start_date'],
     },
-    { title: 'Biudžetas ir peržiūra', fields: ['budget_min', 'budget_max'] },
+    {
+        title: 'Biudžetas ir peržiūra',
+        fields: ['budget_min', 'budget_max', 'photos'],
+    },
 ];
 
 const step = ref(0);
@@ -128,6 +135,15 @@ function budgetText(): string {
     return max ? `iki ${formatMoney(max * 100)}` : 'Nenurodytas';
 }
 
+// Etapas 6: klaida apie konkrečią nuotrauką („photos.1") arba visą sąrašą („photos")
+const photosError = computed(
+    () =>
+        form.errors.photos ??
+        Object.entries(form.errors).find(([key]) =>
+            key.startsWith('photos.'),
+        )?.[1],
+);
+
 function next(): void {
     form.validate({
         only: steps[step.value].fields,
@@ -145,8 +161,13 @@ function submit(): void {
     form.submit({
         // Jei serveris rado klaidų ankstesniame žingsnyje (pvz. kategorija išjungta) – grįžtam į jį
         onError: (errors) => {
+            // Failų klaidos ateina kaip „photos.0" – priskiriam laukui „photos"
             const failed = steps.findIndex((s) =>
-                s.fields.some((field) => field in errors),
+                s.fields.some((field) =>
+                    Object.keys(errors).some(
+                        (key) => key === field || key.startsWith(`${field}.`),
+                    ),
+                ),
             );
 
             if (failed !== -1) {
@@ -352,6 +373,16 @@ function submit(): void {
                 <p class="-mt-3 text-xs text-muted-foreground">
                     Neprivaloma, bet su biudžetu pasiūlymai būna tikslesni.
                 </p>
+
+                <!-- Etapas 6: nuotraukos -->
+                <div class="grid gap-2">
+                    <Label>Nuotraukos (neprivaloma)</Label>
+                    <PhotoPicker
+                        v-model="form.photos"
+                        :max="maxPhotos"
+                        :error="photosError"
+                    />
+                </div>
 
                 <dl class="divide-y rounded-lg border bg-muted/30 text-sm">
                     <div

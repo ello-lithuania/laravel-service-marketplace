@@ -21,12 +21,16 @@ return [
         'start_preference' => 'pradžia',
         'start_date' => 'pradžios data',
         'reason' => 'priežastis',
+        'photos' => 'nuotraukos',
     ],
 
     'validation' => [
         'category_leaf' => 'Pasirinkite konkrečią paslaugą (trečio lygio kategoriją).',
         'budget_max_gte' => 'Biudžetas „iki" negali būti mažesnis už biudžetą „nuo".',
         'start_date_required' => 'Nurodykite datą, kada norite pradėti.',
+        // Etapas 6
+        'photos_max' => 'Užklausoje gali būti daugiausia :max nuotraukų.',
+        'photos_required' => 'Pasirinkite bent vieną nuotrauką.',
     ],
 
     'flash' => [
@@ -34,6 +38,9 @@ return [
         'pending' => 'Užklausa gauta. Ją peržiūrės administratorius ir paskelbs per kelias valandas.',
         'cancelled' => 'Užklausa atšaukta.',
         'completed' => 'Puiku! Užklausa pažymėta kaip atlikta.',
+        // Etapas 6
+        'photos_added' => 'Nuotraukos pridėtos.',
+        'photo_deleted' => 'Nuotrauka pašalinta.',
     ],
 
     'cancel' => [

@@ -53,6 +53,8 @@ class ProviderFeedController extends Controller
             ->when($filters['miestas'], fn (Builder $query, int $id) => $query->where('service_requests.city_id', $id))
             ->when($filters['laikotarpis'], fn (Builder $query, int $days) => $query->where('service_requests.published_at', '>=', now()->subDays($days)))
             ->with(['category:id,name,offer_cost_credits', 'city:id,name'])
+            // Etapas 6: nuotraukų skaičius sąraše – COUNT subužklausa toje pačioje SQL užklausoje (ne N+1)
+            ->withCount(['media as photos_count' => fn (Builder $query) => $query->where('collection_name', 'photos')])
             ->latest('published_at')
             ->paginate(20)
             ->withQueryString();

@@ -6,6 +6,7 @@ use App\Enums\ServiceRequestStatus;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Services\Moderation\AutoModerator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 
 /**
@@ -19,18 +20,23 @@ class CreateServiceRequest
     public function __construct(
         private readonly AutoModerator $moderator,
         private readonly PublishServiceRequest $publish,
+        private readonly AddServiceRequestPhotos $addPhotos,
     ) {}
 
     /**
      * @param  array{category_id: int, city_id: int, title: string, description: string, address: ?string,
      *     budget_min_cents: ?int, budget_max_cents: ?int, start_preference: string, start_date: ?string}  $attributes
+     * @param  list<UploadedFile>  $photos  Etapas 6: nuotraukos iš formos (neprivalomos)
      */
-    public function handle(User $client, array $attributes): ServiceRequest
+    public function handle(User $client, array $attributes, array $photos = []): ServiceRequest
     {
         $serviceRequest = new ServiceRequest([...$attributes, 'slug' => $this->uniqueSlug($attributes['title'])]);
         $serviceRequest->client()->associate($client);
         // status nėra Fillable – jį keičia tik būsenų perėjimai
         $serviceRequest->forceFill(['status' => ServiceRequestStatus::Pending])->save();
+
+        // Nuotraukos – prieš paskelbiant, kad teikėjai, gavę pranešimą, jas jau matytų
+        $this->addPhotos->handle($serviceRequest, $photos);
 
         if ($this->moderator->issues($serviceRequest, $client) === []) {
             $this->publish->handle($serviceRequest);

@@ -7,6 +7,7 @@ use App\Http\Controllers\Offers\OfferController;
 use App\Http\Controllers\Offers\OfferTransitionController;
 use App\Http\Controllers\ServiceRequests\ProviderFeedController;
 use App\Http\Controllers\ServiceRequests\ServiceRequestController;
+use App\Http\Controllers\ServiceRequests\ServiceRequestPhotoController;
 use App\Http\Controllers\ServiceRequests\ServiceRequestTransitionController;
 use App\Http\Controllers\Settings\NotificationSettingsController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
@@ -34,6 +35,13 @@ Route::middleware('auth')->group(function () {
             ->name('service-requests.complete');
         Route::post('pasiulymai/{offer}/priimti', [OfferTransitionController::class, 'accept'])->name('offers.accept');
         Route::post('pasiulymai/{offer}/atmesti', [OfferTransitionController::class, 'decline'])->name('offers.decline');
+
+        // --- Etapas 6: užklausos nuotraukos (kol pending / open – ServiceRequestPolicy::updatePhotos) ---
+        Route::post('uzklausos/{serviceRequest:slug}/nuotraukos', [ServiceRequestPhotoController::class, 'store'])
+            ->name('service-requests.photos.store');
+        Route::delete('uzklausos/{serviceRequest:slug}/nuotraukos/{media}', [ServiceRequestPhotoController::class, 'destroy'])
+            ->scopeBindings()
+            ->name('service-requests.photos.destroy');
     });
 
     // Atšaukti gali klientas arba administratorius – sprendžia ServiceRequestPolicy::cancel

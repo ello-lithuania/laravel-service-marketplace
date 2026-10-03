@@ -60,6 +60,8 @@ class ServiceRequestController extends Controller
                     ->value('id'),
                 'city_id' => City::query()->where('slug', $this->querySlug($request, 'miestas'))->value('id') ?? $user->city_id,
             ],
+            // Etapas 6: nuotraukos paskutiniame žingsnyje
+            'maxPhotos' => ServiceRequest::MAX_PHOTOS,
         ]);
     }
 
@@ -68,7 +70,7 @@ class ServiceRequestController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $serviceRequest = $create->handle($user, $request->toServiceRequestAttributes());
+        $serviceRequest = $create->handle($user, $request->toServiceRequestAttributes(), $request->photos());
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -104,7 +106,8 @@ class ServiceRequestController extends Controller
 
         /** @var User $user */
         $user = $request->user();
-        $serviceRequest->load(['category:id,name,offer_cost_credits', 'city:id,name']);
+        // Etapas 6: media – užklausos nuotraukos (viena užklausa visoms)
+        $serviceRequest->load(['category:id,name,offer_cost_credits', 'city:id,name', 'media']);
 
         return $serviceRequest->client_id === $user->id || $user->isAdmin()
             ? $this->clientView($user, $serviceRequest)
@@ -144,7 +147,9 @@ class ServiceRequestController extends Controller
                 'complete' => $user->can('complete', $serviceRequest),
                 // --- Etapas 6 ---
                 'review' => $user->can('createVerified', [Review::class, $serviceRequest]),
+                'updatePhotos' => $user->can('updatePhotos', $serviceRequest),
             ],
+            'maxPhotos' => ServiceRequest::MAX_PHOTOS,
             // --- Etapas 6: kliento atsiliepimas apie šį darbą (jei jau paliktas) ---
             'review' => $this->clientReview($serviceRequest),
         ]);

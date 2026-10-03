@@ -80,4 +80,14 @@ class ServiceRequestPolicy
     {
         return $user->isAdmin() && $serviceRequest->status === ServiceRequestStatus::Pending;
     }
+
+    // --- Etapas 6 ---
+
+    /**
+     * Pridėti ar pašalinti nuotraukas – savininkas, kol užklausa laukia patvirtinimo ar pasiūlymų.
+     */
+    public function updatePhotos(User $user, ServiceRequest $serviceRequest): bool
+    {
+        return $serviceRequest->client_id === $user->id && $serviceRequest->acceptsPhotoChanges();
+    }
 }
