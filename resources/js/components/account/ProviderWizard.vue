@@ -4,6 +4,7 @@ import { Check } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { cn } from '@/lib/utils';
+import { index as portfolioIndex } from '@/routes/portfolio';
 import { edit as editImages } from '@/routes/provider/images';
 import type { WizardStep } from '@/types';
 
@@ -85,6 +86,11 @@ const hasProfile = computed(() => props.steps.every((step) => step.available));
                     :href="editImages()"
                     class="underline-offset-4 hover:underline"
                     >Logotipas ir viršelis</Link
+                >
+                <Link
+                    :href="portfolioIndex()"
+                    class="underline-offset-4 hover:underline"
+                    >Atlikti darbai</Link
                 >
             </div>
         </nav>

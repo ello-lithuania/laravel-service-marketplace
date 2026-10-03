@@ -81,7 +81,8 @@ test('be profilio kiti žingsniai nukreipia į duomenis', function (string $rout
         ->get(route($route))
         ->assertRedirect(route('provider.details.edit'));
 })->with([
-    'provider.categories.edit', 'provider.areas.edit', 'provider.prices.edit', 'provider.images.edit',
+    'provider.categories.edit', 'provider.areas.edit', 'provider.prices.edit',
+    'provider.images.edit', 'portfolio.index', 'portfolio.create',
 ]);
 
 // --- 1 žingsnis: duomenys ----------------------------------------------------------------

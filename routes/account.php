@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Account\AvatarController;
+use App\Http\Controllers\Account\PortfolioImageController;
+use App\Http\Controllers\Account\PortfolioItemController;
+use App\Http\Controllers\Account\PortfolioOrderController;
 use App\Http\Controllers\Account\ProviderCategoriesController;
 use App\Http\Controllers\Account\ProviderDetailsController;
 use App\Http\Controllers\Account\ProviderImagesController;
@@ -8,6 +11,7 @@ use App\Http\Controllers\Account\ProviderPricesController;
 use App\Http\Controllers\Account\ProviderServiceAreasController;
 use App\Http\Controllers\Account\ProviderWizardController;
 use App\Http\Middleware\EnsureProviderProfileExists;
+use App\Models\PortfolioItem;
 use Illuminate\Support\Facades\Route;
 
 // Paskyra: avataras, teikėjo profilio vedlys, logotipas ir viršelis, atlikti darbai (Etapas 3).
@@ -46,6 +50,25 @@ Route::middleware(['auth', 'verified'])->prefix('paskyra')->group(function () {
             Route::delete('profilis/nuotraukos/{collection}', [ProviderImagesController::class, 'destroy'])
                 ->whereIn('collection', array_keys(ProviderImagesController::COLLECTIONS))
                 ->name('provider.images.destroy');
+
+            // Atlikti darbai (portfolio). ->can() – Policy patikra dar prieš controller'į
+            Route::get('darbai', [PortfolioItemController::class, 'index'])
+                ->can('viewAny', PortfolioItem::class)->name('portfolio.index');
+            Route::get('darbai/naujas', [PortfolioItemController::class, 'create'])
+                ->can('create', PortfolioItem::class)->name('portfolio.create');
+            Route::post('darbai', [PortfolioItemController::class, 'store'])
+                ->can('create', PortfolioItem::class)->name('portfolio.store');
+            Route::put('darbai/tvarka', [PortfolioOrderController::class, 'update'])
+                ->can('viewAny', PortfolioItem::class)->name('portfolio.reorder');
+            Route::get('darbai/{portfolioItem}/redaguoti', [PortfolioItemController::class, 'edit'])
+                ->can('update', 'portfolioItem')->name('portfolio.edit');
+            Route::put('darbai/{portfolioItem}', [PortfolioItemController::class, 'update'])
+                ->can('update', 'portfolioItem')->name('portfolio.update');
+            Route::delete('darbai/{portfolioItem}', [PortfolioItemController::class, 'destroy'])
+                ->can('delete', 'portfolioItem')->name('portfolio.destroy');
+            // scopeBindings(): {media} ieškomas tik tarp šio darbo nuotraukų
+            Route::delete('darbai/{portfolioItem}/nuotraukos/{media}', [PortfolioImageController::class, 'destroy'])
+                ->can('update', 'portfolioItem')->scopeBindings()->name('portfolio.images.destroy');
         });
     });
 });
