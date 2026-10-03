@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Account\AvatarController;
 use App\Http\Controllers\Account\ProviderCategoriesController;
 use App\Http\Controllers\Account\ProviderDetailsController;
+use App\Http\Controllers\Account\ProviderImagesController;
 use App\Http\Controllers\Account\ProviderPricesController;
 use App\Http\Controllers\Account\ProviderServiceAreasController;
 use App\Http\Controllers\Account\ProviderWizardController;
@@ -12,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 // URL – lietuviški, be diakritikų; maršrutų vardai – angliški (CLAUDE.md 6 sk.).
 
 Route::middleware(['auth', 'verified'])->prefix('paskyra')->group(function () {
+    // Avataras – visoms rolėms
+    Route::post('avataras', [AvatarController::class, 'update'])->name('avatar.update');
+    Route::delete('avataras', [AvatarController::class, 'destroy'])->name('avatar.destroy');
+
     // Viskas žemiau – tik teikėjams. role middleware – grubus filtras, Policy – konkretaus įrašo teisės
     Route::middleware('role:provider')->group(function () {
         // Vedlio „įėjimas" – nukreipia į žingsnį, nuo kurio reikia tęsti
@@ -31,6 +37,15 @@ Route::middleware(['auth', 'verified'])->prefix('paskyra')->group(function () {
 
             Route::get('profilis/kainos', [ProviderPricesController::class, 'edit'])->name('provider.prices.edit');
             Route::put('profilis/kainos', [ProviderPricesController::class, 'update'])->name('provider.prices.update');
+
+            // Logotipas ir viršelis: /paskyra/profilis/nuotraukos/logotipas, …/virselis
+            Route::get('profilis/nuotraukos', [ProviderImagesController::class, 'edit'])->name('provider.images.edit');
+            Route::post('profilis/nuotraukos/{collection}', [ProviderImagesController::class, 'update'])
+                ->whereIn('collection', array_keys(ProviderImagesController::COLLECTIONS))
+                ->name('provider.images.update');
+            Route::delete('profilis/nuotraukos/{collection}', [ProviderImagesController::class, 'destroy'])
+                ->whereIn('collection', array_keys(ProviderImagesController::COLLECTIONS))
+                ->name('provider.images.destroy');
         });
     });
 });

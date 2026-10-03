@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { Check } from '@lucide/vue';
+import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { cn } from '@/lib/utils';
+import { edit as editImages } from '@/routes/provider/images';
 import type { WizardStep } from '@/types';
 
 // Teikėjo profilio vedlio „rėmas": antraštė, žingsnių juosta (progresas) ir turinys (slot).
 // Žingsniai ateina iš serverio (App\Enums\ProviderWizardStep::progress), todėl
 // „atlikta" visada atitinka tikrus duomenis.
-defineProps<{
+const props = defineProps<{
     steps: WizardStep[];
     current: WizardStep['key'] | null;
     title: string;
     description?: string;
 }>();
 
+// Kol profilis nesukurtas, kiti žingsniai neprieinami (žr. ProviderWizardStep::progress)
+const hasProfile = computed(() => props.steps.every((step) => step.available));
 </script>
 
 <template>
@@ -72,6 +76,17 @@ defineProps<{
                 </li>
             </ol>
 
+            <div
+                v-if="hasProfile"
+                class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground"
+            >
+                <span>Taip pat:</span>
+                <Link
+                    :href="editImages()"
+                    class="underline-offset-4 hover:underline"
+                    >Logotipas ir viršelis</Link
+                >
+            </div>
         </nav>
 
         <section class="space-y-6">
