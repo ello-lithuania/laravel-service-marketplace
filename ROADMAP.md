@@ -25,24 +25,25 @@ ledger, idempotencija, seeder, factory, Faker.
 - [x] `docs/LEARNING.md` – Etapo 0 sąvokos, komandos, klaidos ir svarbiausių dalykų paaiškinimai
 - [x] Užklausos ir pasiūlymo būsenų mašinos, kreditų grąžinimo taisyklės → `docs/STATES.md`
 - [x] Teikėjo užklausų srauto pavyzdys su indekso paaiškinimu → `docs/DB_SCHEMA.md` 8.1
-- [ ] **Vartotojas peržiūrėjo ir patvirtino schemą** (pageidaujami pakeitimai – atskiru commit'u)
+- [x] **Vartotojas peržiūrėjo ir patvirtino schemą** (pageidaujami pakeitimai – atskiru commit'u)
 
 ---
 
 ## Etapas 1 – Projekto pagrindas
 
-**Tikslas:** veikiantis tuščias Laravel 12 + Inertia + Vue projektas su lietuvių kalba, admin panele ir testais.
+**Tikslas:** veikiantis tuščias Laravel 13 + Inertia + Vue projektas su lietuvių kalba, admin panele ir testais.
 **Sąvokos:** projekto struktūra, `.env` ir `config/`, Composer ir NPM, Vite, Inertia puslapis, Artisan, maršrutai.
 
-- [ ] Laravel 12 projektas iš oficialaus Vue starter kit (Inertia 2 + Vue 3 + Tailwind 4)
-- [ ] Sprendimai užfiksuoti `CLAUDE.md`: TypeScript ar JS, maršrutai Vue pusėje, tikslios paketų versijos
-- [ ] `.env.example`: SQLite dev'ui, MySQL pavyzdys, `APP_LOCALE=lt`, `APP_FAKER_LOCALE=lt_LT`
-- [ ] Lietuviški Laravel tekstai (`lang/lt`: validation, auth, passwords, pagination), datos lietuviškai (Carbon `lt`)
-- [ ] Filament admin panelė `/admin` (laikinai pasiekiama tik lokaliai)
-- [ ] Pest, Pint, GitHub Actions CI (testai + Pint kiekvienam push'ui)
-- [ ] Bazinis išdėstymas: header, footer, laikinas logotipas, pradžios puslapio „griaučiai"
-- [ ] Platformos pavadinimas (`APP_NAME`) – pasirenka vartotojas
-- [ ] `docs/LEARNING.md`: Etapas 1 + santrauka vartotojui
+- [x] Laravel 13 projektas iš oficialaus Vue starter kit (Inertia 3 + Vue 3 + Tailwind 4); vartotojo sprendimu – 13, ne 12
+- [x] Sprendimai užfiksuoti `CLAUDE.md`: TypeScript, Wayfinder, Fortify funkcijos (be 2FA ir passkeys), versijos
+- [x] `.env.example`: SQLite dev'ui, MySQL pavyzdys, `APP_LOCALE=lt`, `APP_FAKER_LOCALE=lt_LT`
+- [x] Lietuviški Laravel tekstai (`lang/lt`: validation, auth, passwords, pagination + `lang/lt.json` laiškams), datos lietuviškai (Carbon `lt`)
+- [x] Filament 5 admin panelė `/admin`, lietuviška (laikinai pasiekiama tik lokaliai)
+- [x] Pest (testai konvertuoti), Pint, PHPStan, GitHub Actions CI (`main` push'ams ir pull request'ams)
+- [x] Bazinis išdėstymas: header, footer, laikinas logotipas, pradžios puslapio „griaučiai"
+- [x] Šriftas su lietuviškomis raidėmis (Fontsource, `latin-ext`)
+- [ ] Platformos pavadinimas (`APP_NAME`) – pasirenka vartotojas (kol kas laikinas: „Paslaugų platforma")
+- [x] `docs/LEARNING.md`: Etapas 1 + santrauka vartotojui
 
 ---
 
@@ -73,6 +74,8 @@ seeder'iai, morph map, masinis įterpimas.
 
 - [ ] Registracija su rolės pasirinkimu (Klientas / Paslaugų teikėjas), vardas ir pavardė
 - [ ] El. pašto patvirtinimas ir slaptažodžio atkūrimas lietuviškai
+- [ ] Starter kit puslapiai (prisijungimas, registracija, paskyra, nustatymai) išversti į lietuvių kalbą
+- [ ] Inertia bendri props: `auth.user` – tik reikalingi laukai (dabar siunčiamas visas `User` modelis)
 - [ ] `role` middleware, Policies pagrindiniams modeliams
 - [ ] Filament prieiga tik `admin` rolei (`canAccessPanel`)
 - [ ] Teikėjo profilio vedlys: duomenys → kategorijos (3 lygių medis) → zonos (apskritis → savivaldybės, „visa Lietuva") → kainos „nuo"
