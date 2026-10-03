@@ -144,6 +144,7 @@ app/
     Requests/         Form Request validacija
   Jobs/  Models/  Notifications/  Observers/  Policies/
   Providers/          AppServiceProvider, FortifyServiceProvider, Filament/AdminPanelProvider
+  Services/           Catalog (katalogo užklausos, cache, SEO), Credits (CreditLedger), Matching (ProviderMatcher)
   Services/Payments/  mokėjimų sąsaja + Paysera / Stripe                     ← Etapas 7
 database/
   data/               žinyniniai duomenys (apskritys, savivaldybės, kategorijos, tekstų bankai)
@@ -161,7 +162,7 @@ resources/
     components/       savi komponentai; components/ui – shadcn-vue
     routes/, actions/ Wayfinder sugeneruoti failai (Git'e ignoruojami)
   views/app.blade.php vienintelis Blade šablonas – Inertia „kevalas"
-routes/web.php, routes/settings.php
+routes/web.php       įtraukia sričių failus: settings, account (E3), catalog (E4), requests (E5), messages (E6), billing (E7)
 tests/Feature, tests/Unit, tests/Pest.php
 ```
 
@@ -217,4 +218,9 @@ Claude Code cloud konteineryje yra apribojimų, kurių vartotojo kompiuteryje n�
   `DB_CONNECTION=mysql DB_DATABASE=laravel_test DB_USERNAME=… DB_PASSWORD=… DB_URL= php artisan test`.
 - **`pestphp/pest-plugin-livewire` neįdiegtas** – Filament/Livewire testuose naudok `Livewire::test(...)`.
 - **`ui-avatars.com` užblokuotas** – Filament avatarai konteineryje nerodomi (vartotojo kompiuteryje veikia).
+- **Lygiagretus darbas su agentais (git worktree):** worktree neturi `vendor/`, `node_modules/`, `.env`. Paruošimas:
+  `(cd <pagrindinis> && tar --exclude=.git -cf - vendor) | tar -xf -`, `composer dump-autoload`, `node_modules`
+  simbolinė nuoroda, `.env` kopija, `migrate:fresh --seed`. `vendor/` su `--prefer-install=source` užima ~4,7 GB
+  (be `.git` – ~1,3 GB), todėl kopijuojam be `.git`. Agentai `ROADMAP.md`/`LEARNING.md` neredaguoja – rašo
+  `docs/drafts/etapas-N.md`, o sujungiant juodraštis perkeliamas į `docs/LEARNING.md`.
 - **`fonts.bunny.net` užblokuotas.** Dėl to (ir dėl lietuviškų raidžių) šriftas imamas per Fontsource iš npm.

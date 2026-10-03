@@ -72,17 +72,17 @@ seeder'iai, morph map, masinis įterpimas.
 **Tikslas:** vartotojai registruojasi kaip klientai arba teikėjai, teikėjai užpildo profilį.
 **Sąvokos:** autentifikacija, middleware, Gates ir Policies, Form Request, failų įkėlimas, el. pašto patvirtinimas.
 
-- [ ] Registracija su rolės pasirinkimu (Klientas / Paslaugų teikėjas), vardas ir pavardė
-- [ ] El. pašto patvirtinimas ir slaptažodžio atkūrimas lietuviškai
-- [ ] Starter kit puslapiai (prisijungimas, registracija, paskyra, nustatymai) išversti į lietuvių kalbą
-- [ ] Inertia bendri props: `auth.user` – tik reikalingi laukai (dabar siunčiamas visas `User` modelis)
-- [ ] `role` middleware, Policies pagrindiniams modeliams
+- [x] Registracija su rolės pasirinkimu (Klientas / Paslaugų teikėjas), vardas ir pavardė
+- [x] El. pašto patvirtinimas ir slaptažodžio atkūrimas lietuviškai
+- [x] Starter kit puslapiai (prisijungimas, registracija, paskyra, nustatymai) išversti į lietuvių kalbą
+- [x] Inertia bendri props: `auth.user` – tik reikalingi laukai (dabar siunčiamas visas `User` modelis)
+- [x] `role` middleware, Policies pagrindiniams modeliams
 - [x] Filament prieiga tik `admin` rolei (`canAccessPanel`) – padaryta Etape 2
-- [ ] Teikėjo profilio vedlys: duomenys → kategorijos (3 lygių medis) → zonos (apskritis → savivaldybės, „visa Lietuva") → kainos „nuo"
-- [ ] Profilio redagavimas, logotipas ir avataras (medialibrary)
-- [ ] Portfolio CRUD su nuotraukomis
-- [ ] Feature testai: registracija, prieigos teisės, profilio vedlys
-- [ ] `docs/LEARNING.md`: Etapas 3 + santrauka vartotojui
+- [x] Teikėjo profilio vedlys: duomenys → kategorijos (3 lygių medis) → zonos (apskritis → savivaldybės, „visa Lietuva") → kainos „nuo"
+- [x] Profilio redagavimas, logotipas ir avataras (medialibrary)
+- [x] Portfolio CRUD su nuotraukomis
+- [x] Feature testai: registracija, prieigos teisės, profilio vedlys
+- [x] `docs/LEARNING.md`: Etapas 3 + santrauka vartotojui
 
 ---
 
@@ -91,15 +91,15 @@ seeder'iai, morph map, masinis įterpimas.
 **Tikslas:** lankytojas randa paslaugą ir teikėją pagal kategoriją, miestą ar žodį.
 **Sąvokos:** route model binding (slug), eager loading ir N+1, puslapiavimas, query scopes, cache, SEO.
 
-- [ ] Pradžios puslapis: kategorijos, paieška, populiarūs miestai
-- [ ] Kategorijų puslapiai (3 lygiai), „duonos trupiniai", SEO meta
-- [ ] Teikėjų sąrašas pagal kategoriją ir miestą: filtrai, rikiavimas (reitingas, atsiliepimai), puslapiavimas
-- [ ] Viešas teikėjo profilis: aprašymas, kainos, portfolio, atsiliepimai
-- [ ] Paieška tekstu (MySQL FULLTEXT) ir sprendimas dėl Laravel Scout + Meilisearch
-- [ ] Kategorijų medžio ir savivaldybių cache
-- [ ] SEO puslapiai „{Paslauga} {mieste}" (`cities.name_locative`)
-- [ ] Testai
-- [ ] `docs/LEARNING.md`: Etapas 4 + santrauka vartotojui
+- [x] Pradžios puslapis: kategorijos, paieška, populiarūs miestai
+- [x] Kategorijų puslapiai (3 lygiai), „duonos trupiniai", SEO meta
+- [x] Teikėjų sąrašas pagal kategoriją ir miestą: filtrai, rikiavimas (reitingas, atsiliepimai), puslapiavimas
+- [x] Viešas teikėjo profilis: aprašymas, kainos, portfolio, atsiliepimai
+- [x] Paieška tekstu (MySQL FULLTEXT) ir sprendimas dėl Laravel Scout + Meilisearch
+- [x] Kategorijų medžio ir savivaldybių cache
+- [x] SEO puslapiai „{Paslauga} {mieste}" (`cities.name_locative`)
+- [x] Testai
+- [x] `docs/LEARNING.md`: Etapas 4 + santrauka vartotojui
 
 ---
 
@@ -109,17 +109,17 @@ seeder'iai, morph map, masinis įterpimas.
 **Sąvokos:** daugiažingsnė forma, Actions, DB transakcijos ir užraktai, eilės (Jobs), Notifications, Scheduler,
 būsenų mašina.
 
-- [ ] Užklausos kūrimo forma (keli žingsniai, nuotraukos), Form Request validacija
-- [ ] Moderavimas (`pending` → `open`) Filament'e + automatinės taisyklės
-- [ ] Atitikimas: job randa teikėjus (kategorija su tėvais, zona arba „visa Lietuva") ir siunčia pranešimus
+- [ ] Užklausos kūrimo forma (keli žingsniai, nuotraukos), Form Request validacija – forma ir validacija atliktos, nuotraukos – kartu su Etapu 6
+- [x] Moderavimas (`pending` → `open`) Filament'e + automatinės taisyklės
+- [x] Atitikimas: job randa teikėjus (kategorija su tėvais, zona arba „visa Lietuva") ir siunčia pranešimus
       (mail + database) pagal `notification_settings`
-- [ ] Teikėjo užklausų srautas su filtrais
-- [ ] Pasiūlymo siuntimas: kreditų patikra, `DB::transaction` + `lockForUpdate`, ledger įrašas
-- [ ] Klientas mato pasiūlymus, priima arba atmeta; būsenų perėjimai pagal `docs/STATES.md`
-- [ ] Darbo užbaigimas ir atšaukimas; Scheduler uždaro pasibaigusias užklausas
-- [ ] Pranešimų varpelis (neperskaityti)
-- [ ] Testai: visas srautas, lygiagretus kreditų nurašymas
-- [ ] `docs/LEARNING.md`: Etapas 5 + santrauka vartotojui
+- [x] Teikėjo užklausų srautas su filtrais
+- [x] Pasiūlymo siuntimas: kreditų patikra, `DB::transaction` + `lockForUpdate`, ledger įrašas
+- [x] Klientas mato pasiūlymus, priima arba atmeta; būsenų perėjimai pagal `docs/STATES.md`
+- [x] Darbo užbaigimas ir atšaukimas; Scheduler uždaro pasibaigusias užklausas
+- [x] Pranešimų varpelis (neperskaityti)
+- [x] Testai: visas srautas, lygiagretus kreditų nurašymas
+- [x] `docs/LEARNING.md`: Etapas 5 + santrauka vartotojui
 
 ---
 
