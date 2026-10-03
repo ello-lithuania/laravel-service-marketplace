@@ -50,8 +50,12 @@ class ServiceRequestController extends Controller
             ),
             // Kitų puslapių nuorodos gali iš anksto parinkti paslaugą ir miestą: /uzklausos/nauja?kategorija=…&miestas=…
             'defaults' => [
-                'category_id' => Category::query()->where('slug', $request->query('kategorija'))->where('depth', Category::MAX_DEPTH)->value('id'),
-                'city_id' => City::query()->where('slug', $request->query('miestas'))->value('id') ?? $user->city_id,
+                'category_id' => Category::query()
+                    ->where('slug', $this->querySlug($request, 'kategorija'))
+                    ->where('depth', Category::MAX_DEPTH)
+                    ->where('is_active', true)
+                    ->value('id'),
+                'city_id' => City::query()->where('slug', $this->querySlug($request, 'miestas'))->value('id') ?? $user->city_id,
             ],
         ]);
     }
@@ -176,6 +180,16 @@ class ServiceRequestController extends Controller
                 ),
             ],
         ]);
+    }
+
+    /**
+     * URL parametras kaip eilutė. Vartotojas gali atsiųsti ir masyvą (?kategorija[]=…) – tada tiesiog ignoruojam.
+     */
+    private function querySlug(Request $request, string $key): string
+    {
+        $value = $request->query($key);
+
+        return is_string($value) ? $value : '';
     }
 
     /**

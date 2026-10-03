@@ -162,3 +162,12 @@ test('Precognition: žingsnio laukai tikrinami neišsaugant', function () {
 
     expect(ServiceRequest::query()->count())->toBe(0);
 });
+
+test('neteisingi ?kategorija ir ?miestas parametrai nesukelia klaidos', function () {
+    $this->actingAs($this->client)
+        ->get('/uzklausos/nauja?kategorija[]=x&miestas='.$this->city->slug)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('defaults.category_id', null)
+            ->where('defaults.city_id', $this->city->id));
+});
