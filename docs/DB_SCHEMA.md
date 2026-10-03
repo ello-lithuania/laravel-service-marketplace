@@ -845,8 +845,8 @@ Visi enum'ai bus `app/Enums` kataloge, backed `string`, su metodu `label()` (lie
 | `ComplaintReason` | `spam` (Šlamštas), `fraud` (Sukčiavimas), `offensive` (Įžeidžiantis turinys), `fake_review` (Netikras atsiliepimas), `wrong_info` (Klaidinga informacija), `other` (Kita) |
 | `ComplaintStatus` | `open` (Naujas), `in_review` (Nagrinėjamas), `resolved` (Išspręstas), `rejected` (Atmestas) |
 
-Leistini perėjimai tarp statusų (būsenų mašina) bus aprašyti Etape 5. Pirmas jų juodraštis – „PADARYK PATS"
-užduotis (žr. `ROADMAP.md`).
+Leistini perėjimai tarp statusų (kas, kada ir su kokiomis pasekmėmis) bei kreditų grąžinimo taisyklės
+aprašyti `docs/STATES.md`.
 
 ---
 

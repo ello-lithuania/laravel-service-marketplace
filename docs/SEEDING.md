@@ -166,6 +166,8 @@ Tvarka atitinka FK priklausomybes: tėvas visada sukuriamas anksčiau nei vaikas
   balanso neužtenka, prieš pasiūlymą įterpiamas paketo pirkimas (mokėjimas `paid` + `purchase` įrašas).
   Taip `balance_after` niekada nebūna neigiamas, o pabaigoje `credits_balance` lygus paskutiniam `balance_after`.
 - 3 % mokėjimų – `failed` arba `cancelled` (be kreditų).
+- Kreditų grąžinimai (`refund`) generuojami pagal `docs/STATES.md` 3 sk.: atšauktų atvirų užklausų `pending`
+  pasiūlymams ir pasibaigusių užklausų pasiūlymams, kurių klientas neatidarė.
 
 ### Pranešimai ir skundai
 - Pranešimai kuriami tik paskutinių 60 dienų įvykiams (`NewOffer`, `OfferAccepted`, `NewMessage`, `NewReview`,
@@ -280,6 +282,7 @@ Etape 2 tai bus Pest testas (`tests/Feature/Seeding/SeedIntegrityTest.php`), pal
 - [ ] Patvirtintas atsiliepimas: užklausa `completed`, autorius = užklausos klientas, teikėjas = priimto
       pasiūlymo teikėjas, sukurtas po `completed_at`.
 - [ ] Kiekvienam teikėjui `SUM(amount) = credits_balance`, joks `balance_after` nėra neigiamas.
+- [ ] `refund` įrašai yra tik ten, kur juos leidžia `docs/STATES.md` 3 sk., ir už vieną pasiūlymą – ne daugiau kaip vienas.
 - [ ] `rating_avg`, `reviews_count`, `completed_jobs_count`, `offers_count`, `last_message_at` sutampa su perskaičiuotais.
 - [ ] Žinutės siuntėjas yra pokalbio dalyvis, žinučių laikas didėja.
 - [ ] Visi el. paštai baigiasi `@example.test`, visi telefonai prasideda `+3700`.
