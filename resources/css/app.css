@@ -1,5 +1,10 @@
 @import 'tailwindcss';
 
+/* Šriftas iš npm (Fontsource): įeina latin-ext rinkinys su lietuviškomis raidėmis, kompiliuojant internetas nereikalingas */
+@import '@fontsource/instrument-sans/400.css';
+@import '@fontsource/instrument-sans/500.css';
+@import '@fontsource/instrument-sans/600.css';
+
 @import 'tw-animate-css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
