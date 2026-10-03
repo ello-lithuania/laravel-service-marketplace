@@ -5,6 +5,8 @@ import { ref } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard, home, login, register } from '@/routes';
+import { index as categoriesIndex } from '@/routes/categories';
+import { index as providersIndex } from '@/routes/providers';
 
 // Viešos svetainės išdėstymas: antraštė, turinys (slot) ir poraštė.
 // Nuorodos su href="#" – puslapiai, kurie atsiras vėlesniuose etapuose.
@@ -12,10 +14,14 @@ const page = usePage();
 const mobileMenuOpen = ref(false);
 const year = new Date().getFullYear();
 
+// anchor: true – paprasta <a> į pradžios puslapio skiltį; kitur – Inertia <Link> (be pilno perkrovimo)
 const navLinks = [
-    { label: 'Paslaugos', href: '#kategorijos' },
-    { label: 'Kaip tai veikia', href: '#kaip-tai-veikia' },
-    { label: 'Teikėjams', href: '#teikejams' },
+    // Katalogas (Etapas 4)
+    { label: 'Paslaugos', href: categoriesIndex.url(), anchor: false },
+    { label: 'Meistrai', href: providersIndex.url(), anchor: false },
+    // Pradžios puslapio skiltys – su „/", kad veiktų ir iš kitų puslapių
+    { label: 'Kaip tai veikia', href: '/#kaip-tai-veikia', anchor: true },
+    { label: 'Teikėjams', href: '/#teikejams', anchor: true },
 ];
 </script>
 
@@ -38,14 +44,15 @@ const navLinks = [
                 </Link>
 
                 <nav class="hidden items-center gap-6 text-sm md:flex">
-                    <a
+                    <component
+                        :is="link.anchor ? 'a' : Link"
                         v-for="link in navLinks"
                         :key="link.href"
                         :href="link.href"
                         class="text-muted-foreground transition-colors hover:text-foreground"
                     >
                         {{ link.label }}
-                    </a>
+                    </component>
                 </nav>
 
                 <div class="hidden items-center gap-2 md:flex">
@@ -78,7 +85,8 @@ const navLinks = [
 
             <div v-if="mobileMenuOpen" class="border-t px-4 py-4 md:hidden">
                 <nav class="flex flex-col gap-3 text-sm">
-                    <a
+                    <component
+                        :is="link.anchor ? 'a' : Link"
                         v-for="link in navLinks"
                         :key="link.href"
                         :href="link.href"
@@ -86,7 +94,7 @@ const navLinks = [
                         @click="mobileMenuOpen = false"
                     >
                         {{ link.label }}
-                    </a>
+                    </component>
                 </nav>
                 <div class="mt-4 flex flex-col gap-2">
                     <Button v-if="page.props.auth.user" as-child>
@@ -122,13 +130,15 @@ const navLinks = [
                     <p class="font-medium">Klientams</p>
                     <ul class="mt-2 space-y-1 text-muted-foreground">
                         <li>
-                            <a href="#" class="hover:text-foreground"
+                            <a
+                                href="/uzklausos/nauja"
+                                class="hover:text-foreground"
                                 >Sukurti užklausą</a
                             >
                         </li>
                         <li>
                             <a
-                                href="#kaip-tai-veikia"
+                                href="/#kaip-tai-veikia"
                                 class="hover:text-foreground"
                                 >Kaip tai veikia</a
                             >
@@ -139,7 +149,7 @@ const navLinks = [
                     <p class="font-medium">Teikėjams</p>
                     <ul class="mt-2 space-y-1 text-muted-foreground">
                         <li>
-                            <a href="#teikejams" class="hover:text-foreground"
+                            <a href="/#teikejams" class="hover:text-foreground"
                                 >Tapti teikėju</a
                             >
                         </li>
