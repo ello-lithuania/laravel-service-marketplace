@@ -1,12 +1,10 @@
 # Mokymosi užrašai
 
-Šis failas pildomas **kiekvieno etapo pabaigoje**: išmoktos sąvokos, naudingos artisan komandos, dažnos klaidos,
-„PADARYK PATS" užduotys ir pasitikrinimo klausimai.
+Šis failas pildomas **kiekvieno etapo pabaigoje**: kas padaryta ir kodėl, išmoktos sąvokos, naudingos artisan
+komandos, dažnos klaidos.
 
 Kaip naudoti:
 - Prieš pradėdamas naują etapą, perskaityk ankstesnio etapo skiltį.
-- Savo atsakymus ir pastabas rašyk skiltyje „Mano atsakymai ir pastabos". Tai tavo vieta: Claude ją
-  tik skaito ir komentuoja, kai paprašai.
 - Nuorodos veda į oficialią dokumentaciją (Laravel 12.x).
 
 ---
@@ -113,6 +111,11 @@ Factory – vieno įrašo receptas (testams). Seeder – DB užpildymo scenariju
 o ne `create()` po vieną (`docs/SEEDING.md` 7 sk.).
 → https://laravel.com/docs/12.x/seeding · https://laravel.com/docs/12.x/eloquent-factories
 
+#### 13. Būsenų mašina
+Aiški taisyklė, iš kurios būsenos į kurią galima pereiti (pvz. `open → in_progress`), kas tai daro ir kas turi
+įvykti kartu (kreditai, pranešimai). Be jos statusą galima pakeisti bet kur į bet ką, ir duomenys tampa nelogiški.
+Mūsų taisyklės – `docs/STATES.md`. Kode: enum metodas `canTransitionTo()` + Action klasė kiekvienam perėjimui.
+
 ### Naudingos artisan komandos (naudosim nuo Etapo 1–2)
 
 | Komanda | Ką daro |
@@ -145,25 +148,30 @@ o ne `create()` po vieną (`docs/SEEDING.md` 7 sk.).
   (grąžina anglišką tekstą), `create()` šimtams tūkstančių eilučių.
 - Saugoti tai, ką galima pigiai apskaičiuoti (pvz. `is_verified`, kai užtenka `service_request_id IS NOT NULL`).
 
-### PADARYK PATS (Etapas 0)
+### Penki svarbiausi dalykai iš Etapo 0
 
-Užduotys aprašytos `ROADMAP.md` (Etapas 0). Atlikęs parašyk „peržiūrėk mano užduotį #N".
+1. **`ServiceRequest` ir `Offer` sieja du ryšiai.** `ServiceRequest hasMany Offer` – FK yra `offers.service_request_id`
+   (užklausa turi daug pasiūlymų). `ServiceRequest belongsTo acceptedOffer` – FK yra
+   `service_requests.accepted_offer_id` (kuris pasiūlymas laimėjo). Lentelės rodo viena į kitą (žiedinė nuoroda),
+   todėl antrą FK pridedam atskira migracija, kai abi lentelės jau sukurtos.
 
-### Pasitikrinimo klausimai (Etapas 0)
+2. **Kaip veikia indeksas `(category_id, status, published_at)`.**
+   - `WHERE category_id = 5` – naudoja (kairysis stulpelis).
+   - `WHERE status = 'open'` – nenaudoja: `status` ne pirmas, todėl DB nežino, nuo kur ieškoti.
+   - `WHERE category_id = 5 AND status = 'open' ORDER BY published_at DESC` – naudoja pilnai: dvi lygybės ir
+     rikiavimas be papildomo rūšiavimo.
+   - `WHERE published_at > '2026-01-01'` – nenaudoja (tas pats „kairiojo prefikso" principas).
 
-1. Ryšys `ServiceRequest` ↔ `Offer`: kuris modelis turi `hasMany`, kuris `belongsTo`, ir kurioje lentelėje fiziškai
-   yra FK stulpelis? Atidžiai – šioje poroje FK yra ne vienas.
-2. Turim indeksą `(category_id, status, published_at)`. Kurios užklausos galės jį naudoti ir kodėl?
-   a) `WHERE category_id = 5`
-   b) `WHERE status = 'open'`
-   c) `WHERE category_id = 5 AND status = 'open' ORDER BY published_at DESC`
-   d) `WHERE published_at > '2026-01-01'`
-3. Kodėl `rating_avg` ir `reviews_count` saugom `provider_profiles` lentelėje, nors juos galima apskaičiuoti iš
-   `reviews`? Kokia to kaina ir kaip ją valdysim?
-4. Kodėl pinigus saugom sveikais centais, o ne `float`? Kaip DB bus saugoma 24,90 €?
-5. `reviews.service_request_id` gali būti NULL, bet turi UNIQUE indeksą. Kodėl tai neprieštarauja vienas kitam ir
-   ką verslo prasme reiškia NULL šiame stulpelyje?
+   Todėl viešam sąrašui „visos naujausios užklausos" turim atskirą indeksą `(status, published_at)`.
 
-### Mano atsakymai ir pastabos
+3. **Kodėl `rating_avg` saugom teikėjo profilyje.** Katalogas rikiuojamas pagal reitingą. Skaičiuojant `AVG()` per
+   100 000 atsiliepimų kiekvieną kartą atidarius puslapį, jis būtų lėtas. Kaina – reikšmę reikia atnaujinti
+   pasikeitus atsiliepimams (observer → job), o testas tikrina, kad ji sutampa su tikra.
 
-_(čia rašyk savo atsakymus)_
+4. **Pinigai centais.** `float` negali tiksliai saugoti 0,1, todėl atsiranda apvalinimo klaidų (`0.1 + 0.2 ≠ 0.3`).
+   24,90 € DB saugoma kaip `2490` stulpelyje `price_cents`.
+
+5. **NULL ir UNIQUE kartu.** `reviews.service_request_id` turi UNIQUE indeksą: vienai užklausai – ne daugiau kaip
+   vienas atsiliepimas. NULL UNIQUE indekse nelaikomas lygiu kitam NULL (ir MySQL, ir SQLite), todėl NULL reikšmių
+   gali būti daug. Verslo prasme NULL reiškia atsiliepimą pagal teikėjo pakvietimą (darbas atliktas ne per
+   platformą), ir UI jis rodomas kaip nepatvirtintas.
