@@ -23,5 +23,10 @@ class DatabaseSeeder extends Seeder
             SubscriptionPlanSeeder::class,
             AdminSeeder::class,
         ]);
+
+        // Dideli testiniai duomenys (SEED_DEMO=false – tik žinyniniai)
+        if (config('seeding.demo')) {
+            $this->call(DemoDataSeeder::class);
+        }
     }
 }

@@ -10,7 +10,7 @@ return [
         '{paslauga} – {metai} m. patirtis',
         'Kokybiškai ir laiku: {paslauga_m}',
         '{paslauga} su garantija',
-        'Profesionali {paslauga_m}',
+        'Profesionalios paslaugos: {paslauga_m}',
     ],
     'descriptions' => [
         'Darbus atlieku kruopščiai ir laikausi sutartų terminų.',
