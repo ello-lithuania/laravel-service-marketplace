@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Pokalbis tarp kliento ir teikėjo dėl pasiūlymo (docs/DB_SCHEMA.md → conversations).
@@ -52,5 +53,33 @@ class Conversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
+    }
+
+    // -------------------------------------------------------------------------
+    // Žinutės (Etapas 6)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Paskutinė žinutė pokalbių sąrašui. latestOfMany() – „vienas iš daugelio" ryšys: eager loading'as visam
+     * puslapiui paima po vieną (didžiausio id) žinutę kiekvienam pokalbiui viena užklausa.
+     * https://laravel.com/docs/13.x/eloquent-relationships#has-one-of-many
+     *
+     * @return HasOne<Message, $this>
+     */
+    public function latestMessage(): HasOne
+    {
+        return $this->hasOne(Message::class)->latestOfMany();
+    }
+
+    /**
+     * Ar vartotojas – pokalbio dalyvis. Jei dalyviai jau užkrauti, DB nebeklausiam.
+     */
+    public function hasParticipant(User $user): bool
+    {
+        if ($this->relationLoaded('participants')) {
+            return $this->participants->contains('id', $user->id);
+        }
+
+        return $this->participants()->whereKey($user->id)->exists();
     }
 }

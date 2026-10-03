@@ -9,8 +9,10 @@ test('teikėjas mato savo grupes su numatytosiomis reikšmėmis', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/Notifications')
-            ->has('groups', 4)
+            // new_requests, offer_updates, messages, reviews (Etapas 6), billing (Etapas 7)
+            ->has('groups', 5)
             ->where('groups.0.key', 'new_requests')
+            ->where('groups.4.key', 'billing')
             ->where('groups.0.channels', ['mail' => true, 'database' => true])
             ->where('emailVerified', true));
 });

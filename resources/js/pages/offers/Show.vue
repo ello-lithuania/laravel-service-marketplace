@@ -3,16 +3,19 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ArrowLeft, BadgeCheck, CalendarDays, Clock, Star } from '@lucide/vue';
 import { ref } from 'vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
+import ReportDialog from '@/components/complaints/ReportDialog.vue';
+import MessageButton from '@/components/messages/MessageButton.vue';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatMoney, plural, timeAgo } from '@/lib/marketplace';
 import { accept, decline } from '@/routes/offers';
 import { index, show } from '@/routes/service-requests';
-import type { Offer, ServiceRequestSummary } from '@/types';
+import type { Offer, OfferMessaging, ServiceRequestSummary } from '@/types';
 
 const props = defineProps<{
     offer: Offer;
     serviceRequest: ServiceRequestSummary;
     can: { accept: boolean; decline: boolean };
+    messaging: OfferMessaging;
 }>();
 
 defineOptions({
@@ -111,7 +114,11 @@ function act(action: 'accept' | 'decline'): void {
                         </span>
                     </p>
                 </div>
-                <StatusBadge :status="offer.status" />
+                <div class="flex items-center gap-1">
+                    <StatusBadge :status="offer.status" />
+                    <!-- Etapas 6: pranešti apie netinkamą pasiūlymą -->
+                    <ReportDialog type="offer" :id="offer.id" compact />
+                </div>
             </div>
 
             <div
@@ -163,7 +170,12 @@ function act(action: 'accept' | 'decline'): void {
             </div>
 
             <div
-                v-if="can.accept || can.decline"
+                v-if="
+                    can.accept ||
+                    can.decline ||
+                    messaging.can_start ||
+                    messaging.conversation_id
+                "
                 class="flex flex-wrap gap-3 border-t pt-4"
             >
                 <Button
@@ -183,6 +195,12 @@ function act(action: 'accept' | 'decline'): void {
                 >
                     Atmesti
                 </Button>
+                <!-- Etapas 6: klausimas teikėjui prieš sprendžiant -->
+                <MessageButton
+                    :offer-id="offer.id"
+                    :messaging="messaging"
+                    size="default"
+                />
             </div>
         </section>
     </div>

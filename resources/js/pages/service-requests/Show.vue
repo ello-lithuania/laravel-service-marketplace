@@ -4,14 +4,27 @@ import { BadgeCheck, Mail, Phone, Star } from '@lucide/vue';
 import { ref } from 'vue';
 import CancelRequestDialog from '@/components/marketplace/CancelRequestDialog.vue';
 import RequestDetails from '@/components/marketplace/RequestDetails.vue';
+import RequestPhotosManager from '@/components/marketplace/RequestPhotosManager.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
+import MessageButton from '@/components/messages/MessageButton.vue';
+import ReviewCard from '@/components/reviews/ReviewCard.vue';
+import ReviewForm from '@/components/reviews/ReviewForm.vue';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatMoney, plural, timeAgo } from '@/lib/marketplace';
 import { show as showOffer } from '@/routes/offers';
+import { store as storeReview } from '@/routes/reviews';
 import { complete, index } from '@/routes/service-requests';
-import type { Offer, ServiceRequestDetail } from '@/types';
+import type {
+    AccountReview,
+    Offer,
+    OfferMessaging,
+    ServiceRequestDetail,
+} from '@/types';
 
-type OfferRow = Offer & { can: { accept: boolean; decline: boolean } };
+type OfferRow = Offer & {
+    can: { accept: boolean; decline: boolean };
+    messaging: OfferMessaging;
+};
 
 const props = defineProps<{
     serviceRequest: ServiceRequestDetail;
@@ -21,7 +34,14 @@ const props = defineProps<{
         phone: string | null;
         email: string;
     } | null;
-    can: { cancel: boolean; complete: boolean };
+    can: {
+        cancel: boolean;
+        complete: boolean;
+        review: boolean;
+        updatePhotos: boolean;
+    };
+    review: AccountReview | null;
+    maxPhotos: number;
 }>();
 
 defineOptions({
@@ -92,7 +112,16 @@ function markCompleted(): void {
             {{ serviceRequest.cancellation_reason }}
         </div>
 
-        <RequestDetails :service-request="serviceRequest" />
+        <RequestDetails :service-request="serviceRequest">
+            <!-- Etapas 6: klientas gali pridėti / pašalinti nuotraukas, kol užklausa laukia -->
+            <template v-if="can.updatePhotos" #photos>
+                <RequestPhotosManager
+                    :slug="serviceRequest.slug"
+                    :photos="serviceRequest.photos"
+                    :max="maxPhotos"
+                />
+            </template>
+        </RequestDetails>
 
         <section
             v-if="acceptedContact"
@@ -118,6 +147,18 @@ function markCompleted(): void {
             </p>
         </section>
 
+        <!-- Etapas 6: teikėjas paprašė pažymėti darbą atliktu -->
+        <div
+            v-if="can.complete && serviceRequest.completion_requested_at"
+            class="rounded-lg border border-sky-300 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200"
+            data-test="completion-requested"
+        >
+            {{ acceptedContact?.name ?? 'Teikėjas' }} pažymėjo, kad darbas
+            atliktas ({{ timeAgo(serviceRequest.completion_requested_at) }}).
+            Jei viskas gerai – paspauskite „Darbas atliktas" ir įvertinkite
+            teikėją.
+        </div>
+
         <div v-if="can.complete || can.cancel" class="flex flex-wrap gap-3">
             <Button
                 v-if="can.complete"
@@ -132,6 +173,31 @@ function markCompleted(): void {
                 :service-request="serviceRequest"
             />
         </div>
+
+        <!-- Etapas 6: atsiliepimas po atlikto darbo -->
+        <section
+            v-if="review || can.review"
+            id="atsiliepimas"
+            class="scroll-mt-6 space-y-3 rounded-xl border bg-card p-4 md:p-6"
+        >
+            <template v-if="review">
+                <h2 class="text-lg font-semibold">Jūsų atsiliepimas</h2>
+                <ReviewCard :review="review" hide-request-title />
+            </template>
+            <template v-else>
+                <div>
+                    <h2 class="text-lg font-semibold">
+                        Įvertinkite
+                        {{ acceptedContact?.name ?? 'teikėją' }}
+                    </h2>
+                    <p class="text-sm text-muted-foreground">
+                        Atsiliepimas bus paskelbtas teikėjo profilyje kaip
+                        „Užsakyta per platformą". Jūsų pavardė nerodoma.
+                    </p>
+                </div>
+                <ReviewForm :action="storeReview(serviceRequest.slug).url" />
+            </template>
+        </section>
 
         <section class="space-y-3">
             <h2 class="text-lg font-semibold">
@@ -225,21 +291,30 @@ function markCompleted(): void {
                         {{ offer.message }}
                     </p>
 
-                    <div class="mt-3 flex items-center justify-between gap-3">
+                    <div
+                        class="mt-3 flex flex-wrap items-center justify-between gap-3"
+                    >
                         <StatusBadge :status="offer.status" />
-                        <Button size="sm" variant="outline" as-child>
-                            <Link
-                                :href="
-                                    showOffer({
-                                        serviceRequest: serviceRequest.slug,
-                                        offer: offer.id,
-                                    })
-                                "
-                                data-test="open-offer"
-                            >
-                                Peržiūrėti pasiūlymą
-                            </Link>
-                        </Button>
+                        <div class="flex flex-wrap gap-2">
+                            <!-- Etapas 6: žinutės -->
+                            <MessageButton
+                                :offer-id="offer.id"
+                                :messaging="offer.messaging"
+                            />
+                            <Button size="sm" variant="outline" as-child>
+                                <Link
+                                    :href="
+                                        showOffer({
+                                            serviceRequest: serviceRequest.slug,
+                                            offer: offer.id,
+                                        })
+                                    "
+                                    data-test="open-offer"
+                                >
+                                    Peržiūrėti pasiūlymą
+                                </Link>
+                            </Button>
+                        </div>
                     </div>
                 </li>
             </ul>

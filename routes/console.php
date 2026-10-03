@@ -39,3 +39,11 @@ Schedule::command('subscriptions:grant-credits')
     ->hourly()
     ->withoutOverlapping()
     ->onOneServer();
+
+// --- Etapas 6: priminimas klientui, kai užklausa vykdoma 60+ d. (docs/STATES.md 1 sk., automatiškai neužbaigiam) ---
+Schedule::command('service-requests:remind-completion')
+    // Ne naktį: laiškas ateina darbo dienos pradžioje Lietuvos laiku
+    ->dailyAt('09:00')
+    ->timezone('Europe/Vilnius')
+    ->withoutOverlapping()
+    ->onOneServer();

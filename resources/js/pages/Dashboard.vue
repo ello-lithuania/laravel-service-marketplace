@@ -7,6 +7,7 @@ import {
     Coins,
     Images,
     ShieldCheck,
+    Star,
     UserRoundPen,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -21,12 +22,16 @@ import {
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { index as creditsIndex } from '@/routes/credits';
-import type { ChecklistItem, ProviderStatus } from '@/types';
+import { show as showRequest } from '@/routes/service-requests';
+import type { ChecklistItem, ProviderStatus, ReviewPrompt } from '@/types';
 
 // „Mano paskyra": kiekviena rolė gauna savo skydelio duomenis (DashboardController),
 // o kitos rolės blokas ateina null.
 const props = defineProps<{
-    client: { service_requests_count: number } | null;
+    client: {
+        service_requests_count: number;
+        review_prompts: ReviewPrompt[];
+    } | null;
     provider: {
         display_name: string | null;
         status: ProviderStatus | null;
@@ -103,6 +108,49 @@ const statusVariant = computed(() => {
                         Iš viso sukurta: {{ client.service_requests_count }}
                     </CardDescription>
                 </CardHeader>
+            </Card>
+
+            <!-- Etapas 6: atlikti darbai, kuriuos dar galima įvertinti -->
+            <Card
+                v-if="client.review_prompts.length"
+                class="md:col-span-2"
+                data-test="review-prompts"
+            >
+                <CardHeader>
+                    <CardTitle class="flex items-center gap-2">
+                        <Star class="size-5 fill-amber-400 text-amber-400" />
+                        Įvertinkite atliktus darbus
+                    </CardTitle>
+                    <CardDescription>
+                        Jūsų atsiliepimas padeda kitiems išsirinkti patikimą
+                        meistrą.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ul class="divide-y">
+                        <li
+                            v-for="prompt in client.review_prompts"
+                            :key="prompt.slug"
+                            class="flex flex-wrap items-center justify-between gap-3 py-2"
+                        >
+                            <div class="min-w-0">
+                                <p class="truncate font-medium">
+                                    {{ prompt.title }}
+                                </p>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ prompt.provider }}
+                                </p>
+                            </div>
+                            <Button size="sm" variant="outline" as-child>
+                                <Link
+                                    :href="`${showRequest(prompt.slug).url}#atsiliepimas`"
+                                >
+                                    Palikti atsiliepimą
+                                </Link>
+                            </Button>
+                        </li>
+                    </ul>
+                </CardContent>
             </Card>
         </div>
 

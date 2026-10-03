@@ -10,13 +10,16 @@ use App\Enums\StartPreference;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequests\StoreServiceRequestRequest;
 use App\Http\Resources\OfferResource;
+use App\Http\Resources\Reviews\AccountReviewResource;
 use App\Http\Resources\ServiceRequestResource;
 use App\Http\Resources\ServiceRequestSummaryResource;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\Offer;
+use App\Models\Review;
 use App\Models\ServiceRequest;
 use App\Models\User;
+use App\Support\OfferMessaging;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -57,6 +60,8 @@ class ServiceRequestController extends Controller
                     ->value('id'),
                 'city_id' => City::query()->where('slug', $this->querySlug($request, 'miestas'))->value('id') ?? $user->city_id,
             ],
+            // Etapas 6: nuotraukos paskutiniame žingsnyje
+            'maxPhotos' => ServiceRequest::MAX_PHOTOS,
         ]);
     }
 
@@ -65,7 +70,7 @@ class ServiceRequestController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $serviceRequest = $create->handle($user, $request->toServiceRequestAttributes());
+        $serviceRequest = $create->handle($user, $request->toServiceRequestAttributes(), $request->photos());
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -101,7 +106,8 @@ class ServiceRequestController extends Controller
 
         /** @var User $user */
         $user = $request->user();
-        $serviceRequest->load(['category:id,name,offer_cost_credits', 'city:id,name']);
+        // Etapas 6: media – užklausos nuotraukos (viena užklausa visoms)
+        $serviceRequest->load(['category:id,name,offer_cost_credits', 'city:id,name', 'media']);
 
         return $serviceRequest->client_id === $user->id || $user->isAdmin()
             ? $this->clientView($user, $serviceRequest)
@@ -111,7 +117,8 @@ class ServiceRequestController extends Controller
     private function clientView(User $user, ServiceRequest $serviceRequest): Response
     {
         $offers = $serviceRequest->offers()
-            ->with('providerProfile.city:id,name')
+            // Etapas 6: conversation – „Rašyti žinutę" mygtukui (OfferMessaging), be N+1
+            ->with(['providerProfile.city:id,name', 'conversation'])
             // Pirma priimtas, tada laukiantys, tada kiti; tame pačiame lygyje – naujausi viršuje
             ->orderByRaw('CASE status WHEN ? THEN 0 WHEN ? THEN 1 ELSE 2 END', [OfferStatus::Accepted->value, OfferStatus::Pending->value])
             ->latest()
@@ -127,6 +134,7 @@ class ServiceRequestController extends Controller
             'offers' => $offers->map(fn (Offer $offer): array => [
                 ...OfferResource::make($offer)->resolve(),
                 'can' => ['accept' => $user->can('accept', $offer), 'decline' => $user->can('decline', $offer)],
+                'messaging' => OfferMessaging::for($user, $offer),
             ]),
             // Išrinkto teikėjo kontaktai – tik po priėmimo
             'acceptedContact' => $accepted === null ? null : [
@@ -137,7 +145,13 @@ class ServiceRequestController extends Controller
             'can' => [
                 'cancel' => $user->can('cancel', $serviceRequest),
                 'complete' => $user->can('complete', $serviceRequest),
+                // --- Etapas 6 ---
+                'review' => $user->can('createVerified', [Review::class, $serviceRequest]),
+                'updatePhotos' => $user->can('updatePhotos', $serviceRequest),
             ],
+            'maxPhotos' => ServiceRequest::MAX_PHOTOS,
+            // --- Etapas 6: kliento atsiliepimas apie šį darbą (jei jau paliktas) ---
+            'review' => $this->clientReview($serviceRequest),
         ]);
     }
 
@@ -168,7 +182,12 @@ class ServiceRequestController extends Controller
                 ...OfferResource::make($myOffer)->withFullMessage()->resolve(),
                 'is_chosen' => $isChosen,
                 'can' => ['withdraw' => $user->can('withdraw', $myOffer)],
+                'messaging' => OfferMessaging::for($user, $myOffer),
             ],
+            // --- Etapas 6: „Paprašyti pažymėti atliktu" – tik išrinktam teikėjui vykdomoje užklausoje ---
+            'completion' => $isChosen && $serviceRequest->status === ServiceRequestStatus::InProgress
+                ? $this->completionRequestState($user, $serviceRequest)
+                : null,
             'offerForm' => [
                 'allowed' => $offerPermission->allowed(),
                 'reason' => $offerPermission->denied() ? $offerPermission->message() : null,
@@ -180,6 +199,34 @@ class ServiceRequestController extends Controller
                 ),
             ],
         ]);
+    }
+
+    /**
+     * Etapas 6: ar teikėjas gali paprašyti pažymėti darbą atliktu ir kada paskutinį kartą prašė.
+     *
+     * @return array{can_request: bool, reason: string|null, requested_at: string|null}
+     */
+    private function completionRequestState(User $user, ServiceRequest $serviceRequest): array
+    {
+        $permission = Gate::forUser($user)->inspect('requestCompletion', $serviceRequest);
+
+        return [
+            'can_request' => $permission->allowed(),
+            'reason' => $permission->denied() ? $permission->message() : null,
+            'requested_at' => $serviceRequest->completion_requested_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Etapas 6: atsiliepimas apie šią užklausą (patvirtintas – vienas užklausai).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function clientReview(ServiceRequest $serviceRequest): ?array
+    {
+        $review = $serviceRequest->review()->with('author')->first();
+
+        return $review === null ? null : AccountReviewResource::make($review->setRelation('serviceRequest', $serviceRequest))->resolve();
     }
 
     /**

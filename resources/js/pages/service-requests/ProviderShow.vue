@@ -6,6 +6,8 @@ import InputError from '@/components/InputError.vue';
 import FormTextarea from '@/components/marketplace/FormTextarea.vue';
 import RequestDetails from '@/components/marketplace/RequestDetails.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
+import ReportDialog from '@/components/complaints/ReportDialog.vue';
+import MessageButton from '@/components/messages/MessageButton.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,14 +15,25 @@ import { formatDate, formatMoney, timeAgo } from '@/lib/marketplace';
 import { index as creditsIndex } from '@/routes/credits';
 import { store, withdraw } from '@/routes/offers';
 import { index as feed } from '@/routes/provider-feed';
-import type { Offer, ServiceRequestDetail } from '@/types';
+import { requestCompletion } from '@/routes/service-requests';
+import type { Offer, OfferMessaging, ServiceRequestDetail } from '@/types';
 
 const props = defineProps<{
     serviceRequest: ServiceRequestDetail;
     client: { public_name: string; phone: string | null; email: string | null };
     myOffer:
-        | (Offer & { is_chosen: boolean; can: { withdraw: boolean } })
+        | (Offer & {
+              is_chosen: boolean;
+              can: { withdraw: boolean };
+              messaging: OfferMessaging;
+          })
         | null;
+    /** Etapas 6: „Paprašyti pažymėti atliktu" (tik išrinktam teikėjui, kai užklausa vykdoma) */
+    completion: {
+        can_request: boolean;
+        reason: string | null;
+        requested_at: string | null;
+    } | null;
     offerForm: {
         allowed: boolean;
         reason: string | null;
@@ -61,6 +74,21 @@ function submit(): void {
 
 const withdrawing = ref(false);
 
+// Etapas 6: pats pažymėti darbo atliktu teikėjas negali – tik paprašyti klientą (docs/STATES.md 1 sk.)
+const requestingCompletion = ref(false);
+
+function askToComplete(): void {
+    router.post(
+        requestCompletion(props.serviceRequest.slug).url,
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => (requestingCompletion.value = true),
+            onFinish: () => (requestingCompletion.value = false),
+        },
+    );
+}
+
 function withdrawOffer(): void {
     if (
         !props.myOffer ||
@@ -91,6 +119,12 @@ function withdrawOffer(): void {
                     {{ serviceRequest.title }}
                 </h1>
                 <StatusBadge :status="serviceRequest.status" />
+                <!-- Etapas 6: pranešti apie netinkamą užklausą -->
+                <ReportDialog
+                    type="service_request"
+                    :id="serviceRequest.id"
+                    class="ml-auto"
+                />
             </div>
             <p
                 class="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground"
@@ -135,6 +169,39 @@ function withdrawOffer(): void {
             </p>
         </section>
 
+        <!-- Etapas 6: darbas atliktas? Paprašyti klientą pažymėti -->
+        <section
+            v-if="completion"
+            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4"
+        >
+            <div class="text-sm">
+                <p class="font-medium">Darbą jau atlikote?</p>
+                <p class="text-muted-foreground">
+                    Pažymėti atliktu gali tik klientas – paprašykite jo, ir jis
+                    galės palikti atsiliepimą.
+                    <template v-if="completion.requested_at">
+                        Paskutinį kartą prašėte
+                        {{ timeAgo(completion.requested_at) }}.
+                    </template>
+                </p>
+                <p
+                    v-if="!completion.can_request && completion.reason"
+                    class="mt-1 text-xs text-muted-foreground"
+                >
+                    {{ completion.reason }}
+                </p>
+            </div>
+            <Button
+                v-if="completion.can_request"
+                variant="outline"
+                :disabled="requestingCompletion"
+                data-test="request-completion"
+                @click="askToComplete"
+            >
+                Paprašyti pažymėti atliktu
+            </Button>
+        </section>
+
         <!-- Mano pasiūlymas -->
         <section
             v-if="myOffer"
@@ -173,16 +240,23 @@ function withdrawOffer(): void {
                         : 'klientas dar neperžiūrėjo'
                 }}
             </p>
-            <Button
-                v-if="myOffer.can.withdraw"
-                variant="outline"
-                size="sm"
-                :disabled="withdrawing"
-                data-test="withdraw-offer"
-                @click="withdrawOffer"
-            >
-                Atšaukti pasiūlymą
-            </Button>
+            <div class="flex flex-wrap gap-2">
+                <!-- Etapas 6: pokalbis su klientu -->
+                <MessageButton
+                    :offer-id="myOffer.id"
+                    :messaging="myOffer.messaging"
+                />
+                <Button
+                    v-if="myOffer.can.withdraw"
+                    variant="outline"
+                    size="sm"
+                    :disabled="withdrawing"
+                    data-test="withdraw-offer"
+                    @click="withdrawOffer"
+                >
+                    Atšaukti pasiūlymą
+                </Button>
+            </div>
         </section>
 
         <!-- Pasiūlymo forma -->

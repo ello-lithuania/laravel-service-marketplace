@@ -307,14 +307,15 @@ todėl naujam vartotojui nieko įrašyti nereikia, o pridėjus naują grupę sen
 }
 ```
 
-| Grupė             | Kam      | Notification klasės                                                 |
-| ----------------- | -------- | ------------------------------------------------------------------- |
-| `new_requests`    | teikėjui | `NewMatchingRequest`                                                |
-| `offer_updates`   | teikėjui | `OfferAccepted`, `OfferDeclined`, `ServiceRequestCancelled`         |
-| `new_offers`      | klientui | `NewOffer`                                                          |
-| `request_updates` | klientui | `ServiceRequestPublished`, `ServiceRequestRejected`                 |
-| `messages`        | abiem    | `NewMessage` (Etapas 6)                                             |
-| `billing`         | teikėjui | `PaymentSucceeded`, `SubscriptionExpiring`, `LowCredits` (Etapas 7) |
+| Grupė             | Kam      | Notification klasės                                                               |
+| ----------------- | -------- | --------------------------------------------------------------------------------- |
+| `new_requests`    | teikėjui | `NewMatchingRequest`                                                              |
+| `offer_updates`   | teikėjui | `OfferAccepted`, `OfferDeclined`, `ServiceRequestCancelled`                       |
+| `new_offers`      | klientui | `NewOffer`                                                                        |
+| `request_updates` | klientui | `ServiceRequestPublished`, `ServiceRequestRejected`                               |
+| `messages`        | abiem    | `NewMessage` (Etapas 6)                                                           |
+| `reviews`         | abiem    | `ReviewInvitation`, `ReviewReplied` (klientui), `NewReview` (teikėjui) – Etapas 6 |
+| `billing`         | teikėjui | `PaymentSucceeded`, `SubscriptionExpiring`, `LowCredits` (Etapas 7)               |
 
 Kodas: `App\Support\NotificationSettings` (numatytosios reikšmės, skaitymas, grupės pagal rolę). El. laiškas
 nesiunčiamas, kol vartotojas nepatvirtino el. pašto – nepatvirtintu adresu laiškų nesiunčiam.
@@ -561,7 +562,20 @@ stulpeliu, todėl tinka ir FK reikmėms.
 `cancellation_reason` – `string(500)?`, administratoriaus atmetimo ar kliento atšaukimo priežastis
 (vykdomą užklausą klientas gali atšaukti tik su priežastimi – `docs/STATES.md` 1 sk.).
 
-Nuotraukos – medialibrary kolekcija `photos`.
+**Etapas 6 papildė** (migracija `add_completion_reminders_to_service_requests_table`, `docs/STATES.md` 1 sk.
+„Papildomos taisyklės"):
+
+| Stulpelis               | Tipas        | Pastaba                                                                                  |
+| ----------------------- | ------------ | ---------------------------------------------------------------------------------------- |
+| completion_requested_at | `timestamp?` | kada teikėjas paskutinį kartą paprašė pažymėti darbą atliktu (kartoti – ne dažniau 3 d.) |
+| completion_reminded_at  | `timestamp?` | kada sistema priminė klientui, kad užklausa vykdoma jau 60 d. (siunčiama vieną kartą)    |
+
+_Kodėl stulpeliai, o ne cache ar `notifications` lentelė:_ tai verslo taisyklės („ne dažniau kaip kas 3 d.",
+„tik vieną kartą"), kurios turi išlikti išvalius cache, o UI turi parodyti „Paprašėte prieš 2 d.". Ieškoti
+`notifications.data` JSON'e būtų lėta ir priklausytų nuo vartotojo pranešimų nustatymų (database kanalas gali būti
+išjungtas). Indeksų nereikia: kasdienė komanda atsirenka `in_progress` užklausas pagal `(status, published_at)`.
+
+Nuotraukos – medialibrary kolekcija `photos` (Etapas 6: iki 8, privatus diskas – žr. `media`).
 
 **Ryšiai:** `belongsTo` client (User, FK `client_id`), Category, City, acceptedOffer (Offer) ·
 `hasMany` Offer, Conversation · `hasOne` Review · `morphMany` media, complaints.
@@ -650,6 +664,13 @@ _Kodėl `last_read_message_id`, o ne `messages.read_at`:_ neperskaitytos žinut�
 o tai yra intervalas indekse. Be to, toks būdas veikia ir tada, kai dalyvių daugiau nei du (pvz. prie pokalbio
 prisijungia administratorius, nagrinėjantis skundą).
 
+**Įgyvendinta Etape 6.** Pokalbis sukuriamas per `StartConversation` (`createOrFirst` pagal `UNIQUE(offer_id)`), dalyviai –
+užklausos klientas ir pasiūlymo teikėjas. Pradėti gali klientas (bet kuriam savo užklausos pasiūlymui), teikėjas – tik
+priimtam; rašyti galima, kol pasiūlymas laukia atviroje užklausoje, o priimtam – visada (`ConversationPolicy`).
+Atidarius pokalbį `last_read_message_id` = paskutinės žinutės id (`MarkConversationRead`); siuntėjui – iš karto jo žinutės
+id. Neperskaitytų skaičius – `App\Services\Messaging\UnreadMessages` (sąrašui – `withCount`, meniu – vienas `COUNT`
+su `JOIN`).
+
 #### `messages`
 
 | Stulpelis       | Tipas                         | Pastaba                                         |
@@ -697,6 +718,14 @@ Priedai – medialibrary kolekcija `attachments`.
   pažymimas kitaip.
 - Stulpelio `is_verified` nededam: tai pigiai išvedama iš `service_request_id IS NOT NULL`. Nesaugom to, ką
   galima lengvai apskaičiuoti.
+
+**Įgyvendinta Etape 6** (`ReviewPolicy`, `app/Actions/Reviews`):
+
+- patvirtintą rašo tik užklausos klientas, per 60 d. nuo `completed_at`, vieną kartą; paskelbiamas iš karto;
+- pakvietimo – per pasirašytą nuorodą (`URL::temporarySignedRoute`, 30 d.), tik klientai, ne savo profiliui, vienas
+  tam pačiam teikėjui per 12 mėn. (tikrinama per `(author_id)` FK indeksą), būsena `pending` – paskelbia administratorius;
+- teikėjas atsako vieną kartą (`provider_reply IS NULL`);
+- `rating_avg` ir `reviews_count` perskaičiuoja `ReviewObserver` → `RecalculateProviderRating` (eilėje).
 
 **Indeksai ir kodėl:**
 
@@ -903,6 +932,12 @@ numeracijoje nelieka.
 „kiek skundų gavo šis atsiliepimas?" · `(status, created_at)` – admin eilė, seniausi viršuje ·
 `reporter_id`, `handled_by_id` – automatiškai (FK).
 
+**Įgyvendinta Etape 6.** `reportable_type` – enum `ReportableType` (tie patys trumpi vardai kaip morph map'e: `service_request`,
+`offer`, `review`, `message`, `provider_profile`). Tas pats pranešėjas apie tą patį įrašą gali turėti tik vieną
+neužbaigtą (`open` / `in_review`) skundą – tikrina `FileComplaint` (unikalaus indekso nėra, nes užbaigus skundą
+pranešti vėl galima). Nagrinėjimas – Filament `ComplaintResource`: `open → in_review → resolved / rejected`,
+išsprendus galima paslėpti atsiliepimą (`status = hidden`) ar žinutę (soft delete).
+
 #### `notifications` (Laravel)
 
 Sukuriama komanda `php artisan make:notifications-table`.
@@ -920,6 +955,8 @@ Lentelė naudojama `database` kanalui (varpelis svetainėje). El. laiškai siun�
 Notification klasės kodu, o ką siųsti, lemia `users.notification_settings`.
 Planuojami tipai: `NewMatchingRequest`, `NewOffer`, `OfferAccepted`, `OfferDeclined`, `NewMessage`, `NewReview`,
 `ReviewReplied`, `LowCredits`, `SubscriptionExpiring`, `PaymentSucceeded`, `ComplaintResolved`.
+Etape 6 sukurti: `NewMessage`, `NewReview`, `ReviewInvitation`, `ReviewReplied`, `CompletionRequested`,
+`CompletionReminder`, `ComplaintResolved` (pastarasis nustatymuose neišjungiamas – tai atsakymas į paties vartotojo veiksmą).
 **Indeksai:** `(notifiable_type, notifiable_id)` sukuriamas automatiškai. Jei neperskaitytų skaičiavimas sulėtės,
 pridėsim į indeksą `read_at` (spręsim pagal `EXPLAIN`).
 → https://laravel.com/docs/13.x/notifications#database-notifications
@@ -940,9 +977,15 @@ Migraciją sukuria paketas. Svarbiausi stulpeliai: `model_type`/`model_id` (morp
 | ProviderProfile | `logo`        | 1 (single) | `thumb` iki 256×256, `Fit::Max` (neapkerpa)                 | iškart (`nonQueued`) | 3      |
 | ProviderProfile | `cover`       | 1 (single) | `wide` 1200×400, `Fit::Crop`                                | iškart (`nonQueued`) | 3      |
 | PortfolioItem   | `images`      | iki 10     | `thumb` 480×360 `Fit::Crop`, `large` iki 1600 px `Fit::Max` | eilėje (queued)      | 3      |
-| ServiceRequest  | `photos`      |            |                                                             |                      | 5      |
-| Message         | `attachments` |            |                                                             |                      | 6      |
-| Complaint       | `evidence`    |            |                                                             |                      | 6      |
+| ServiceRequest  | `photos`      | iki 8      | `thumb` 480×360 `Fit::Crop`, `large` iki 1600 px `Fit::Max` | eilėje (queued)      | 6      |
+| Message         | `attachments` | iki 5      | `thumb` 480×360 `Fit::Crop` (tik nuotraukoms, ne PDF)       | eilėje (queued)      | 6      |
+| Complaint       | `evidence`    |            | (kol kas nedaroma – skundui užtenka aprašymo)               |                      | –      |
+
+- **Privatus diskas (Etapas 6).** Užklausos nuotraukos ir žinučių priedai saugomi `local` diske
+  (`storage/app/private`), o ne `public`: juos gali matyti tik užklausos klientas, tinkami teikėjai ar pokalbio
+  dalyviai. `public` diske failas pasiekiamas kiekvienam, kas atspėja URL (`/storage/{media_id}/{failas}`, o
+  `media_id` – iš eilės didėjantis skaičius). Todėl failą atiduoda `PrivateMediaController` (`/failai/{media}`), kuris
+  pirma patikrina Policy (`view` modeliui, kuriam failas priklauso).
 
 - **Diskas:** `public` (`storage/app/public`, URL `/storage/...`). Vieną kartą paleisti `php artisan storage:link`
   (sukuria `public/storage` nuorodą; Git'e ignoruojama). Produkcijoje diską galima pakeisti į S3 (`MEDIA_DISK`).
@@ -1031,9 +1074,10 @@ datą failo pavadinime.
 | 25  | `create_notifications_table`                           | `php artisan make:notifications-table`                                                |
 | 26  | `create_media_table`                                   | publikuota iš medialibrary paketo Etape 3 (`2026_10_03_170615_…`)                     |
 | 27  | `add_cancellation_reason_to_service_requests_table`    | **Etapas 5**: atmetimo / atšaukimo priežastis                                         |
-| 28  | `add_billing_columns_to_payments_table`                | **Etapas 7**: `subscription_id`, `billing_details`                                    |
-| 29  | `add_credits_granted_until_to_subscriptions_table`     | **Etapas 7**: kreditų suteikimo idempotencija                                         |
-| 30  | `create_invoice_sequences_table`                       | **Etapas 7**: sąskaitų numerių skaitiklis                                             |
+| 28  | `add_completion_reminders_to_service_requests_table`   | **Etapas 6**: teikėjo prašymas užbaigti ir 60 d. priminimas                           |
+| 29  | `add_billing_columns_to_payments_table`                | **Etapas 7**: `subscription_id`, `billing_details`                                    |
+| 30  | `add_credits_granted_until_to_subscriptions_table`     | **Etapas 7**: kreditų suteikimo idempotencija                                         |
+| 31  | `create_invoice_sequences_table`                       | **Etapas 7**: sąskaitų numerių skaitiklis                                             |
 
 **Kodėl `city_id` pridedam atskirai:** numatytoji `users` migracija turi seniausią datą (`0001_01_01_…`), todėl
 vykdoma pirma, kai `cities` dar nėra. Galima būtų pakeisti datas, bet atskira `add_…` migracija aiškiau parodo

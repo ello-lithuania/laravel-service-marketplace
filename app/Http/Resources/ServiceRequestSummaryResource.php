@@ -41,6 +41,8 @@ class ServiceRequestSummaryResource extends JsonResource
             'published_at' => $this->published_at?->toIso8601String(),
             'expires_at' => $this->expires_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
+            // Etapas 6: tik kai užklausa su withCount('media as photos_count') (teikėjo srautas)
+            'photos_count' => $this->whenCounted('photos'),
         ];
     }
 }

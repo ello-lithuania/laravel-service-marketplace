@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests\ServiceRequests;
 
+use App\Concerns\ImageValidationRules;
 use App\Enums\StartPreference;
 use App\Models\Category;
 use App\Models\ServiceRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
@@ -19,6 +22,9 @@ use Illuminate\Validation\Rule;
  */
 class StoreServiceRequestRequest extends FormRequest
 {
+    // Etapas 6: nuotraukų taisyklės – tos pačios kaip Etapo 3 įkėlimams
+    use ImageValidationRules;
+
     public function authorize(): bool
     {
         return Gate::allows('create', ServiceRequest::class);
@@ -49,6 +55,9 @@ class StoreServiceRequestRequest extends FormRequest
                 'after_or_equal:today',
                 'before_or_equal:'.now()->addYear()->toDateString(),
             ],
+            // --- Etapas 6: nuotraukos (neprivalomos, paskutiniame formos žingsnyje) ---
+            'photos' => ['nullable', 'array', 'max:'.ServiceRequest::MAX_PHOTOS],
+            'photos.*' => $this->imageRules(),
         ];
     }
 
@@ -70,6 +79,8 @@ class StoreServiceRequestRequest extends FormRequest
             'category_id.exists' => __('service_requests.validation.category_leaf'),
             'budget_max.gte' => __('service_requests.validation.budget_max_gte'),
             'start_date.required_if' => __('service_requests.validation.start_date_required'),
+            'photos.max' => __('service_requests.validation.photos_max', ['max' => ServiceRequest::MAX_PHOTOS]),
+            ...$this->imageMessages('photos.*'),
         ];
     }
 
@@ -94,5 +105,15 @@ class StoreServiceRequestRequest extends FormRequest
             'start_preference' => $startPreference,
             'start_date' => $startPreference === StartPreference::Date->value ? $this->string('start_date')->toString() : null,
         ];
+    }
+
+    /**
+     * Etapas 6: įkeltos nuotraukos (validacija jau patikrino, kad tai paveikslėliai).
+     *
+     * @return list<UploadedFile>
+     */
+    public function photos(): array
+    {
+        return array_values(Arr::wrap($this->file('photos')));
     }
 }

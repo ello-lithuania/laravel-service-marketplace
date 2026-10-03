@@ -11,6 +11,7 @@ use App\Http\Resources\ServiceRequestSummaryResource;
 use App\Models\Offer;
 use App\Models\ServiceRequest;
 use App\Models\User;
+use App\Support\OfferMessaging;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -84,6 +85,8 @@ class OfferController extends Controller
             'offer' => OfferResource::make($offer)->withFullMessage()->resolve(),
             'serviceRequest' => ServiceRequestSummaryResource::make($serviceRequest)->resolve(),
             'can' => ['accept' => $user->can('accept', $offer), 'decline' => $user->can('decline', $offer)],
+            // Etapas 6: „Rašyti žinutę"
+            'messaging' => OfferMessaging::for($user, $offer),
         ]);
     }
 }

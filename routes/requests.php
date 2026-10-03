@@ -5,8 +5,10 @@
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Offers\OfferController;
 use App\Http\Controllers\Offers\OfferTransitionController;
+use App\Http\Controllers\ServiceRequests\CompletionRequestController;
 use App\Http\Controllers\ServiceRequests\ProviderFeedController;
 use App\Http\Controllers\ServiceRequests\ServiceRequestController;
+use App\Http\Controllers\ServiceRequests\ServiceRequestPhotoController;
 use App\Http\Controllers\ServiceRequests\ServiceRequestTransitionController;
 use App\Http\Controllers\Settings\NotificationSettingsController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
@@ -26,13 +28,21 @@ Route::middleware('auth')->group(function () {
         Route::get('uzklausos/nauja', [ServiceRequestController::class, 'create'])->name('service-requests.create');
         // Precognition: formos žingsniai validuojami serverio taisyklėmis neišsaugant (Precognition antraštė)
         Route::post('uzklausos', [ServiceRequestController::class, 'store'])
-            ->middleware(HandlePrecognitiveRequests::class)
+            // Etapas 6: throttle – tik tikram išsaugojimui (Precognition užklausų limiter'is neriboja)
+            ->middleware([HandlePrecognitiveRequests::class, 'throttle:service-requests'])
             ->name('service-requests.store');
         Route::get('mano-uzklausos', [ServiceRequestController::class, 'index'])->name('service-requests.index');
         Route::post('uzklausos/{serviceRequest:slug}/uzbaigti', [ServiceRequestTransitionController::class, 'complete'])
             ->name('service-requests.complete');
         Route::post('pasiulymai/{offer}/priimti', [OfferTransitionController::class, 'accept'])->name('offers.accept');
         Route::post('pasiulymai/{offer}/atmesti', [OfferTransitionController::class, 'decline'])->name('offers.decline');
+
+        // --- Etapas 6: užklausos nuotraukos (kol pending / open – ServiceRequestPolicy::updatePhotos) ---
+        Route::post('uzklausos/{serviceRequest:slug}/nuotraukos', [ServiceRequestPhotoController::class, 'store'])
+            ->name('service-requests.photos.store');
+        Route::delete('uzklausos/{serviceRequest:slug}/nuotraukos/{media}', [ServiceRequestPhotoController::class, 'destroy'])
+            ->scopeBindings()
+            ->name('service-requests.photos.destroy');
     });
 
     // Atšaukti gali klientas arba administratorius – sprendžia ServiceRequestPolicy::cancel
@@ -45,6 +55,10 @@ Route::middleware('auth')->group(function () {
         Route::get('mano-pasiulymai', [OfferController::class, 'index'])->name('offers.index');
         Route::post('uzklausos/{serviceRequest:slug}/pasiulymai', [OfferController::class, 'store'])->name('offers.store');
         Route::post('pasiulymai/{offer}/atsaukti', [OfferTransitionController::class, 'withdraw'])->name('offers.withdraw');
+
+        // --- Etapas 6: išrinktas teikėjas prašo klientą pažymėti darbą atliktu (docs/STATES.md 1 sk.) ---
+        Route::post('uzklausos/{serviceRequest:slug}/prasyti-uzbaigti', CompletionRequestController::class)
+            ->name('service-requests.request-completion');
     });
 
     // Užklausos ir pasiūlymo puslapiai – klientui, tinkamam teikėjui ir administratoriui (Policy „view")

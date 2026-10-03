@@ -38,12 +38,18 @@ final class NotificationSettings
         ],
         'request_updates' => [
             'label' => 'Mano užklausos',
-            'description' => 'Kai administratorius patvirtina ar atmeta jūsų užklausą.',
+            'description' => 'Kai administratorius patvirtina ar atmeta jūsų užklausą, teikėjas prašo pažymėti darbą atliktu ar primename apie neužbaigtą darbą.',
             'roles' => [UserRole::Client],
         ],
         'messages' => [
             'label' => 'Žinutės',
             'description' => 'Kai gaunate naują žinutę.',
+            'roles' => [UserRole::Client, UserRole::Provider],
+        ],
+        // --- Etapas 6 ---
+        'reviews' => [
+            'label' => 'Atsiliepimai',
+            'description' => 'Kai gaunate atsiliepimą ar atsakymą į jį, arba kvietimą įvertinti atliktą darbą.',
             'roles' => [UserRole::Client, UserRole::Provider],
         ],
         // --- Etapas 7: PaymentSucceeded, SubscriptionExpiring, LowCredits ---

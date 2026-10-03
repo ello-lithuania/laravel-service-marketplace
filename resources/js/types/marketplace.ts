@@ -1,5 +1,7 @@
 // Etapas 5: užklausų, pasiūlymų ir pranešimų tipai (atitinka app/Http/Resources/*)
 
+import type { PrivateFile } from './messages';
+
 /** PHP enum'as, išsiųstas kaip { value, label } – label jau lietuviškas */
 export type EnumValue<T extends string = string> = {
     value: T;
@@ -37,6 +39,8 @@ export type ServiceRequestSummary = {
     published_at: string | null;
     expires_at: string | null;
     created_at: string | null;
+    /** Etapas 6: tik teikėjo sraute (withCount) */
+    photos_count?: number;
 };
 
 export type ServiceRequestDetail = ServiceRequestSummary & {
@@ -47,6 +51,10 @@ export type ServiceRequestDetail = ServiceRequestSummary & {
     cancelled_at: string | null;
     cancellation_reason: string | null;
     views_count: number;
+    /** Etapas 6: kada teikėjas paprašė pažymėti darbą atliktu */
+    completion_requested_at: string | null;
+    /** Etapas 6: užklausos nuotraukos (privačios, per /failai/{id}) */
+    photos: PrivateFile[];
 };
 
 export type OfferProvider = {

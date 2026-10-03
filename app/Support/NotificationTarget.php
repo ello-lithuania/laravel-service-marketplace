@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Offer;
 use App\Models\Payment;
+use App\Models\Review;
 use App\Models\ServiceRequest;
 use Illuminate\Notifications\DatabaseNotification;
 
@@ -25,13 +26,20 @@ final class NotificationTarget
             return $billingUrl;
         }
 
+        // --- Etapas 6 ---
+        $etapas6 = self::etapas6Url($type, $data);
+
+        if ($etapas6 !== null) {
+            return $etapas6;
+        }
+
         $requestId = isset($data['service_request_id']) && is_numeric($data['service_request_id']) ? (int) $data['service_request_id'] : null;
         $offerId = isset($data['offer_id']) && is_numeric($data['offer_id']) ? (int) $data['offer_id'] : null;
 
         $slug = $requestId === null ? null : ServiceRequest::withTrashed()->whereKey($requestId)->value('slug');
 
         if (! is_string($slug)) {
-            // Etapo 6 tipai (NewMessage, NewReview) ir ištrinti įrašai – kol kas į pranešimų sąrašą
+            // Ištrinti įrašai ir tipai be užklausos – į pranešimų sąrašą
             return route('notifications.index');
         }
 
@@ -59,5 +67,36 @@ final class NotificationTarget
             'LowCredits' => route('credits.index'),
             default => null,
         };
+    }
+
+    // -------------------------------------------------------------------------
+    // Etapas 6: žinutės, atsiliepimai, skundai
+    // -------------------------------------------------------------------------
+
+    /**
+     * @param  array<array-key, mixed>  $data
+     */
+    private static function etapas6Url(string $type, array $data): ?string
+    {
+        $id = fn (string $key): ?int => isset($data[$key]) && is_numeric($data[$key]) ? (int) $data[$key] : null;
+
+        return match (true) {
+            $type === 'NewMessage' && $id('conversation_id') !== null => route('conversations.show', $id('conversation_id')),
+            // Teikėjui – jo atsiliepimų puslapis (ten galima atsakyti)
+            $type === 'NewReview' => route('provider-reviews.index'),
+            // Autoriui – viešas teikėjo profilis, kur matomas atsakymas
+            $type === 'ReviewReplied' && $id('review_id') !== null => self::providerProfileUrl($id('review_id')),
+            default => null,
+        };
+    }
+
+    private static function providerProfileUrl(int $reviewId): ?string
+    {
+        $slug = Review::query()
+            ->join('provider_profiles', 'provider_profiles.id', '=', 'reviews.provider_profile_id')
+            ->where('reviews.id', $reviewId)
+            ->value('provider_profiles.slug');
+
+        return is_string($slug) ? route('providers.show', $slug).'#atsiliepimai' : null;
     }
 }

@@ -4,11 +4,14 @@ import {
     CalendarClock,
     CircleCheck,
     CircleX,
+    ClipboardCheck,
     ClipboardList,
     Coins,
     FileText,
     Inbox,
     MessageSquare,
+    MessageSquareReply,
+    ShieldCheck,
     Receipt,
     Star,
 } from '@lucide/vue';
@@ -33,6 +36,8 @@ const icon = computed(() => {
         case 'NewMessage':
             return MessageSquare;
         case 'NewReview':
+        // Etapas 6
+        case 'ReviewInvitation':
             return Star;
         // Etapas 7: mokėjimai ir kreditai
         case 'PaymentSucceeded':
@@ -41,6 +46,13 @@ const icon = computed(() => {
             return CalendarClock;
         case 'LowCredits':
             return Coins;
+        case 'ReviewReplied':
+            return MessageSquareReply;
+        case 'CompletionRequested':
+        case 'CompletionReminder':
+            return ClipboardCheck;
+        case 'ComplaintResolved':
+            return ShieldCheck;
         default:
             return props.type.startsWith('ServiceRequest')
                 ? ClipboardList
