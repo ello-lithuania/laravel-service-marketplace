@@ -23,5 +23,14 @@ defineProps<{ seo: SeoMeta }>();
             :content="seo.description"
         />
         <meta head-key="og:url" property="og:url" :content="seo.canonical" />
+        <!-- Etapas 8: schema.org JSON-LD. <component is="script">, nes Vue šablone tiesioginės <script> žymos neleidžia;
+             tekstas jau užkoduotas serveryje (tas pats kaip app.blade.php), todėl Inertia jo nedubliuoja -->
+        <component
+            :is="'script'"
+            v-if="seo.json_ld"
+            head-key="json-ld"
+            type="application/ld+json"
+            >{{ seo.json_ld }}</component
+        >
     </Head>
 </template>

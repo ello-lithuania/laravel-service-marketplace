@@ -48,6 +48,10 @@
                 <meta property="og:title" content="{{ $seo['title'] }}" data-inertia="og:title">
                 <meta property="og:description" content="{{ $seo['description'] }}" data-inertia="og:description">
                 <meta property="og:url" content="{{ $seo['canonical'] }}" data-inertia="og:url">
+                {{-- Etapas 8: schema.org JSON-LD. Tekstas jau užkoduotas serveryje (SeoMeta, JSON_HEX_TAG) --}}
+                @if (! empty($seo['json_ld']))
+                    <script type="application/ld+json" data-inertia="json-ld">{!! $seo['json_ld'] !!}</script>
+                @endif
             @else
                 <title>{{ config('app.name', 'Laravel') }}</title>
             @endif
