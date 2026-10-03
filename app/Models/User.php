@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -49,7 +51,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['first_name', 'last_name', 'email', 'phone', 'city_id', 'password', 'notification_settings'])]
 #[Hidden(['password', 'remember_token'])]
 #[Appends(['name'])]
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
@@ -172,6 +174,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function complaints(): MorphMany
     {
         return $this->morphMany(Complaint::class, 'reportable');
+    }
+
+    /**
+     * Į Filament admin panelę – tik administratoriai su patvirtintu el. paštu ir neužblokuoti.
+     * Be šio metodo Filament įleistų bet kurį vartotoją, bet tik lokalioje aplinkoje.
+     * https://filamentphp.com/docs/5.x/users/overview#authorizing-access-to-the-panel
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->isAdmin() && $this->hasVerifiedEmail() && $this->banned_at === null;
     }
 
     public function isAdmin(): bool
