@@ -15,6 +15,7 @@ test('žodžiai sutrumpinami iki šaknies, kad tiktų kitos linksnių formos', f
     expect(SearchTerms::parse($input)?->words)->toBe($words);
 })->with([
     'kilmininkas' => ['Plytelių klijavimas', ['plytel', 'klijavim']],
+    'galininkas ir vietininkas' => ['plyteles vonioje', ['plytel', 'voni']],
     'didžiosios raidės ir galūnės' => ['SANTECHNIKAS Kaune', ['santechnik', 'kaun']],
     'trumpas žodis lieka' => ['IT pagalba', ['it', 'pagalb']],
     'dublikatai pašalinami' => ['langai langų', ['lang']],

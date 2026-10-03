@@ -25,9 +25,11 @@ final readonly class SearchTerms
      * bet daugumą paslaugų pavadinimų formų suveda į tą pačią šaknį.
      */
     private const ENDINGS = [
-        'iuose', 'iems', 'iams', 'ėmis', 'omis', 'imis', 'ioms', 'iais', 'iose',
-        'ams', 'ems', 'ims', 'oms', 'ose', 'ėse', 'yse', 'iai', 'ius', 'iui', 'ias', 'iam', 'ais',
-        'ių', 'as', 'is', 'ys', 'us', 'os', 'ės', 'ai', 'ei', 'ui', 'ią', 'io', 'ia',
+        'iuose',
+        'iems', 'iams', 'ėmis', 'omis', 'imis', 'umis', 'ioms', 'iais', 'iose', 'iuje',
+        'ams', 'ems', 'ims', 'oms', 'ėms', 'ums', 'ose', 'ėse', 'yse', 'oje', 'ėje', 'yje', 'uje',
+        'iai', 'ius', 'iui', 'ias', 'iam', 'ais',
+        'ių', 'iu', 'as', 'is', 'ys', 'us', 'os', 'ės', 'es', 'ai', 'ei', 'ui', 'ią', 'io', 'ia',
         'ų', 'ą', 'ę', 'į', 'ė', 'a', 'e', 'i', 'o', 'u', 'y', 's',
     ];
 
