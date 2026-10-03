@@ -25,7 +25,7 @@ class OfferDeclined extends BaseNotification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $request = $this->offer->loadMissing('serviceRequest:id,slug,title')->serviceRequest;
+        $request = $this->offer->loadMissing('serviceRequest')->serviceRequest;
 
         return $this->withSettingsHint($this->mailMessage(__('notifications.offer_declined.subject', ['title' => $request->title]))
             ->line($this->text($request->title))
@@ -37,7 +37,7 @@ class OfferDeclined extends BaseNotification
      */
     public function toArray(object $notifiable): array
     {
-        $request = $this->offer->loadMissing('serviceRequest:id,slug,title')->serviceRequest;
+        $request = $this->offer->loadMissing('serviceRequest')->serviceRequest;
 
         return [
             'offer_id' => $this->offer->id,

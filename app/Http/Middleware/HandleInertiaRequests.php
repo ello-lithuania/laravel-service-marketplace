@@ -42,6 +42,11 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // Etapas 5: neperskaitytų pranešimų skaičius varpeliui. Closure – vykdoma tik kai prop'o reikia
+            // (dalinis perkrovimas su „only" jo neskaičiuoja); COUNT naudoja indeksą (notifiable_type, notifiable_id).
+            'notifications' => fn (): ?array => $request->user() === null ? null : [
+                'unread_count' => $request->user()->unreadNotifications()->count(),
+            ],
         ];
     }
 }

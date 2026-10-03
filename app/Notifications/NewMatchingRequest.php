@@ -21,7 +21,7 @@ class NewMatchingRequest extends BaseNotification
     public function toMail(object $notifiable): MailMessage
     {
         // Eilėje modelis atkuriamas iš DB be ryšių, todėl juos užkraunam aiškiai (ne lazy loading)
-        $request = $this->serviceRequest->loadMissing(['category:id,name,offer_cost_credits', 'city:id,name']);
+        $request = $this->serviceRequest->loadMissing(['category', 'city']);
 
         return $this->withSettingsHint($this->mailMessage(__('notifications.new_matching_request.subject', ['title' => $request->title]))
             ->line(__('notifications.new_matching_request.intro', ['title' => $request->title]))

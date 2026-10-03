@@ -57,6 +57,6 @@ class NewOffer extends BaseNotification
 
     private function loadOffer(): Offer
     {
-        return $this->offer->loadMissing(['providerProfile:id,display_name', 'serviceRequest:id,slug,title']);
+        return $this->offer->loadMissing(['providerProfile', 'serviceRequest']);
     }
 }
