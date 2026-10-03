@@ -2,12 +2,11 @@
 
 `[x]` – atlikta, `[ ]` – liko.
 Kiekvienos sesijos pradžioje tęsiam nuo **pirmo nepažymėto etapo**. Etapas baigtas, kai pažymėti visi jo darbai
-**ir vartotojas jį patvirtino**. „PADARYK PATS" užduotys kito etapo neblokuoja, bet jas rekomenduojama atlikti.
+**ir vartotojas jį patvirtino**.
 
 Kiekvieno etapo pabaigoje:
 - `docs/LEARNING.md` papildomas sąvokomis, komandomis ir dažnomis klaidomis;
-- duodamos 1–3 „PADARYK PATS" užduotys (su užuominomis, be atsakymų);
-- užduodami 3–5 pasitikrinimo klausimai;
+- vartotojui papasakojama, kas padaryta, kaip ir kodėl (be užduočių ir klausimų);
 - daromas commit'as su šio failo pažymėjimais.
 
 ---
@@ -22,27 +21,10 @@ ledger, idempotencija, seeder, factory, Faker.
 - [x] Seed'ų planas (Faker lt_LT; 20k teikėjų, 100k užklausų, 300k pasiūlymų, 100k atsiliepimų, 200k žinučių) → `docs/SEEDING.md`
 - [x] `CLAUDE.md` – stack'as, konvencijos, struktūra, mokymosi režimas
 - [x] `ROADMAP.md` – etapai 0–8
-- [x] `docs/LEARNING.md` – Etapo 0 sąvokos, komandos, klaidos, klausimai
+- [x] `docs/LEARNING.md` – Etapo 0 sąvokos, komandos, klaidos ir svarbiausių dalykų paaiškinimai
+- [x] Užklausos ir pasiūlymo būsenų mašinos, kreditų grąžinimo taisyklės → `docs/STATES.md`
+- [x] Teikėjo užklausų srauto pavyzdys su indekso paaiškinimu → `docs/DB_SCHEMA.md` 8.1
 - [ ] **Vartotojas peržiūrėjo ir patvirtino schemą** (pageidaujami pakeitimai – atskiru commit'u)
-
-**PADARYK PATS**
-- [ ] **#1 `favorites` lentelė.** Suprojektuok lentelę, kurioje klientas išsisaugo patinkančius teikėjus. Aprašyk
-  ją tuo pačiu formatu kaip `docs/DB_SCHEMA.md`: stulpeliai, pirminis raktas ar unikalumas, indeksai, ON DELETE.
-  *Užuominos:* koks tai ryšio tipas – 1:N ar N:M? Kaip tokią lentelę pavadintų Laravel konvencija ir ar čia
-  geriau tiktų prasminis vardas? Dažniausios bus dvi užklausos: „mano išsaugoti teikėjai" ir „ar jau išsaugojau
-  šį teikėją?". Kurį indeksą naudos kiekviena? Ar reikia `created_at`?
-- [ ] **#2 Teikėjo užklausų srautas.** Parašyk SQL arba Eloquent pseudo-kodą: teikėjui grąžinti `open` užklausas
-  jo kategorijose ir zonose, naujausios viršuje, po 20 puslapyje. Nurodyk, kurį indeksą naudos užklausa.
-  *Užuominos:* teikėjas galėjo pasirinkti 2 lygio kategoriją, o užklausos visada 3 lygio. Kaip rasti vaikus?
-  (`DB_SCHEMA.md` 2.2 sk. aprašytas atvirkštinis atvejis.) Kaip įtraukti `serves_whole_country`?
-  Kuo skiriasi `whereIn` ir `whereExists`?
-- [ ] **#3 Būsenų diagrama.** Nupiešk užklausos (`ServiceRequestStatus`) ir pasiūlymo (`OfferStatus`) būsenų
-  perėjimus: kas gali įvykti iš kiekvienos būsenos ir kas tai inicijuoja (klientas, teikėjas, sistema, admin).
-  Galima popieriuje arba Mermaid `stateDiagram-v2` naujame faile `docs/STATES.md`.
-  *Užuominos:* kas nutinka kitiems pasiūlymams, kai vienas priimamas? O laukiantiems pasiūlymams, kai užklausa
-  pasibaigia ar atšaukiama? Ar galima atšaukti `in_progress` užklausą? Ar teikėjas atgauna kreditus, jei
-  atšaukia savo pasiūlymą?
-- [ ] Atsakyta į pasitikrinimo klausimus (`docs/LEARNING.md`)
 
 ---
 
@@ -59,9 +41,7 @@ ledger, idempotencija, seeder, factory, Faker.
 - [ ] Pest, Pint, GitHub Actions CI (testai + Pint kiekvienam push'ui)
 - [ ] Bazinis išdėstymas: header, footer, laikinas logotipas, pradžios puslapio „griaučiai"
 - [ ] Platformos pavadinimas (`APP_NAME`) – pasirenka vartotojas
-- [ ] `docs/LEARNING.md`: Etapas 1 · PADARYK PATS · klausimai
-
-PADARYK PATS (planuojamos): statinis Inertia puslapis „Apie mus" su maršrutu; savo validacijos pranešimas `lang/lt`.
+- [ ] `docs/LEARNING.md`: Etapas 1 + santrauka vartotojui
 
 ---
 
@@ -81,10 +61,7 @@ seeder'iai, morph map, masinis įterpimas.
 - [ ] Vientisumo testai (`SEEDING.md` 8 sk.)
 - [ ] Pilnas seed'as MySQL – išmatuotas laikas įrašytas į `SEEDING.md`
 - [ ] Filament: kategorijų ir savivaldybių CRUD (pirmas susipažinimas su Filament)
-- [ ] `docs/LEARNING.md`: Etapas 2 · PADARYK PATS · klausimai
-
-PADARYK PATS (planuojamos): `reviews` migracija; ryšys `ProviderProfile::categories()` su pivot laukais;
-factory būsena `ServiceRequest::expired()`.
+- [ ] `docs/LEARNING.md`: Etapas 2 + santrauka vartotojui
 
 ---
 
@@ -101,10 +78,7 @@ factory būsena `ServiceRequest::expired()`.
 - [ ] Profilio redagavimas, logotipas ir avataras (medialibrary)
 - [ ] Portfolio CRUD su nuotraukomis
 - [ ] Feature testai: registracija, prieigos teisės, profilio vedlys
-- [ ] `docs/LEARNING.md`: Etapas 3 · PADARYK PATS · klausimai
-
-PADARYK PATS (planuojamos): `ProviderProfilePolicy::update()`; Form Request portfolio darbui;
-testas „klientas negali atidaryti teikėjo profilio vedlio".
+- [ ] `docs/LEARNING.md`: Etapas 3 + santrauka vartotojui
 
 ---
 
@@ -121,10 +95,7 @@ testas „klientas negali atidaryti teikėjo profilio vedlio".
 - [ ] Kategorijų medžio ir savivaldybių cache
 - [ ] SEO puslapiai „{Paslauga} {mieste}" (`cities.name_locative`)
 - [ ] Testai
-- [ ] `docs/LEARNING.md`: Etapas 4 · PADARYK PATS · klausimai
-
-PADARYK PATS (planuojamos): query scope `ProviderProfile::scopeActive()`; puslapiavimas teikėjų sąraše;
-testas filtrui pagal miestą.
+- [ ] `docs/LEARNING.md`: Etapas 4 + santrauka vartotojui
 
 ---
 
@@ -140,14 +111,11 @@ būsenų mašina.
       (mail + database) pagal `notification_settings`
 - [ ] Teikėjo užklausų srautas su filtrais
 - [ ] Pasiūlymo siuntimas: kreditų patikra, `DB::transaction` + `lockForUpdate`, ledger įrašas
-- [ ] Klientas mato pasiūlymus, priima arba atmeta; būsenų perėjimai pagal patvirtintą diagramą
+- [ ] Klientas mato pasiūlymus, priima arba atmeta; būsenų perėjimai pagal `docs/STATES.md`
 - [ ] Darbo užbaigimas ir atšaukimas; Scheduler uždaro pasibaigusias užklausas
 - [ ] Pranešimų varpelis (neperskaityti)
 - [ ] Testai: visas srautas, lygiagretus kreditų nurašymas
-- [ ] `docs/LEARNING.md`: Etapas 5 · PADARYK PATS · klausimai
-
-PADARYK PATS (planuojamos): validacijos taisyklės užklausos formai; Action `WithdrawOffer` su kreditų grąžinimu;
-testas „negalima siųsti pasiūlymo be kreditų".
+- [ ] `docs/LEARNING.md`: Etapas 5 + santrauka vartotojui
 
 ---
 
@@ -163,10 +131,7 @@ testas „negalima siųsti pasiūlymo be kreditų".
 - [ ] Skundo mygtukas (užklausa, pasiūlymas, atsiliepimas, žinutė, profilis) + nagrinėjimas Filament'e
 - [ ] Rate limiting: žinutės, skundai, užklausos
 - [ ] Testai
-- [ ] `docs/LEARNING.md`: Etapas 6 · PADARYK PATS · klausimai
-
-PADARYK PATS (planuojamos): `ReviewPolicy::create()`; observer, atnaujinantis `reviews_count`;
-rate limiter žinutėms.
+- [ ] `docs/LEARNING.md`: Etapas 6 + santrauka vartotojui
 
 ---
 
@@ -182,10 +147,7 @@ rate limiter žinutėms.
 - [ ] Sąskaitos faktūros (numeracija, PDF)
 - [ ] Filament: mokėjimai, kreditų operacijos, rankinis koregavimas
 - [ ] Testai su netikru mokėjimų tiekėju
-- [ ] `docs/LEARNING.md`: Etapas 7 · PADARYK PATS · klausimai
-
-PADARYK PATS (planuojamos): `FakePaymentGateway` testams; testas „pakartotinis callback'as kreditų dukart
-neužskaito"; Scheduler komanda pasibaigusioms prenumeratoms.
+- [ ] `docs/LEARNING.md`: Etapas 7 + santrauka vartotojui
 
 ---
 
@@ -202,7 +164,5 @@ neužskaito"; Scheduler komanda pasibaigusioms prenumeratoms.
 - [ ] Logai, klaidų stebėsena, atsarginės kopijos
 - [ ] Diegimas: serveris, eilių supervisor, cron (scheduler), CI/CD
 - [ ] Galutinė testų peržiūra
-- [ ] `docs/LEARNING.md`: Etapas 8 · PADARYK PATS · klausimai
+- [ ] `docs/LEARNING.md`: Etapas 8 + santrauka vartotojui
 
-PADARYK PATS (planuojamos): Filament widget'as „užklausos per savaitę"; `EXPLAIN` analizė vienai lėtai užklausai;
-anonimizavimo Action.
