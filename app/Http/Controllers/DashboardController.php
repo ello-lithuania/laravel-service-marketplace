@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\ProviderProfile\BuildProfileChecklist;
+use App\Actions\Reviews\ListReviewPrompts;
 use App\Models\ProviderProfile;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,6 +22,8 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'client' => $user->isClient() ? [
                 'service_requests_count' => $user->serviceRequests()->count(),
+                // --- Etapas 6: atlikti darbai, kuriuos dar galima įvertinti ---
+                'review_prompts' => app(ListReviewPrompts::class)->handle($user),
             ] : null,
             'provider' => $user->isProvider() ? $this->providerPanel($user->providerProfile, $checklist) : null,
         ]);

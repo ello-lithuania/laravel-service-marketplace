@@ -46,6 +46,12 @@ final class NotificationSettings
             'description' => 'Kai gaunate naują žinutę.',
             'roles' => [UserRole::Client, UserRole::Provider],
         ],
+        // --- Etapas 6 ---
+        'reviews' => [
+            'label' => 'Atsiliepimai',
+            'description' => 'Kai gaunate atsiliepimą ar atsakymą į jį, arba kvietimą įvertinti atliktą darbą.',
+            'roles' => [UserRole::Client, UserRole::Provider],
+        ],
     ];
 
     /**

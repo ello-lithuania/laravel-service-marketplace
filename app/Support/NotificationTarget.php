@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Offer;
+use App\Models\Review;
 use App\Models\ServiceRequest;
 use Illuminate\Notifications\DatabaseNotification;
 
@@ -55,7 +56,21 @@ final class NotificationTarget
 
         return match (true) {
             $type === 'NewMessage' && $id('conversation_id') !== null => route('conversations.show', $id('conversation_id')),
+            // Teikėjui – jo atsiliepimų puslapis (ten galima atsakyti)
+            $type === 'NewReview' => route('provider-reviews.index'),
+            // Autoriui – viešas teikėjo profilis, kur matomas atsakymas
+            $type === 'ReviewReplied' && $id('review_id') !== null => self::providerProfileUrl($id('review_id')),
             default => null,
         };
+    }
+
+    private static function providerProfileUrl(int $reviewId): ?string
+    {
+        $slug = Review::query()
+            ->join('provider_profiles', 'provider_profiles.id', '=', 'reviews.provider_profile_id')
+            ->where('reviews.id', $reviewId)
+            ->value('provider_profiles.slug');
+
+        return is_string($slug) ? route('providers.show', $slug).'#atsiliepimai' : null;
     }
 }

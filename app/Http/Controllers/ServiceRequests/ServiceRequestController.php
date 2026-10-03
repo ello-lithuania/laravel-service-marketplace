@@ -10,11 +10,13 @@ use App\Enums\StartPreference;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequests\StoreServiceRequestRequest;
 use App\Http\Resources\OfferResource;
+use App\Http\Resources\Reviews\AccountReviewResource;
 use App\Http\Resources\ServiceRequestResource;
 use App\Http\Resources\ServiceRequestSummaryResource;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\Offer;
+use App\Models\Review;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Support\OfferMessaging;
@@ -140,7 +142,11 @@ class ServiceRequestController extends Controller
             'can' => [
                 'cancel' => $user->can('cancel', $serviceRequest),
                 'complete' => $user->can('complete', $serviceRequest),
+                // --- Etapas 6 ---
+                'review' => $user->can('createVerified', [Review::class, $serviceRequest]),
             ],
+            // --- Etapas 6: kliento atsiliepimas apie šį darbą (jei jau paliktas) ---
+            'review' => $this->clientReview($serviceRequest),
         ]);
     }
 
@@ -184,6 +190,18 @@ class ServiceRequestController extends Controller
                 ),
             ],
         ]);
+    }
+
+    /**
+     * Etapas 6: atsiliepimas apie šią užklausą (patvirtintas – vienas užklausai).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function clientReview(ServiceRequest $serviceRequest): ?array
+    {
+        $review = $serviceRequest->review()->with('author')->first();
+
+        return $review === null ? null : AccountReviewResource::make($review->setRelation('serviceRequest', $serviceRequest))->resolve();
     }
 
     /**

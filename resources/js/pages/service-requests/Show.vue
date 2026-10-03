@@ -6,11 +6,19 @@ import CancelRequestDialog from '@/components/marketplace/CancelRequestDialog.vu
 import RequestDetails from '@/components/marketplace/RequestDetails.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
 import MessageButton from '@/components/messages/MessageButton.vue';
+import ReviewCard from '@/components/reviews/ReviewCard.vue';
+import ReviewForm from '@/components/reviews/ReviewForm.vue';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatMoney, plural, timeAgo } from '@/lib/marketplace';
 import { show as showOffer } from '@/routes/offers';
+import { store as storeReview } from '@/routes/reviews';
 import { complete, index } from '@/routes/service-requests';
-import type { Offer, OfferMessaging, ServiceRequestDetail } from '@/types';
+import type {
+    AccountReview,
+    Offer,
+    OfferMessaging,
+    ServiceRequestDetail,
+} from '@/types';
 
 type OfferRow = Offer & {
     can: { accept: boolean; decline: boolean };
@@ -25,7 +33,8 @@ const props = defineProps<{
         phone: string | null;
         email: string;
     } | null;
-    can: { cancel: boolean; complete: boolean };
+    can: { cancel: boolean; complete: boolean; review: boolean };
+    review: AccountReview | null;
 }>();
 
 defineOptions({
@@ -136,6 +145,31 @@ function markCompleted(): void {
                 :service-request="serviceRequest"
             />
         </div>
+
+        <!-- Etapas 6: atsiliepimas po atlikto darbo -->
+        <section
+            v-if="review || can.review"
+            id="atsiliepimas"
+            class="scroll-mt-6 space-y-3 rounded-xl border bg-card p-4 md:p-6"
+        >
+            <template v-if="review">
+                <h2 class="text-lg font-semibold">Jūsų atsiliepimas</h2>
+                <ReviewCard :review="review" />
+            </template>
+            <template v-else>
+                <div>
+                    <h2 class="text-lg font-semibold">
+                        Įvertinkite
+                        {{ acceptedContact?.name ?? 'teikėją' }}
+                    </h2>
+                    <p class="text-sm text-muted-foreground">
+                        Atsiliepimas bus paskelbtas teikėjo profilyje kaip
+                        „Užsakyta per platformą". Jūsų pavardė nerodoma.
+                    </p>
+                </div>
+                <ReviewForm :action="storeReview(serviceRequest.slug).url" />
+            </template>
+        </section>
 
         <section class="space-y-3">
             <h2 class="text-lg font-semibold">

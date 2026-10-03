@@ -7,6 +7,7 @@ import {
     FileText,
     Inbox,
     MessageSquare,
+    MessageSquareReply,
     Star,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -30,7 +31,11 @@ const icon = computed(() => {
         case 'NewMessage':
             return MessageSquare;
         case 'NewReview':
+        // Etapas 6
+        case 'ReviewInvitation':
             return Star;
+        case 'ReviewReplied':
+            return MessageSquareReply;
         default:
             return props.type.startsWith('ServiceRequest')
                 ? ClipboardList

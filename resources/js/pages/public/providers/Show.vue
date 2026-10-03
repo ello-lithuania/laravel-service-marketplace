@@ -10,6 +10,7 @@ import {
     MessageSquareReply,
     ShieldCheck,
     Star,
+    UserPlus,
 } from '@lucide/vue';
 import { computed } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
@@ -325,6 +326,16 @@ function bucketPercent(count: number): number {
                                     >
                                         <ShieldCheck aria-hidden="true" />
                                         Užsakyta per platformą
+                                    </Badge>
+                                    <!-- Etapas 6: darbas atliktas ne per platformą – teikėjo pakvietimu -->
+                                    <Badge
+                                        v-else
+                                        variant="outline"
+                                        class="font-normal text-muted-foreground"
+                                        title="Buvęs klientas, pakviestas teikėjo. Darbas užsakytas ne per platformą."
+                                    >
+                                        <UserPlus aria-hidden="true" />
+                                        Pagal pakvietimą
                                     </Badge>
                                 </div>
                                 <time

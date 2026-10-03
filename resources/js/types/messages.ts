@@ -69,3 +69,31 @@ export type ChatMessage = {
     created_at: string | null;
     attachments: PrivateFile[];
 };
+
+// --- Atsiliepimai ---
+
+export type ReviewStatus = 'pending' | 'published' | 'hidden';
+
+/** Atsiliepimas paskyroje (App\Http\Resources\Reviews\AccountReviewResource) */
+export type AccountReview = {
+    id: number;
+    rating: number;
+    comment: string;
+    status: EnumValue<ReviewStatus>;
+    is_verified: boolean;
+    author_name: string;
+    service_request_title: string | null;
+    created_at: string | null;
+    published_at: string | null;
+    provider_reply: string | null;
+    provider_replied_at: string | null;
+    can: { reply: boolean };
+};
+
+/** „Įvertinkite atliktą darbą" (App\Actions\Reviews\ListReviewPrompts) */
+export type ReviewPrompt = {
+    slug: string;
+    title: string;
+    provider: string | null;
+    completed_at: string | null;
+};

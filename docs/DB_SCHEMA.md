@@ -312,6 +312,7 @@ todėl naujam vartotojui nieko įrašyti nereikia, o pridėjus naują grupę sen
 | `new_offers`      | klientui | `NewOffer`                                                  |
 | `request_updates` | klientui | `ServiceRequestPublished`, `ServiceRequestRejected`         |
 | `messages`        | abiem    | `NewMessage` (Etapas 6)                                     |
+| `reviews`         | abiem    | `ReviewInvitation`, `ReviewReplied` (klientui), `NewReview` (teikėjui) – Etapas 6 |
 
 Kodas: `App\Support\NotificationSettings` (numatytosios reikšmės, skaitymas, grupės pagal rolę). El. laiškas
 nesiunčiamas, kol vartotojas nepatvirtino el. pašto – nepatvirtintu adresu laiškų nesiunčiam.

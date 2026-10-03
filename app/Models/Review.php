@@ -78,4 +78,22 @@ class Review extends Model
     {
         $query->where('reviews.status', ReviewStatus::Published);
     }
+
+    // -------------------------------------------------------------------------
+    // Atsiliepimų rašymas ir moderavimas (Etapas 6)
+    // -------------------------------------------------------------------------
+
+    /** Per kiek dienų po darbo užbaigimo klientas gali palikti patvirtintą atsiliepimą. */
+    public const VERIFIED_WINDOW_DAYS = 60;
+
+    /** Kiek dienų galioja teikėjo pakvietimo nuoroda. */
+    public const INVITATION_LINK_DAYS = 30;
+
+    /** Tas pats klientas tam pačiam teikėjui pagal pakvietimą gali rašyti ne dažniau kaip kartą per tiek dienų. */
+    public const INVITATION_COOLDOWN_DAYS = 365;
+
+    public function isPublished(): bool
+    {
+        return $this->status === ReviewStatus::Published;
+    }
 }

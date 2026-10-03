@@ -7,6 +7,7 @@ import {
     MessagesSquare,
     Plus,
     Send,
+    Star,
 } from '@lucide/vue';
 import { computed } from 'vue';
 import {
@@ -21,6 +22,7 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { index as conversations } from '@/routes/conversations';
 import { index as notifications } from '@/routes/notifications';
 import { index as myOffers } from '@/routes/offers';
+import { index as providerReviews } from '@/routes/provider-reviews';
 import { index as feed } from '@/routes/provider-feed';
 import { create, index as myRequests } from '@/routes/service-requests';
 import type { NavItem } from '@/types';
@@ -57,6 +59,7 @@ const items = computed<NavItem[]>(() => {
                     href: conversations(),
                     icon: MessagesSquare,
                 },
+                { title: 'Atsiliepimai', href: providerReviews(), icon: Star },
                 { title: 'Pranešimai', href: notifications(), icon: Bell },
             ];
         default:
