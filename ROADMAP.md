@@ -160,12 +160,12 @@ būsenų mašina.
 **Tikslas:** platforma paruošta realiems vartotojams: greita, saugi, prižiūrima.
 **Sąvokos:** Filament widgets, `EXPLAIN` ir indeksų derinimas, cache, saugumas, BDAR, diegimas (deploy).
 
-- [ ] Filament dashboard (statistika), moderavimo įrankiai, vartotojų blokavimas
-- [ ] Našumas: `EXPLAIN` pagrindinėms užklausoms su pilnu seed'u (MySQL), indeksų korekcijos, cache
-- [ ] Saugumas: autorizacijos auditas, failų įkėlimo validacija, rate limiting, saugos antraštės
-- [ ] BDAR: duomenų eksportas, paskyros anonimizavimas
-- [ ] SEO: `sitemap.xml`, struktūriniai duomenys (schema.org)
-- [ ] Logai, klaidų stebėsena, atsarginės kopijos
-- [ ] Diegimas: serveris, eilių supervisor, cron (scheduler), CI/CD
-- [ ] Galutinė testų peržiūra
-- [ ] `docs/LEARNING.md`: Etapas 8 + santrauka vartotojui
+- [x] Filament dashboard (statistika), moderavimo įrankiai, vartotojų blokavimas
+- [x] Našumas: `EXPLAIN` pagrindinėms užklausoms su pilnu seed'u (MySQL), indeksų korekcijos, cache
+- [x] Saugumas: autorizacijos auditas, failų įkėlimo validacija, rate limiting, saugos antraštės
+- [x] BDAR: duomenų eksportas, paskyros anonimizavimas
+- [x] SEO: `sitemap.xml`, struktūriniai duomenys (schema.org)
+- [x] Logai, klaidų stebėsena, atsarginės kopijos
+- [x] Diegimas: serveris, eilių supervisor, cron (scheduler), CI/CD
+- [x] Galutinė testų peržiūra
+- [x] `docs/LEARNING.md`: Etapas 8 + santrauka vartotojui

@@ -149,7 +149,7 @@ app/
 database/
   data/               žinyniniai duomenys (apskritys, savivaldybės, kategorijos, tekstų bankai)
   factories/  migrations/  seeders/
-docs/                 DB_SCHEMA.md, SEEDING.md, STATES.md, LEARNING.md
+docs/                 DB_SCHEMA.md, SEEDING.md, STATES.md, LEARNING.md, PERFORMANCE.md, DEPLOYMENT.md
 lang/lt/, lang/lt.json  Laravel tekstai lietuviškai
 resources/
   css/app.css         Tailwind + šriftas
@@ -162,19 +162,21 @@ resources/
     components/       savi komponentai; components/ui – shadcn-vue
     routes/, actions/ Wayfinder sugeneruoti failai (Git'e ignoruojami)
   views/app.blade.php vienintelis Blade šablonas – Inertia „kevalas"
-routes/web.php       įtraukia sričių failus: settings, account (E3), catalog (E4), requests (E5), messages (E6), billing (E7)
+routes/web.php       įtraukia sričių failus: settings, account (E3), catalog (E4), requests (E5), messages (E6), billing (E7), seo (E8)
 tests/Feature, tests/Unit, tests/Pest.php
 ```
 
 ## 8. Dokumentai
 
-| Failas              | Kam                                                                    |
-| ------------------- | ---------------------------------------------------------------------- |
-| `ROADMAP.md`        | etapai 0–8 su checkbox'ais – kur esam                                  |
-| `docs/DB_SCHEMA.md` | DB schema, ryšiai, indeksai, sprendimai                                |
-| `docs/SEEDING.md`   | testinių duomenų (seed'ų) planas                                       |
-| `docs/LEARNING.md`  | mokymosi užrašai: sąvokos, komandos, dažnos klaidos                    |
-| `docs/STATES.md`    | užklausos ir pasiūlymo būsenų perėjimai ir kreditų grąžinimo taisyklės |
+| Failas                | Kam                                                                    |
+| --------------------- | ---------------------------------------------------------------------- |
+| `ROADMAP.md`          | etapai 0–8 su checkbox'ais – kur esam                                  |
+| `docs/DB_SCHEMA.md`   | DB schema, ryšiai, indeksai, sprendimai                                |
+| `docs/SEEDING.md`     | testinių duomenų (seed'ų) planas                                       |
+| `docs/LEARNING.md`    | mokymosi užrašai: sąvokos, komandos, dažnos klaidos                    |
+| `docs/STATES.md`      | užklausos ir pasiūlymo būsenų perėjimai ir kreditų grąžinimo taisyklės |
+| `docs/PERFORMANCE.md` | `EXPLAIN` su pilnu MySQL seed'u, indeksų sprendimai, matavimai         |
+| `docs/DEPLOYMENT.md`  | diegimas: serveris, Supervisor, cron, Nginx, `.env` produkcijai        |
 
 ## 9. Komandos
 
