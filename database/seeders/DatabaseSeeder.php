@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
+    // Seed'o metu nevykdomi model events (observeriai, pranešimai) – žr. docs/SEEDING.md 7 sk.
     use WithoutModelEvents;
 
     /**
@@ -15,12 +15,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'first_name' => 'Test',
-            'last_name' => 'User',
-            'email' => 'test@example.com',
+        // Žinyniniai duomenys – visada pilni, nepriklausomai nuo SEED_SCALE
+        $this->call([
+            GeographySeeder::class,
+            CategorySeeder::class,
+            CreditPackageSeeder::class,
+            SubscriptionPlanSeeder::class,
+            AdminSeeder::class,
         ]);
     }
 }

@@ -53,8 +53,9 @@ Vartotojas moka PHP ir WordPress, Laravel – tik pagrindus.
 2. `ROADMAP.md` rask **pirmą nepažymėtą etapą** ir tęsk nuo pirmo nepažymėto jo punkto.
 3. Dirbk mažais žingsniais, kiekvieną loginį žingsnį – atskiru commit'u.
 4. Sesijos pabaigoje pažymėk atliktus punktus `ROADMAP.md`, papildyk `docs/LEARNING.md`, commit'ink ir push'ink.
-5. Etapo pabaigoje parašyk santrauką: kas padaryta, kaip ir kodėl.
-   **Kitą etapą pradėk tik tada, kai vartotojas parašo tęsti.**
+5. Etapo pabaigoje papildyk `docs/LEARNING.md` (kas padaryta, kaip ir kodėl).
+   **Vartotojo nurodymas (Etapas 2): atlikti visus etapus iš eilės, nelaukiant patvirtinimo tarp jų.**
+   Todėl baigęs etapą iškart tęsk kitą; vartotojui – trumpa eiga, o pilna santrauka – kai baigsi visus.
 
 ## 5. Stack
 
