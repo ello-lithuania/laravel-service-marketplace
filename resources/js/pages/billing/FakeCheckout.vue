@@ -2,7 +2,7 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import { FlaskConical } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
-import { formatMoney } from '@/lib/marketplace';
+import { formatPrice } from '@/lib/format';
 import { complete } from '@/routes/payments/fake';
 import type { PaymentItem } from '@/types';
 
@@ -38,7 +38,7 @@ function submit(result: 'paid' | 'failed' | 'cancelled'): void {
                 {{ payment.description }}
             </h1>
             <p class="mt-1 text-3xl font-semibold">
-                {{ formatMoney(payment.amount_cents) }}
+                {{ formatPrice(payment.amount_cents) }}
             </p>
             <p class="mt-1 text-xs text-muted-foreground">
                 Užsakymo Nr. {{ payment.uuid }}

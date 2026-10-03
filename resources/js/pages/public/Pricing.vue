@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { usePurchase } from '@/composables/usePurchase';
 import { formatCredits } from '@/lib/billing';
-import { formatMoney } from '@/lib/marketplace';
+import { formatPrice } from '@/lib/format';
 import { register } from '@/routes';
 import { wizard } from '@/routes/provider';
 import type { CreditPackage, SeoMeta, SubscriptionPlan } from '@/types';
@@ -177,13 +177,13 @@ const faq = [
                         +{{ pkg.bonus_credits }} dovanų
                     </p>
                     <p class="mt-4 text-2xl font-semibold">
-                        {{ formatMoney(pkg.price_cents) }}
+                        {{ formatPrice(pkg.price_cents) }}
                     </p>
                     <p
                         v-if="pkg.price_per_credit_cents !== null"
                         class="text-sm text-muted-foreground"
                     >
-                        ≈ {{ formatMoney(pkg.price_per_credit_cents) }} už
+                        ≈ {{ formatPrice(pkg.price_per_credit_cents) }} už
                         kreditą
                     </p>
                     <div class="mt-auto pt-5">
@@ -253,7 +253,7 @@ const faq = [
                     </p>
                     <p class="mt-4">
                         <span class="text-3xl font-semibold">{{
-                            formatMoney(plan.price_cents)
+                            formatPrice(plan.price_cents)
                         }}</span>
                         <span class="text-muted-foreground">
                             / {{ plan.billing_period.per }}</span
@@ -263,7 +263,7 @@ const faq = [
                         v-if="plan.price_per_credit_cents !== null"
                         class="text-sm text-muted-foreground"
                     >
-                        ≈ {{ formatMoney(plan.price_per_credit_cents) }} už
+                        ≈ {{ formatPrice(plan.price_per_credit_cents) }} už
                         kreditą
                     </p>
                     <ul class="mt-5 space-y-2 text-sm">

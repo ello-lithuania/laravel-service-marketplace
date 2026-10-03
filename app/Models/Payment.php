@@ -109,7 +109,7 @@ class Payment extends Model
             $purchasable instanceof CreditPackage => __('billing.purchasable.credit_package', ['name' => $purchasable->name]),
             $purchasable instanceof SubscriptionPlan => __('billing.purchasable.subscription_plan', [
                 'name' => $purchasable->name,
-                'period' => $purchasable->billing_period->label(),
+                'period' => $purchasable->billing_period->durationLabel(),
             ]),
             default => __('billing.purchasable.unknown'),
         };

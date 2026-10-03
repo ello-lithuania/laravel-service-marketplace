@@ -14,7 +14,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { usePurchase } from '@/composables/usePurchase';
 import { formatCreditChange, formatCredits } from '@/lib/billing';
-import { formatDate, formatDateTime, formatMoney } from '@/lib/marketplace';
+import { formatPrice } from '@/lib/format';
+import { formatDate, formatDateTime } from '@/lib/marketplace';
 import { pricing } from '@/routes';
 import { index as creditsIndex } from '@/routes/credits';
 import { index as paymentsIndex, pay } from '@/routes/payments';
@@ -145,7 +146,7 @@ function cancel(): void {
                             formatCredits(subscription.plan.credits_per_period)
                         }}
                         kas {{ subscription.plan.period_label }} ·
-                        {{ formatMoney(subscription.plan.price_cents) }} /
+                        {{ formatPrice(subscription.plan.price_cents) }} /
                         {{ subscription.plan.period_label }}
                     </p>
                     <p class="mt-3 flex items-center gap-2 text-sm">
@@ -156,8 +157,8 @@ function cancel(): void {
                             pratęsimą.
                         </span>
                         <span v-else-if="subscription.auto_renew">
-                            Apmokėta iki {{ formatDate(subscription.ends_at) }}.
-                            Prieš pabaigą atsiųsime nuorodą pratęsti.
+                            Apmokėta iki {{ formatDate(subscription.ends_at) }}
+                            – prieš pabaigą atsiųsime nuorodą pratęsti.
                         </span>
                         <span v-else>
                             Galioja iki {{ formatDate(subscription.ends_at) }},
@@ -171,7 +172,7 @@ function cancel(): void {
                             @click="payRenewal"
                         >
                             Apmokėti pratęsimą ({{
-                                formatMoney(renewalPayment.amount_cents)
+                                formatPrice(renewalPayment.amount_cents)
                             }})
                         </Button>
                         <Button
@@ -234,7 +235,7 @@ function cancel(): void {
                         įskaitant +{{ pkg.bonus_credits }} dovanų
                     </p>
                     <p class="mt-2 font-medium">
-                        {{ formatMoney(pkg.price_cents) }}
+                        {{ formatPrice(pkg.price_cents) }}
                     </p>
                     <Button
                         class="mt-3"

@@ -4,7 +4,8 @@ import { CircleCheck, CircleX, Download, LoaderCircle } from '@lucide/vue';
 import { computed, onUnmounted, ref, watch } from 'vue';
 import BillingStatusBadge from '@/components/billing/BillingStatusBadge.vue';
 import { Button } from '@/components/ui/button';
-import { formatDateTime, formatMoney } from '@/lib/marketplace';
+import { formatPrice } from '@/lib/format';
+import { formatDateTime } from '@/lib/marketplace';
 import { pricing } from '@/routes';
 import { index as creditsIndex } from '@/routes/credits';
 import { index as paymentsIndex, invoice, pay } from '@/routes/payments';
@@ -25,6 +26,18 @@ defineOptions({
 });
 
 const isPending = computed(() => props.payment.status.value === 'pending');
+
+// Antraštė su teisinga gimine (būsenos pavadinimas „Atšaukta" – moteriškosios)
+const failedHeading = computed(() => {
+    switch (props.payment.status.value) {
+        case 'cancelled':
+            return 'Mokėjimas atšauktas';
+        case 'refunded':
+            return 'Mokėjimas grąžintas';
+        default:
+            return 'Mokėjimas nepavyko';
+    }
+});
 
 // Polling – ne ilgiau kaip 2 min.: jei patvirtinimo vis nėra, žmogus gali tiesiog grįžti vėliau
 const { stop } = usePoll(
@@ -83,7 +96,7 @@ function payNow(): void {
             <template v-else>
                 <CircleX class="mx-auto size-12 text-red-600" />
                 <h1 class="mt-3 text-xl font-semibold">
-                    Mokėjimas {{ payment.status.label.toLowerCase() }}
+                    {{ failedHeading }}
                 </h1>
                 <p class="mt-1 text-sm text-muted-foreground">
                     Pinigai nenuskaičiuoti. Galite bandyti dar kartą.
@@ -101,7 +114,7 @@ function payNow(): void {
             <div class="flex justify-between gap-4 px-4 py-3">
                 <dt class="text-muted-foreground">Suma</dt>
                 <dd class="font-medium">
-                    {{ formatMoney(payment.amount_cents) }}
+                    {{ formatPrice(payment.amount_cents) }}
                 </dd>
             </div>
             <div class="flex justify-between gap-4 px-4 py-3">
@@ -127,7 +140,7 @@ function payNow(): void {
 
         <div class="flex flex-wrap justify-center gap-2">
             <Button v-if="payment.can.pay" :disabled="paying" @click="payNow">
-                Apmokėti {{ formatMoney(payment.amount_cents) }}
+                Apmokėti {{ formatPrice(payment.amount_cents) }}
             </Button>
             <Button
                 v-if="payment.can.download_invoice"

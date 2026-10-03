@@ -40,6 +40,17 @@ enum BillingPeriod: string implements HasLabel
     }
 
     /**
+     * Vieno laikotarpio trukmė pirkinio aprašyme: „Prenumerata „Startas" (1 mėn.)".
+     */
+    public function durationLabel(): string
+    {
+        return match ($this) {
+            self::Month => '1 mėn.',
+            self::Year => '1 metai',
+        };
+    }
+
+    /**
      * Data po vieno laikotarpio. NoOverflow: sausio 31 + 1 mėn. = vasario 28, o ne kovo 3.
      */
     public function addTo(CarbonInterface $date): CarbonImmutable

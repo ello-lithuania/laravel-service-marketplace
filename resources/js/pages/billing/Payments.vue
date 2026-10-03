@@ -4,7 +4,8 @@ import { Download } from '@lucide/vue';
 import BillingStatusBadge from '@/components/billing/BillingStatusBadge.vue';
 import PaginationLinks from '@/components/marketplace/PaginationLinks.vue';
 import { Button } from '@/components/ui/button';
-import { formatDateTime, formatMoney } from '@/lib/marketplace';
+import { formatPrice } from '@/lib/format';
+import { formatDateTime } from '@/lib/marketplace';
 import { pricing } from '@/routes';
 import { index as creditsIndex } from '@/routes/credits';
 import { index, invoice, show } from '@/routes/payments';
@@ -88,7 +89,7 @@ defineOptions({
                             </p>
                         </td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
-                            {{ formatMoney(payment.amount_cents) }}
+                            {{ formatPrice(payment.amount_cents) }}
                         </td>
                         <td class="px-4 py-3">
                             <BillingStatusBadge :status="payment.status" />

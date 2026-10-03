@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 /**
@@ -32,6 +33,19 @@ class CreditTransactionResource extends Resource
 
     // Lietuviškas URL: /admin/kreditu-operacijos
     protected static ?string $slug = 'kreditu-operacijos';
+
+    /**
+     * Filament antraštėms ir meniu daro „Title Case" („Kreditų Operacijos"); lietuviškai didžioji – tik pirma raidė.
+     */
+    public static function getTitleCasePluralModelLabel(): string
+    {
+        return Str::ucfirst(static::getPluralModelLabel());
+    }
+
+    public static function getTitleCaseModelLabel(): string
+    {
+        return Str::ucfirst(static::getModelLabel());
+    }
 
     public static function table(Table $table): Table
     {
