@@ -911,13 +911,60 @@ priežastį ir parodo, kaip keičiama jau esanti lentelė.
 | 15 | Prenumeratų galiojimas | `subscriptions WHERE status='active' AND ends_at <= ?` | `subscriptions(status, ends_at)` |
 | 16 | Pasibaigusios užklausos | `service_requests WHERE status='open' AND expires_at <= ?` | `(status, published_at)` – naudojama `status` dalis. Jei `EXPLAIN` parodys, kad to maža, pridėsim `(status, expires_at)`. |
 
+### 8.1 Pavyzdys: teikėjo užklausų srautas
+
+**Užduotis:** teikėjui parodyti `open` užklausas jo kategorijose ir zonose, naujausias viršuje, po 20 puslapyje.
+
+**1 žingsnis – kategorijos.** Teikėjas galėjo pasirinkti 2 arba 3 lygio kategoriją, o užklausos visada yra 3 lygio.
+Todėl pirmiausia PHP'e, iš cache laikomo medžio, teikėjo pasirinkimus paverčiam 3 lygio ID sąrašu:
+3 lygio kategorija paliekama, o 2 lygio pakeičiama visais jos vaikais. Tai atvirkštinis 2.2 sk. atvejis: ten nuo
+užklausos einam aukštyn pas tėvus (kam pranešti?), o čia nuo teikėjo – žemyn pas vaikus (ką rodyti?).
+
+**2 žingsnis – zonos.** Jei `serves_whole_country = true`, miesto sąlygos nėra. Kitaip naudojamas teikėjo
+savivaldybių sąrašas iš `city_provider_profile`.
+
+**3 žingsnis – užklausa:**
+
+```sql
+SELECT id, slug, title, category_id, city_id, budget_min_cents, budget_max_cents, published_at
+FROM service_requests
+WHERE status = 'open'
+  AND category_id IN (131, 132, 140)    -- teikėjo 3 lygio kategorijos (1 žingsnis)
+  AND city_id IN (1, 2, 14)             -- teikėjo zonos; praleidžiama, jei „visa Lietuva"
+  AND deleted_at IS NULL                -- soft deletes (Eloquent prideda pats)
+ORDER BY published_at DESC
+LIMIT 20;
+```
+
+Tas pats per Eloquent (rašysim Etape 5):
+
+```php
+ServiceRequest::query()
+    ->where('status', ServiceRequestStatus::Open)
+    ->whereIn('category_id', $leafCategoryIds)
+    ->when(! $provider->serves_whole_country, fn ($query) => $query->whereIn('city_id', $cityIds))
+    ->latest('published_at')
+    ->paginate(20);
+```
+
+**Kodėl `whereIn` su paruoštu sąrašu, o ne JOIN su pivot lentelėmis.** Teikėjo kategorijų ir zonų būna dešimtys,
+o jos jau žinomos (užkraunamos kartu su profiliu). Todėl paprasčiau ir greičiau perduoti jas kaip sąrašą.
+`whereExists` su pivot lentelėmis tiktų, jei sąrašai būtų labai dideli arba norėtume visko vienoje SQL užklausoje.
+→ https://laravel.com/docs/12.x/queries#where-clauses
+
+**Kurį indeksą naudoja.** MySQL rinksis tarp `(category_id, status, published_at)` ir `(city_id, status, published_at)`
+pagal tai, kuris sąrašas atsijoja daugiau eilučių. Kiekvienai `category_id` reikšmei eilutės su `status = 'open'`
+indekse jau surikiuotos pagal `published_at`. Kelių kategorijų rezultatus DB dar turi sujungti ir surūšiuoti
+(filesort), bet tai pigu: vienoje kategorijoje atvirų užklausų būna dešimtys ar šimtai, ne tūkstančiai.
+Etape 8 tai patikrinsim su `EXPLAIN` pilnoje MySQL DB.
+
 ---
 
 ## 9. Ko sąmoningai kol kas nededam
 
 | Galimas plėtinys | Kodėl ne dabar |
 |---|---|
-| `favorites` – klientas išsisaugo teikėją | tai bus tavo „PADARYK PATS" užduotis |
+| `favorites` – klientas išsisaugo teikėją | nebuvo tarp reikalavimų. Prireikus – viena pivot lentelė (`provider_profile_user`) |
 | `category_questions` – kategorijai specifiniai klausimai formoje („kiek m²?") | pirmai versijai pakanka laisvo aprašymo |
 | Mikrorajonai (`districts`) | savivaldybių tikslumo užtenka |
 | Mokamos TOP pozicijos kataloge | galima įjungti per `subscription_plans.features` vėliau |
