@@ -30,7 +30,7 @@ class CreditsController extends Controller
         $provider = $user->providerProfile()->firstOrFail();
 
         $subscriptions = $provider->subscriptions()->live()->with('plan')->orderBy('starts_at')->get();
-        $current = $subscriptions->first(fn (Subscription $subscription): bool => $subscription->starts_at->isPast());
+        $current = $subscriptions->first(fn (Subscription $subscription): bool => ! $subscription->starts_at->isFuture());
         $scheduled = $subscriptions->first(fn (Subscription $subscription): bool => $subscription->isScheduled());
 
         // Laukiantis pratęsimo mokėjimas – rodom „Apmokėti pratęsimą"

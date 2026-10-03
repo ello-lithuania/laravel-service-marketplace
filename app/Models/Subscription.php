@@ -81,7 +81,7 @@ class Subscription extends Model
     public function isCurrent(): bool
     {
         return in_array($this->status, [SubscriptionStatus::Active, SubscriptionStatus::Cancelled], true)
-            && $this->starts_at->isPast()
+            && ! $this->starts_at->isFuture()
             && $this->ends_at->isFuture();
     }
 
