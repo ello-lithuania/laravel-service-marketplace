@@ -20,7 +20,7 @@ class MessageController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $send->handle($conversation, $user, $request->body());
+        $send->handle($conversation, $user, $request->body(), $request->attachments());
 
         return to_route('conversations.show', $conversation);
     }

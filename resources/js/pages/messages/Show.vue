@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePoll } from '@inertiajs/vue3';
-import { ArrowLeft, Lock, Send } from '@lucide/vue';
-import { nextTick, onMounted, useTemplateRef, watch } from 'vue';
+import { ArrowLeft, Lock, Paperclip, Send, X } from '@lucide/vue';
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
+import AttachmentList from '@/components/messages/AttachmentList.vue';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { formatDateTime, formatMoney } from '@/lib/marketplace';
+import { attachmentError, formatFileSize } from '@/lib/messages';
 import { index } from '@/routes/conversations';
 import { store } from '@/routes/messages';
 import { show as showRequest } from '@/routes/service-requests';
@@ -59,16 +61,70 @@ watch(
     },
 );
 
-const form = useForm({ body: '' });
+const MAX_ATTACHMENTS = 5;
+
+const form = useForm({ body: '', attachments: [] as File[] });
+const fileInput = useTemplateRef<HTMLInputElement>('fileInput');
+const fileError = ref<string | null>(null);
+
+const canSubmit = computed(
+    () =>
+        !form.processing &&
+        (form.body.trim() !== '' || form.attachments.length > 0),
+);
+
+// Serverio klaidos apie konkretų failą ateina kaip „attachments.0", „attachments.1"…
+const attachmentsError = computed(
+    () =>
+        fileError.value ??
+        form.errors.attachments ??
+        Object.entries(form.errors).find(([key]) =>
+            key.startsWith('attachments.'),
+        )?.[1],
+);
+
+function addFiles(event: Event): void {
+    fileError.value = null;
+
+    for (const file of Array.from(
+        (event.target as HTMLInputElement).files ?? [],
+    )) {
+        if (form.attachments.length >= MAX_ATTACHMENTS) {
+            fileError.value = `Vienoje žinutėje – daugiausia ${MAX_ATTACHMENTS} priedai.`;
+            break;
+        }
+
+        const error = attachmentError(file);
+
+        if (error) {
+            fileError.value = error;
+            continue;
+        }
+
+        form.attachments.push(file);
+    }
+
+    if (fileInput.value) {
+        fileInput.value.value = '';
+    }
+}
+
+function removeFile(index: number): void {
+    form.attachments.splice(index, 1);
+}
 
 function send(): void {
-    if (form.processing || form.body.trim() === '') {
+    if (!canSubmit.value) {
         return;
     }
 
+    // Su failais Inertia pati siunčia multipart/form-data (FormData)
     form.post(store(props.conversation.id).url, {
         preserveScroll: true,
-        onSuccess: () => form.reset(),
+        onSuccess: () => {
+            form.reset();
+            fileError.value = null;
+        },
     });
 }
 
@@ -160,9 +216,18 @@ function onKeydown(event: KeyboardEvent): void {
                     <p v-if="message.is_hidden">
                         Žinutė paslėpta administratoriaus.
                     </p>
-                    <p v-else class="break-words whitespace-pre-line">
+                    <p
+                        v-else-if="message.body"
+                        class="break-words whitespace-pre-line"
+                    >
                         {{ message.body }}
                     </p>
+                    <AttachmentList
+                        v-if="message.attachments.length"
+                        :files="message.attachments"
+                        :mine="message.is_mine"
+                        :class="{ 'mt-2': message.body }"
+                    />
                 </div>
                 <p class="px-1 text-xs text-muted-foreground">
                     <span v-if="!message.is_mine"
@@ -195,10 +260,59 @@ function onKeydown(event: KeyboardEvent): void {
                 @keydown="onKeydown"
             />
             <InputError :message="form.errors.body" />
-            <div class="flex items-center justify-end gap-3">
+
+            <!-- Pasirinkti, bet dar neišsiųsti priedai -->
+            <ul v-if="form.attachments.length" class="flex flex-wrap gap-2">
+                <li
+                    v-for="(file, i) in form.attachments"
+                    :key="`${file.name}-${i}`"
+                    class="inline-flex max-w-full items-center gap-2 rounded-full border bg-muted/40 py-1 pr-1 pl-3 text-xs"
+                >
+                    <span class="truncate">{{ file.name }}</span>
+                    <span class="text-muted-foreground">
+                        {{ formatFileSize(file.size) }}
+                    </span>
+                    <button
+                        type="button"
+                        class="rounded-full p-1 hover:bg-muted"
+                        :aria-label="`Pašalinti ${file.name}`"
+                        @click="removeFile(i)"
+                    >
+                        <X class="size-3" />
+                    </button>
+                </li>
+            </ul>
+            <InputError :message="attachmentsError" />
+
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <input
+                        ref="fileInput"
+                        type="file"
+                        multiple
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        class="sr-only"
+                        data-test="attachments-input"
+                        @change="addFiles"
+                    />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        :disabled="form.attachments.length >= MAX_ATTACHMENTS"
+                        @click="fileInput?.click()"
+                    >
+                        <Paperclip class="size-4" /> Pridėti failą
+                    </Button>
+                    <span
+                        class="hidden text-xs text-muted-foreground sm:inline"
+                    >
+                        Nuotraukos iki 5 MB, PDF iki 10 MB
+                    </span>
+                </div>
                 <Button
                     type="submit"
-                    :disabled="form.processing || form.body.trim() === ''"
+                    :disabled="!canSubmit"
                     data-test="send-message"
                 >
                     <Spinner v-if="form.processing" />

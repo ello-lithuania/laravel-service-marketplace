@@ -109,6 +109,8 @@ class ConversationController extends Controller
     {
         $messages = $conversation->messages()
             ->withTrashed()
+            // Priedai (medialibrary) – viena užklausa visoms žinutėms
+            ->with('media')
             ->latest('id')
             ->limit(self::MESSAGES_LIMIT)
             ->get()

@@ -4,6 +4,7 @@
 
 use App\Http\Controllers\Messages\ConversationController;
 use App\Http\Controllers\Messages\MessageController;
+use App\Http\Controllers\PrivateMediaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,4 +21,9 @@ Route::middleware('auth')->group(function () {
         Route::post('zinutes/{conversation}', [MessageController::class, 'store'])->name('messages.store');
         Route::post('pasiulymai/{offer}/pokalbis', [ConversationController::class, 'store'])->name('conversations.store');
     });
+
+    // --- Privatūs failai: žinučių priedai, užklausų nuotraukos (teisės – savininko Policy „view") ---
+    Route::get('failai/{media}/{conversion?}', PrivateMediaController::class)
+        ->whereIn('conversion', ['thumb', 'large'])
+        ->name('media.show');
 });

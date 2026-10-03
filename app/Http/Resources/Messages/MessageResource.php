@@ -3,8 +3,10 @@
 namespace App\Http\Resources\Messages;
 
 use App\Models\Message;
+use App\Support\PrivateMedia;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Žinutė pokalbio puslapyje. Siuntėjo vardas imamas iš pokalbio (klientas arba teikėjas), todėl kiekvienai
@@ -31,7 +33,10 @@ class MessageResource extends JsonResource
             'is_mine' => $message->sender_id !== null && $message->sender_id === $request->user()?->id,
             'sender_name' => $this->senderName(),
             'created_at' => $message->created_at?->toIso8601String(),
-            'attachments' => [],
+            // Paslėptos žinutės priedai irgi nerodomi (PrivateMediaController jų ir neatiduotų)
+            'attachments' => $hidden ? [] : array_values($message->getMedia('attachments')
+                ->map(fn (Media $media): array => PrivateMedia::toArray($media))
+                ->all()),
         ];
     }
 
