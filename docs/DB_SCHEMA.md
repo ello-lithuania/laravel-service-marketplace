@@ -446,8 +446,13 @@ Lentelėje 60 eilučių, ir visa ji laikoma cache.
 
 - `UNIQUE(user_id)` – užtikrina 1:1 pačios DB lygiu.
 - `UNIQUE(slug)` – viešo profilio URL.
-- `(status, rating_avg)` – „geriausiai įvertinti aktyvūs teikėjai" (pradžios puslapis, katalogas be filtrų)
-  gaunami be papildomo rūšiavimo.
+- `(status, deleted_at, rating_avg, reviews_count)` – „geriausiai įvertinti aktyvūs teikėjai" (pradžios puslapis,
+  katalogas) gaunami be papildomo rūšiavimo, o `COUNT(*)` puslapiavimui skaičiuojamas vien iš indekso.
+  **Etapas 8** (pakeitė Etapo 0 indeksą `(status, rating_avg)`, migracija `tune_indexes_after_explain`): `EXPLAIN` su
+  pilnu seed'u parodė, kad senas indeksas nepadėjo rikiuoti `ORDER BY rating_avg DESC, reviews_count DESC, id DESC`
+  (rūšiuota 18 000 eilučių), o `deleted_at IS NULL` kiekvienai eilutei reikalavo skaityti lentelę. Naujas indeksas
+  atitinka tikrą katalogo užklausą: `status` ir `deleted_at` – lygybės sąlygos, toliau – rikiavimo stulpeliai, o InnoDB
+  gale prideda `id`. Matavimai – `docs/PERFORMANCE.md`.
 - `city_id` – automatiškai (FK).
 - `FULLTEXT(display_name, headline, description)` – paieška tekstu. Tik MySQL: SQLite tokio indekso nepalaiko,
   todėl migracijoje jį apgaubsim `DB::getDriverName() === 'mysql'` patikra. Etapas 4: kol kas užtenka FULLTEXT
@@ -577,8 +582,10 @@ Stulpelis reiškia viena: viena užklausa – vienas laimėtojas.
   `WHERE category_id IN (…) AND status = 'open' ORDER BY published_at DESC`. Indeksas prasideda FK
   stulpeliu, todėl MySQL atskiro FK indekso nekurs.
 - `(city_id, status, published_at)` – tas pats, kai filtruojama pagal miestą.
-- `(status, published_at)` – viešas sąrašas „naujausios užklausos" ir kas valandą vykdomas pasibaigusių
-  užklausų tikrinimas.
+- `(status, published_at)` – viešas sąrašas „naujausios užklausos".
+- `(status, expires_at)` – **Etapas 8**: kas valandą vykdomas pasibaigusių užklausų tikrinimas
+  (`status = 'open' AND expires_at <= now()`, `chunkById`). Be jo `EXPLAIN` parodė, kad MySQL dėl `ORDER BY id LIMIT 200`
+  skenavo visą lentelę pagal pirminį raktą (100 000 eilučių, ~130 ms kiekvieną valandą).
 - `(client_id, created_at)` – „Mano užklausos".
 - `accepted_offer_id` – automatiškai (FK).
 
@@ -852,8 +859,11 @@ Lentelė naudojama `database` kanalui (varpelis svetainėje). El. laiškai siun�
 Notification klasės kodu, o ką siųsti, lemia `users.notification_settings`.
 Planuojami tipai: `NewMatchingRequest`, `NewOffer`, `OfferAccepted`, `OfferDeclined`, `NewMessage`, `NewReview`,
 `ReviewReplied`, `LowCredits`, `SubscriptionExpiring`, `PaymentSucceeded`, `ComplaintResolved`.
-**Indeksai:** `(notifiable_type, notifiable_id)` sukuriamas automatiškai. Jei neperskaitytų skaičiavimas sulėtės,
-pridėsim į indeksą `read_at` (spręsim pagal `EXPLAIN`).
+**Indeksai:** `(notifiable_type, notifiable_id, read_at)`. **Etapas 8:** `morphs()` sukurtas
+`(notifiable_type, notifiable_id)` pakeistas šiuo, nes neperskaitytų skaičius (varpelis) skaičiuojamas **kiekviename**
+puslapyje, o aktyviausio teikėjo ~1 200 pranešimų reikėjo skaityti iš lentelės. Su `read_at` indekse `COUNT(*)`
+skaičiuojamas vien iš indekso (4 ms → 0,2 ms, `docs/PERFORMANCE.md`). Senas indeksas – naujojo pradžia, todėl
+nereikalingas.
 → https://laravel.com/docs/13.x/notifications#database-notifications
 
 #### `media` (spatie/laravel-medialibrary)
@@ -963,6 +973,7 @@ datą failo pavadinime.
 | 25  | `create_notifications_table`                           | `php artisan make:notifications-table`                                                |
 | 26  | `create_media_table`                                   | publikuota iš medialibrary paketo Etape 3 (`2026_10_03_170615_…`)                     |
 | 27  | `add_cancellation_reason_to_service_requests_table`    | **Etapas 5**: atmetimo / atšaukimo priežastis                                         |
+| 28  | `tune_indexes_after_explain`                           | **Etapas 8**: indeksų korekcijos pagal `EXPLAIN` (`docs/PERFORMANCE.md`)              |
 
 **Kodėl `city_id` pridedam atskirai:** numatytoji `users` migracija turi seniausią datą (`0001_01_01_…`), todėl
 vykdoma pirma, kai `cities` dar nėra. Galima būtų pakeisti datas, bet atskira `add_…` migracija aiškiau parodo
@@ -983,13 +994,13 @@ priežastį ir parodo, kaip keičiama jau esanti lentelė.
 | 7   | Pokalbio žinutės                | `messages WHERE conversation_id = ? ORDER BY id`                                                                               | `messages(conversation_id)` (+ PK)                                                                                        |
 | 8   | Neperskaitytos žinutės          | `messages WHERE conversation_id = ? AND id > ?`                                                                                | `messages(conversation_id)` (+ PK)                                                                                        |
 | 9   | Profilio atsiliepimai           | `reviews WHERE provider_profile_id = ? AND status='published' ORDER BY published_at DESC`                                      | `reviews(provider_profile_id, status, published_at)`                                                                      |
-| 10  | Geriausiai įvertinti            | `provider_profiles WHERE status='active' ORDER BY rating_avg DESC`                                                             | `provider_profiles(status, rating_avg)`                                                                                   |
+| 10  | Geriausiai įvertinti            | `provider_profiles WHERE status='active' ORDER BY rating_avg DESC`                                                             | `provider_profiles(status, deleted_at, rating_avg, reviews_count)` (Etapas 8)                                             |
 | 11  | Kreditų istorija                | `credit_transactions WHERE provider_profile_id = ? ORDER BY id DESC`                                                           | FK indeksas (+ PK)                                                                                                        |
 | 12  | Mokėjimo callback'as            | `payments WHERE uuid = ?` / `WHERE gateway = ? AND gateway_reference = ?`                                                      | `UNIQUE(uuid)`, `UNIQUE(gateway, gateway_reference)`                                                                      |
 | 13  | Skundų eilė                     | `complaints WHERE status='open' ORDER BY created_at`                                                                           | `complaints(status, created_at)`                                                                                          |
-| 14  | Pranešimų varpelis              | `notifications WHERE notifiable_type='user' AND notifiable_id = ? AND read_at IS NULL`                                         | `(notifiable_type, notifiable_id)`                                                                                        |
+| 14  | Pranešimų varpelis              | `notifications WHERE notifiable_type='user' AND notifiable_id = ? AND read_at IS NULL`                                         | `(notifiable_type, notifiable_id, read_at)` (Etapas 8)                                                                    |
 | 15  | Prenumeratų galiojimas          | `subscriptions WHERE status='active' AND ends_at <= ?`                                                                         | `subscriptions(status, ends_at)`                                                                                          |
-| 16  | Pasibaigusios užklausos         | `service_requests WHERE status='open' AND expires_at <= ?`                                                                     | `(status, published_at)` – naudojama `status` dalis. Jei `EXPLAIN` parodys, kad to maža, pridėsim `(status, expires_at)`. |
+| 16  | Pasibaigusios užklausos         | `service_requests WHERE status='open' AND expires_at <= ?`                                                                     | `(status, expires_at)` (Etapas 8: be jo `chunkById` skenavo visą lentelę pagal PK)                                        |
 
 ### 8.1 Pavyzdys: teikėjo užklausų srautas
 
@@ -1036,7 +1047,9 @@ o jos jau žinomos (užkraunamos kartu su profiliu). Todėl paprasčiau ir grei�
 pagal tai, kuris sąrašas atsijoja daugiau eilučių. Kiekvienai `category_id` reikšmei eilutės su `status = 'open'`
 indekse jau surikiuotos pagal `published_at`. Kelių kategorijų rezultatus DB dar turi sujungti ir surūšiuoti
 (filesort), bet tai pigu: vienoje kategorijoje atvirų užklausų būna dešimtys ar šimtai, ne tūkstančiai.
-Etape 8 tai patikrinsim su `EXPLAIN` pilnoje MySQL DB.
+**Etapas 8 patikrino** su `EXPLAIN ANALYZE` pilnoje MySQL DB: naudojamas `(category_id, status, published_at)`
+(range scan per kategorijas), `NOT EXISTS` pasiūlymams – `offers UNIQUE(service_request_id, provider_profile_id)`;
+srautas – 1–7 ms net aktyviausiam teikėjui (`docs/PERFORMANCE.md`).
 
 ---
 
