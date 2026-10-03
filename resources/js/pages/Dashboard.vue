@@ -20,6 +20,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
+import { index as creditsIndex } from '@/routes/credits';
 import type { ChecklistItem, ProviderStatus } from '@/types';
 
 // „Mano paskyra": kiekviena rolė gauna savo skydelio duomenis (DashboardController),
@@ -212,10 +213,19 @@ const statusVariant = computed(() => {
                             Už kreditus siunčiami pasiūlymai klientams.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent class="space-y-3">
                         <p class="text-3xl font-semibold">
                             {{ provider.credits_balance }}
                         </p>
+                        <!-- Etapas 7: kreditų pirkimas ir istorija (reikia profilio) -->
+                        <Button
+                            v-if="provider.status"
+                            size="sm"
+                            variant="outline"
+                            as-child
+                        >
+                            <Link :href="creditsIndex()">Pirkti kreditų</Link>
+                        </Button>
                     </CardContent>
                 </Card>
                 <Card>
