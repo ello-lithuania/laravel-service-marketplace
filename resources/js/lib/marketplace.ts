@@ -1,20 +1,15 @@
 // Etapas 5: pinigų, datų ir būsenų formatavimas lietuviškai.
 // Serveris siunčia pinigus centais ir datas ISO formatu (UTC), čia jas rodom Lietuvos laiku.
 
+import { formatPrice } from '@/lib/format';
 import type { ServiceRequestStatus, OfferStatus } from '@/types/marketplace';
 
 const TIME_ZONE = 'Europe/Vilnius';
 
-const moneyFormat = new Intl.NumberFormat('lt-LT', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-});
-
 /** 125000 → „1 250 €" */
 export function formatMoney(cents: number): string {
-    return moneyFormat.format(cents / 100);
+    // Viena formatavimo taisyklė visam projektui: sveiki eurai be centų, kitaip – visada 2 skaitmenys („320,50 €")
+    return formatPrice(cents);
 }
 
 /** Biudžetas: „100 € – 300 €", „nuo 100 €", „iki 300 €" arba „Nenurodytas" */
