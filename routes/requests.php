@@ -26,7 +26,8 @@ Route::middleware('auth')->group(function () {
         Route::get('uzklausos/nauja', [ServiceRequestController::class, 'create'])->name('service-requests.create');
         // Precognition: formos žingsniai validuojami serverio taisyklėmis neišsaugant (Precognition antraštė)
         Route::post('uzklausos', [ServiceRequestController::class, 'store'])
-            ->middleware(HandlePrecognitiveRequests::class)
+            // Etapas 6: throttle – tik tikram išsaugojimui (Precognition užklausų limiter'is neriboja)
+            ->middleware([HandlePrecognitiveRequests::class, 'throttle:service-requests'])
             ->name('service-requests.store');
         Route::get('mano-uzklausos', [ServiceRequestController::class, 'index'])->name('service-requests.index');
         Route::post('uzklausos/{serviceRequest:slug}/uzbaigti', [ServiceRequestTransitionController::class, 'complete'])
