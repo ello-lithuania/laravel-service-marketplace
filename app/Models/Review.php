@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Enums\ReviewStatus;
+use App\Observers\ReviewObserver;
 use Database\Factories\ReviewFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,8 +17,11 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 /**
  * Kliento atsiliepimas apie teikėją (docs/DB_SCHEMA.md → reviews).
  * Su service_request_id – patvirtintas; be jo (NULL) – pagal teikėjo pakvietimą.
+ *
+ * Etapas 6: ReviewObserver po kiekvieno pokyčio perskaičiuoja teikėjo reitingą (eilėje).
  */
 #[Fillable(['rating', 'comment'])]
+#[ObservedBy(ReviewObserver::class)]
 class Review extends Model
 {
     /** @use HasFactory<ReviewFactory> */
