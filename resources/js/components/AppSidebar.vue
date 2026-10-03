@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { Images, LayoutGrid, UserRoundPen } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
+import NavMarketplace from '@/components/marketplace/NavMarketplace.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -68,6 +69,8 @@ const mainNavItems = computed<NavItem[]>(() => {
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
+            <!-- Etapas 5: užklausos, pasiūlymai, pranešimai (pagal rolę) -->
+            <NavMarketplace />
         </SidebarContent>
 
         <SidebarFooter>

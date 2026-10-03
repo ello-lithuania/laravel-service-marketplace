@@ -20,6 +20,8 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            /** Etapas 5: varpelis (HandleInertiaRequests) */
+            notifications: { unread_count: number } | null;
             [key: string]: unknown;
         };
     }
