@@ -1,9 +1,9 @@
 <?php
 
 return [
-    'reset' => 'Nustatytas naujas slaptažodis!',
-    'sent' => 'Naujo slaptažodžio nustatymo nuoroda išsiųsta.',
-    'throttled' => 'Palaukite prieš tęsdami.',
-    'token' => 'Šis slaptažodžio raktas yra neteisingas.',
+    'reset' => 'Slaptažodis pakeistas. Galite prisijungti.',
+    'sent' => 'Išsiuntėme nuorodą slaptažodžiui atkurti. Patikrinkite el. paštą.',
+    'throttled' => 'Palaukite prieš bandydami dar kartą.',
+    'token' => 'Slaptažodžio atkūrimo nuoroda netinkama arba nebegalioja.',
     'user' => 'Vartotojas su tokiu el. paštu nerastas.',
 ];

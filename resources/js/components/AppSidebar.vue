@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { Images, LayoutGrid, UserRoundPen } from '@lucide/vue';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -15,28 +15,41 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as portfolioIndex } from '@/routes/portfolio';
+import { wizard } from '@/routes/provider';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
+const page = usePage();
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+// Meniu priklauso nuo rolės: teikėjas dar mato profilio vedlį ir atliktus darbus
+const mainNavItems = computed<NavItem[]>(() => {
+    const items: NavItem[] = [
+        {
+            title: 'Mano paskyra',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+    ];
+
+    // --- Etapas 3: teikėjo profilis ---
+    if (page.props.auth.user.role === 'provider') {
+        items.push({
+            title: 'Teikėjo profilis',
+            href: wizard(),
+            icon: UserRoundPen,
+        });
+
+        if (page.props.auth.user.provider_profile) {
+            items.push({
+                title: 'Atlikti darbai',
+                href: portfolioIndex(),
+                icon: Images,
+            });
+        }
+    }
+
+    return items;
+});
 </script>
 
 <template>
@@ -58,7 +71,6 @@ const footerNavItems: NavItem[] = [
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

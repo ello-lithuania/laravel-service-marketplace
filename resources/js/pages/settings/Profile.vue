@@ -5,10 +5,15 @@ import { computed } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/DeleteUser.vue';
 import Heading from '@/components/Heading.vue';
+import ImageUploadField from '@/components/ImageUploadField.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    destroy as destroyAvatar,
+    update as updateAvatar,
+} from '@/routes/avatar';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 
@@ -16,7 +21,7 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: 'Profile settings',
+                title: 'Profilis',
                 href: edit(),
             },
         ],
@@ -28,15 +33,25 @@ const user = computed(() => page.props.auth.user);
 </script>
 
 <template>
-    <Head title="Profile settings" />
+    <Head title="Profilio nustatymai" />
 
-    <h1 class="sr-only">Profile settings</h1>
+    <h1 class="sr-only">Profilio nustatymai</h1>
 
     <div class="flex flex-col space-y-6">
         <Heading
             variant="small"
-            title="Profile"
-            description="Update your name and email address"
+            title="Profilis"
+            description="Jūsų vardas, pavardė ir el. pašto adresas"
+        />
+
+        <ImageUploadField
+            v-if="user.email_verified_at"
+            label="Profilio nuotrauka"
+            description="Rodoma šalia jūsų vardo žinutėse ir atsiliepimuose"
+            :url="user.avatar"
+            :upload-url="updateAvatar().url"
+            :delete-url="destroyAvatar().url"
+            shape="round"
         />
 
         <Form
@@ -46,7 +61,7 @@ const user = computed(() => page.props.auth.user);
         >
             <div class="grid grid-cols-2 gap-4">
                 <div class="grid gap-2">
-                    <Label for="first_name">First name</Label>
+                    <Label for="first_name">Vardas</Label>
                     <Input
                         id="first_name"
                         class="mt-1 block w-full"
@@ -58,7 +73,7 @@ const user = computed(() => page.props.auth.user);
                     <InputError class="mt-2" :message="errors.first_name" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="last_name">Last name</Label>
+                    <Label for="last_name">Pavardė</Label>
                     <Input
                         id="last_name"
                         class="mt-1 block w-full"
@@ -72,7 +87,7 @@ const user = computed(() => page.props.auth.user);
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">El. pašto adresas</Label>
                 <Input
                     id="email"
                     type="email"
@@ -81,20 +96,20 @@ const user = computed(() => page.props.auth.user);
                     :default-value="user.email"
                     required
                     autocomplete="username"
-                    placeholder="Email address"
+                    placeholder="El. pašto adresas"
                 />
                 <InputError class="mt-2" :message="errors.email" />
             </div>
 
             <div v-if="page.props.mustVerifyEmail && !user.email_verified_at">
                 <p class="-mt-4 text-sm text-muted-foreground">
-                    Your email address is unverified.
+                    Jūsų el. pašto adresas nepatvirtintas.
                     <Link
                         :href="send()"
                         as="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                     >
-                        Click here to re-send the verification email.
+                        Siųsti patvirtinimo laišką dar kartą.
                     </Link>
                 </p>
 
@@ -102,13 +117,13 @@ const user = computed(() => page.props.auth.user);
                     v-if="page.props.status === 'verification-link-sent'"
                     class="mt-2 text-sm font-medium text-green-600"
                 >
-                    A new verification link has been sent to your email address.
+                    Nauja patvirtinimo nuoroda išsiųsta jūsų el. pašto adresu.
                 </div>
             </div>
 
             <div class="flex items-center gap-4">
                 <Button :disabled="processing" data-test="update-profile-button"
-                    >Save</Button
+                    >Išsaugoti</Button
                 >
             </div>
         </Form>

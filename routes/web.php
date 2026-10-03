@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 // Pradžios puslapis „home" – routes/catalog.php (Etapas 4)
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    // „Mano paskyra" – skydelis pagal rolę (Etapas 3)
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 });
 
 // Maršrutai suskirstyti pagal sritis – kiekviena sritis savo faile (ROADMAP etapai)

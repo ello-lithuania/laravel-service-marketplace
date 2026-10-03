@@ -8,7 +8,7 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: 'Appearance settings',
+                title: 'Išvaizda',
                 href: edit(),
             },
         ],
@@ -17,15 +17,15 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Appearance settings" />
+    <Head title="Išvaizda" />
 
-    <h1 class="sr-only">Appearance settings</h1>
+    <h1 class="sr-only">Išvaizdos nustatymai</h1>
 
     <div class="space-y-6">
         <Heading
             variant="small"
-            title="Appearance settings"
-            description="Update the appearance settings for your account"
+            title="Išvaizda"
+            description="Šviesi, tamsi arba pagal jūsų įrenginio nustatymus"
         />
         <AppearanceTabs />
     </div>

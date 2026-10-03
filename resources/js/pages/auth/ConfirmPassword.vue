@@ -9,15 +9,15 @@ import { store } from '@/routes/password/confirm';
 
 defineOptions({
     layout: {
-        title: 'Confirm password',
+        title: 'Patvirtinkite slaptažodį',
         description:
-            'This is a secure area of the application. Please confirm your password before continuing.',
+            'Tai saugi paskyros sritis. Prieš tęsdami dar kartą įveskite slaptažodį.',
     },
 });
 </script>
 
 <template>
-    <Head title="Confirm password" />
+    <Head title="Slaptažodžio patvirtinimas" />
 
     <Form
         v-bind="store.form()"
@@ -26,7 +26,7 @@ defineOptions({
     >
         <div class="space-y-6">
             <div class="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Slaptažodis</Label>
                 <PasswordInput
                     id="password"
                     name="password"
@@ -46,7 +46,7 @@ defineOptions({
                     data-test="confirm-password-button"
                 >
                     <Spinner v-if="processing" />
-                    Confirm password
+                    Patvirtinti
                 </Button>
             </div>
         </div>

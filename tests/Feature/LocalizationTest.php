@@ -19,7 +19,7 @@ test('validacijos klaidos rodomos lietuviškai su lietuviškais laukų pavadinim
 });
 
 test('laiškų tekstai išversti į lietuvių kalbą', function () {
-    expect(__('Verify Email Address'))->toBe('El. pašto adreso patvirtinimas');
+    expect(__('Verify Email Address'))->toBe('Patvirtinti el. pašto adresą');
 });
 
 test('datos rodomos lietuviškai', function () {

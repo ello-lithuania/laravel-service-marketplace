@@ -8,9 +8,9 @@ import { send } from '@/routes/verification';
 
 defineOptions({
     layout: {
-        title: 'Email verification',
+        title: 'Patvirtinkite el. paštą',
         description:
-            'Please verify your email address by clicking on the link we just emailed to you.',
+            'Išsiuntėme jums laišką su patvirtinimo nuoroda. Paspauskite ją ir galėsite tęsti.',
     },
 });
 
@@ -20,14 +20,14 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Email verification" />
+    <Head title="El. pašto patvirtinimas" />
 
     <div
         v-if="status === 'verification-link-sent'"
         class="mb-4 text-center text-sm font-medium text-green-600"
     >
-        A new verification link has been sent to the email address you provided
-        during registration.
+        Nauja patvirtinimo nuoroda išsiųsta registracijos metu nurodytu el.
+        pašto adresu.
     </div>
 
     <Form
@@ -35,13 +35,18 @@ defineProps<{
         class="space-y-6 text-center"
         v-slot="{ processing }"
     >
+        <p class="text-sm text-muted-foreground">
+            Laiško nėra? Patikrinkite šlamšto (spam) aplanką arba atsiųskite
+            nuorodą dar kartą.
+        </p>
+
         <Button :disabled="processing" variant="secondary">
             <Spinner v-if="processing" />
-            Resend verification email
+            Siųsti dar kartą
         </Button>
 
         <TextLink :href="logout()" as="button" class="mx-auto block text-sm">
-            Log out
+            Atsijungti
         </TextLink>
     </Form>
 </template>

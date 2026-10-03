@@ -429,6 +429,21 @@ Lentelėje 60 eilučių, ir visa ji laikoma cache.
   (boolean režimas, scope `ProviderProfile::matchingText`; SQLite – `LIKE`), Scout + Meilisearch – kai prireiks
   klaidų tolerancijos ar paieškos „kol rašai" (sprendimas – `docs/LEARNING.md`, Etapas 4).
 
+**Būsenos (`ProviderStatus`) ir profilio vedlys (Etapas 3):**
+
+| Perėjimas                                    | Kas inicijuoja                                                     | Taisyklė                                                                                                                                 |
+| -------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| → `pending`                                  | teikėjas, vedlio 1 žingsnis (duomenys)                             | profilis sukuriamas tik tada, kai yra privalomi laukai (`city_id` NOT NULL), todėl ne registracijos metu                                 |
+| `pending` → `active`                         | sistema (`ActivateCompletedProfile`), po kiekvieno vedlio žingsnio | kai užpildyti privalomi žingsniai: duomenys + ≥ 1 kategorija + zona (`serves_whole_country` arba ≥ 1 savivaldybė). Kainos – neprivalomos |
+| `active` → `hidden` / `suspended` (ir atgal) | administratorius (Filament)                                        | vedlys šių būsenų niekada nekeičia; `active` profilis likti be kategorijų ar zonų negali (validacija `min:1`)                            |
+
+_Kodėl be administratoriaus patvirtinimo:_ teikėjas gali pradėti gauti užklausas iš karto (greitesnė pradžia,
+mažiau rankinio darbo). Piktnaudžiavimą stabdo skundai ir `suspended`. Prireikus išankstinio moderavimo, užtektų
+`ActivateCompletedProfile` vietoj `active` palikti `pending` ir pridėti Filament veiksmą „Patvirtinti".
+
+**Slug** sukuriamas vieną kartą (`GenerateProviderSlug`: `jonas-simkus`, `jonas-simkus-2`…, tikrinami ir soft
+deleted profiliai) ir pervadinus profilį nesikeičia – kad nesulūžtų nuorodos.
+
 #### `category_provider_profile` (pivot)
 
 **Paskirtis:** kokias paslaugas teikia teikėjas ir kokia kaina „nuo".
@@ -814,19 +829,34 @@ pridėsim į indeksą `read_at` (spręsim pagal `EXPLAIN`).
 
 #### `media` (spatie/laravel-medialibrary)
 
-> Kuriama **Etape 3**, kai diegsime paketą ir failų įkėlimą.
+> **Sukurta Etape 3:** `spatie/laravel-medialibrary` 11, migracija `2026_10_03_170615_create_media_table`
+> (publikuota komanda `php artisan vendor:publish --tag=medialibrary-migrations`).
 
 Migraciją sukuria paketas. Svarbiausi stulpeliai: `model_type`/`model_id` (morphs), `uuid`, `collection_name`,
 `file_name`, `mime_type`, `disk`, `size`, `custom_properties` (json), `generated_conversions` (json), `order_column`.
+`model_type` saugomas trumpu vardu iš morph map (`user`, `provider_profile`, `portfolio_item`), nes modelio
+`getMorphClass()` paiso `Relation::enforceMorphMap()` (2.13 sk.).
 
-| Modelis         | Kolekcija       |
-| --------------- | --------------- |
-| User            | `avatar`        |
-| ProviderProfile | `logo`, `cover` |
-| PortfolioItem   | `images`        |
-| ServiceRequest  | `photos`        |
-| Message         | `attachments`   |
-| Complaint       | `evidence`      |
+| Modelis         | Kolekcija     | Failų      | Miniatiūros (conversions)                                   | Kada daromos         | Etapas |
+| --------------- | ------------- | ---------- | ----------------------------------------------------------- | -------------------- | ------ |
+| User            | `avatar`      | 1 (single) | `thumb` 128×128, `Fit::Crop`                                | iškart (`nonQueued`) | 3      |
+| ProviderProfile | `logo`        | 1 (single) | `thumb` iki 256×256, `Fit::Max` (neapkerpa)                 | iškart (`nonQueued`) | 3      |
+| ProviderProfile | `cover`       | 1 (single) | `wide` 1200×400, `Fit::Crop`                                | iškart (`nonQueued`) | 3      |
+| PortfolioItem   | `images`      | iki 10     | `thumb` 480×360 `Fit::Crop`, `large` iki 1600 px `Fit::Max` | eilėje (queued)      | 3      |
+| ServiceRequest  | `photos`      |            |                                                             |                      | 5      |
+| Message         | `attachments` |            |                                                             |                      | 6      |
+| Complaint       | `evidence`    |            |                                                             |                      | 6      |
+
+- **Diskas:** `public` (`storage/app/public`, URL `/storage/...`). Vieną kartą paleisti `php artisan storage:link`
+  (sukuria `public/storage` nuorodą; Git'e ignoruojama). Produkcijoje diską galima pakeisti į S3 (`MEDIA_DISK`).
+- **Queued ar ne:** viena nuotrauka (avataras, logotipas, viršelis) apdorojama iškart – žmogus rezultatą nori matyti
+  tame pačiame puslapyje. Portfolio nuotraukų gali būti 10, todėl miniatiūras daro eilės darbuotojas
+  (`composer run dev` jį paleidžia); kol miniatiūros nėra, rodomas originalas (`PortfolioItem::imageUrls()`).
+- **Validacija** (`App\Concerns\ImageValidationRules`): tik JPG / PNG / WEBP (tikrinamas turinys, ne plėtinys; SVG
+  draudžiamas dėl JavaScript), iki 5 MB, nuo 200×200 iki 8000×8000 px. Kolekcijos papildomai riboja MIME
+  (`acceptsMimeTypes`). PHP `upload_max_filesize` (numatytai 2 MB) produkcijoje reikia padidinti iki ≥ 5 MB,
+  `post_max_size` – iki ≥ 64 MB (10 nuotraukų vienu kartu).
+- Ištrynus modelį, medialibrary ištrina ir jo failus (soft delete atveju – ne).
 
 ---
 
@@ -902,7 +932,7 @@ datą failo pavadinime.
 | 23  | `create_payments_table`                                |                                                                                       |
 | 24  | `create_complaints_table`                              |                                                                                       |
 | 25  | `create_notifications_table`                           | `php artisan make:notifications-table`                                                |
-| 26  | `create_media_table`                                   | publikuojama iš medialibrary paketo – **Etape 3**                                     |
+| 26  | `create_media_table`                                   | publikuota iš medialibrary paketo Etape 3 (`2026_10_03_170615_…`)                     |
 
 **Kodėl `city_id` pridedam atskirai:** numatytoji `users` migracija turi seniausią datą (`0001_01_01_…`), todėl
 vykdoma pirma, kai `cities` dar nėra. Galima būtų pakeisti datas, bet atskira `add_…` migracija aiškiau parodo

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { Hammer, Search } from '@lucide/vue';
+import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -10,20 +12,40 @@ import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
-defineProps<{
+const props = defineProps<{
     passwordRules: string;
+    /** Iš anksto pažymėta rolė (/register?role=provider) */
+    role: 'client' | 'provider';
 }>();
 
 defineOptions({
     layout: {
-        title: 'Create an account',
-        description: 'Enter your details below to create your account',
+        title: 'Susikurkite paskyrą',
+        description: 'Užtruks mažiau nei minutę',
     },
 });
+
+// Rolė – paprasti radio mygtukai su name="role": <Form> pats surenka jų reikšmę
+const selectedRole = ref(props.role);
+
+const roles = [
+    {
+        value: 'client',
+        title: 'Ieškau paslaugų',
+        text: 'Aprašysiu darbą ir gausiu pasiūlymus',
+        icon: Search,
+    },
+    {
+        value: 'provider',
+        title: 'Teikiu paslaugas',
+        text: 'Gausiu užklausas iš klientų',
+        icon: Hammer,
+    },
+] as const;
 </script>
 
 <template>
-    <Head title="Register" />
+    <Head title="Registracija" />
 
     <Form
         v-bind="store.form()"
@@ -32,9 +54,46 @@ defineOptions({
         class="flex flex-col gap-6"
     >
         <div class="grid gap-6">
+            <fieldset class="grid gap-2">
+                <legend class="mb-2 text-sm font-medium">
+                    Kaip naudosite platformą?
+                </legend>
+                <div class="grid grid-cols-2 gap-3">
+                    <label
+                        v-for="option in roles"
+                        :key="option.value"
+                        class="flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-sm transition-colors has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
+                        :class="
+                            selectedRole === option.value
+                                ? 'border-primary bg-primary/5'
+                                : 'hover:bg-accent'
+                        "
+                        :data-test="`role-${option.value}`"
+                    >
+                        <input
+                            v-model="selectedRole"
+                            type="radio"
+                            name="role"
+                            :value="option.value"
+                            class="sr-only"
+                        />
+                        <component
+                            :is="option.icon"
+                            class="size-5 text-primary"
+                            aria-hidden="true"
+                        />
+                        <span class="font-medium">{{ option.title }}</span>
+                        <span class="text-xs text-muted-foreground">{{
+                            option.text
+                        }}</span>
+                    </label>
+                </div>
+                <InputError :message="errors.role" />
+            </fieldset>
+
             <div class="grid grid-cols-2 gap-4">
                 <div class="grid gap-2">
-                    <Label for="first_name">First name</Label>
+                    <Label for="first_name">Vardas</Label>
                     <Input
                         id="first_name"
                         type="text"
@@ -48,7 +107,7 @@ defineOptions({
                     <InputError :message="errors.first_name" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="last_name">Last name</Label>
+                    <Label for="last_name">Pavardė</Label>
                     <Input
                         id="last_name"
                         type="text"
@@ -63,7 +122,7 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">El. pašto adresas</Label>
                 <Input
                     id="email"
                     type="email"
@@ -71,34 +130,36 @@ defineOptions({
                     :tabindex="2"
                     autocomplete="email"
                     name="email"
-                    placeholder="email@example.com"
+                    placeholder="vardas@pavyzdys.lt"
                 />
                 <InputError :message="errors.email" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">Password</Label>
+                <Label for="password">Slaptažodis</Label>
                 <PasswordInput
                     id="password"
                     required
                     :tabindex="3"
                     autocomplete="new-password"
                     name="password"
-                    placeholder="Password"
+                    placeholder="Slaptažodis"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirm password</Label>
+                <Label for="password_confirmation"
+                    >Pakartokite slaptažodį</Label
+                >
                 <PasswordInput
                     id="password_confirmation"
                     required
                     :tabindex="4"
                     autocomplete="new-password"
                     name="password_confirmation"
-                    placeholder="Confirm password"
+                    placeholder="Pakartokite slaptažodį"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password_confirmation" />
@@ -112,17 +173,17 @@ defineOptions({
                 data-test="register-user-button"
             >
                 <Spinner v-if="processing" />
-                Create account
+                Sukurti paskyrą
             </Button>
         </div>
 
         <div class="text-center text-sm text-muted-foreground">
-            Already have an account?
+            Jau turite paskyrą?
             <TextLink
                 :href="login()"
                 class="underline underline-offset-4"
                 :tabindex="6"
-                >Log in</TextLink
+                >Prisijunkite</TextLink
             >
         </div>
     </Form>
