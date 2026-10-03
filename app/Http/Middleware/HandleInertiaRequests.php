@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Resources\AuthUserResource;
+use App\Services\Messaging\UnreadMessages;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -50,6 +51,12 @@ class HandleInertiaRequests extends Middleware
             // (dalinis perkrovimas su „only" jo neskaičiuoja); COUNT naudoja indeksą (notifiable_type, notifiable_id).
             'notifications' => fn (): ?array => $request->user() === null ? null : [
                 'unread_count' => $request->user()->unreadNotifications()->count(),
+            ],
+            // --- Etapas 6: neperskaitytų žinučių skaičius meniu ženkleliui ---
+            // Vardas „inbox", ne „messages": puslapio prop'as tokiu pat vardu (pokalbio žinutės) jį perrašytų.
+            // Closure – skaičiuojama tik kai reikia; vienas COUNT su JOIN (UnreadMessages::total).
+            'inbox' => fn (): ?array => $request->user() === null ? null : [
+                'unread_count' => app(UnreadMessages::class)->total($request->user()),
             ],
         ];
     }

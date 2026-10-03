@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Bell, ClipboardList, Inbox, Plus, Send } from '@lucide/vue';
+import {
+    Bell,
+    ClipboardList,
+    Inbox,
+    MessagesSquare,
+    Plus,
+    Send,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import {
     SidebarGroup,
@@ -11,6 +18,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { index as conversations } from '@/routes/conversations';
 import { index as notifications } from '@/routes/notifications';
 import { index as myOffers } from '@/routes/offers';
 import { index as feed } from '@/routes/provider-feed';
@@ -31,12 +39,24 @@ const items = computed<NavItem[]>(() => {
                     icon: ClipboardList,
                 },
                 { title: 'Nauja užklausa', href: create(), icon: Plus },
+                // --- Etapas 6 ---
+                {
+                    title: 'Žinutės',
+                    href: conversations(),
+                    icon: MessagesSquare,
+                },
                 { title: 'Pranešimai', href: notifications(), icon: Bell },
             ];
         case 'provider':
             return [
                 { title: 'Užklausų srautas', href: feed(), icon: Inbox },
                 { title: 'Mano pasiūlymai', href: myOffers(), icon: Send },
+                // --- Etapas 6 ---
+                {
+                    title: 'Žinutės',
+                    href: conversations(),
+                    icon: MessagesSquare,
+                },
                 { title: 'Pranešimai', href: notifications(), icon: Bell },
             ];
         default:
@@ -45,6 +65,19 @@ const items = computed<NavItem[]>(() => {
 });
 
 const unread = computed(() => page.props.notifications?.unread_count ?? 0);
+// Etapas 6: neperskaitytos žinutės (bendras prop'as „inbox")
+const unreadMessages = computed(() => page.props.inbox?.unread_count ?? 0);
+
+function badgeFor(item: NavItem): number {
+    switch (item.title) {
+        case 'Pranešimai':
+            return unread.value;
+        case 'Žinutės':
+            return unreadMessages.value;
+        default:
+            return 0;
+    }
+}
 </script>
 
 <template>
@@ -62,10 +95,8 @@ const unread = computed(() => page.props.notifications?.unread_count ?? 0);
                         <span>{{ item.title }}</span>
                     </Link>
                 </SidebarMenuButton>
-                <SidebarMenuBadge
-                    v-if="item.title === 'Pranešimai' && unread > 0"
-                >
-                    {{ unread }}
+                <SidebarMenuBadge v-if="badgeFor(item) > 0">
+                    {{ badgeFor(item) }}
                 </SidebarMenuBadge>
             </SidebarMenuItem>
         </SidebarMenu>

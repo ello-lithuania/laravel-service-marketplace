@@ -22,6 +22,8 @@ declare module '@inertiajs/core' {
             sidebarOpen: boolean;
             /** Etapas 5: varpelis (HandleInertiaRequests) */
             notifications: { unread_count: number } | null;
+            /** Etapas 6: neperskaitytos žinutės (HandleInertiaRequests „inbox") */
+            inbox: { unread_count: number } | null;
             [key: string]: unknown;
         };
     }

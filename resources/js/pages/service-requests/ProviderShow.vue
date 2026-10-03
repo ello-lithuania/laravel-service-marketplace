@@ -6,19 +6,24 @@ import InputError from '@/components/InputError.vue';
 import FormTextarea from '@/components/marketplace/FormTextarea.vue';
 import RequestDetails from '@/components/marketplace/RequestDetails.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
+import MessageButton from '@/components/messages/MessageButton.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate, formatMoney, timeAgo } from '@/lib/marketplace';
 import { store, withdraw } from '@/routes/offers';
 import { index as feed } from '@/routes/provider-feed';
-import type { Offer, ServiceRequestDetail } from '@/types';
+import type { Offer, OfferMessaging, ServiceRequestDetail } from '@/types';
 
 const props = defineProps<{
     serviceRequest: ServiceRequestDetail;
     client: { public_name: string; phone: string | null; email: string | null };
     myOffer:
-        | (Offer & { is_chosen: boolean; can: { withdraw: boolean } })
+        | (Offer & {
+              is_chosen: boolean;
+              can: { withdraw: boolean };
+              messaging: OfferMessaging;
+          })
         | null;
     offerForm: {
         allowed: boolean;
@@ -172,16 +177,23 @@ function withdrawOffer(): void {
                         : 'klientas dar neperžiūrėjo'
                 }}
             </p>
-            <Button
-                v-if="myOffer.can.withdraw"
-                variant="outline"
-                size="sm"
-                :disabled="withdrawing"
-                data-test="withdraw-offer"
-                @click="withdrawOffer"
-            >
-                Atšaukti pasiūlymą
-            </Button>
+            <div class="flex flex-wrap gap-2">
+                <!-- Etapas 6: pokalbis su klientu -->
+                <MessageButton
+                    :offer-id="myOffer.id"
+                    :messaging="myOffer.messaging"
+                />
+                <Button
+                    v-if="myOffer.can.withdraw"
+                    variant="outline"
+                    size="sm"
+                    :disabled="withdrawing"
+                    data-test="withdraw-offer"
+                    @click="withdrawOffer"
+                >
+                    Atšaukti pasiūlymą
+                </Button>
+            </div>
         </section>
 
         <!-- Pasiūlymo forma -->

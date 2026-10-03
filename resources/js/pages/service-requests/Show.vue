@@ -5,13 +5,17 @@ import { ref } from 'vue';
 import CancelRequestDialog from '@/components/marketplace/CancelRequestDialog.vue';
 import RequestDetails from '@/components/marketplace/RequestDetails.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
+import MessageButton from '@/components/messages/MessageButton.vue';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatMoney, plural, timeAgo } from '@/lib/marketplace';
 import { show as showOffer } from '@/routes/offers';
 import { complete, index } from '@/routes/service-requests';
-import type { Offer, ServiceRequestDetail } from '@/types';
+import type { Offer, OfferMessaging, ServiceRequestDetail } from '@/types';
 
-type OfferRow = Offer & { can: { accept: boolean; decline: boolean } };
+type OfferRow = Offer & {
+    can: { accept: boolean; decline: boolean };
+    messaging: OfferMessaging;
+};
 
 const props = defineProps<{
     serviceRequest: ServiceRequestDetail;
@@ -225,21 +229,30 @@ function markCompleted(): void {
                         {{ offer.message }}
                     </p>
 
-                    <div class="mt-3 flex items-center justify-between gap-3">
+                    <div
+                        class="mt-3 flex flex-wrap items-center justify-between gap-3"
+                    >
                         <StatusBadge :status="offer.status" />
-                        <Button size="sm" variant="outline" as-child>
-                            <Link
-                                :href="
-                                    showOffer({
-                                        serviceRequest: serviceRequest.slug,
-                                        offer: offer.id,
-                                    })
-                                "
-                                data-test="open-offer"
-                            >
-                                Peržiūrėti pasiūlymą
-                            </Link>
-                        </Button>
+                        <div class="flex flex-wrap gap-2">
+                            <!-- Etapas 6: žinutės -->
+                            <MessageButton
+                                :offer-id="offer.id"
+                                :messaging="offer.messaging"
+                            />
+                            <Button size="sm" variant="outline" as-child>
+                                <Link
+                                    :href="
+                                        showOffer({
+                                            serviceRequest: serviceRequest.slug,
+                                            offer: offer.id,
+                                        })
+                                    "
+                                    data-test="open-offer"
+                                >
+                                    Peržiūrėti pasiūlymą
+                                </Link>
+                            </Button>
+                        </div>
                     </div>
                 </li>
             </ul>

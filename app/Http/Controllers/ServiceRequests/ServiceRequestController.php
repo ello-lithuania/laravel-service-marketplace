@@ -17,6 +17,7 @@ use App\Models\City;
 use App\Models\Offer;
 use App\Models\ServiceRequest;
 use App\Models\User;
+use App\Support\OfferMessaging;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -111,7 +112,8 @@ class ServiceRequestController extends Controller
     private function clientView(User $user, ServiceRequest $serviceRequest): Response
     {
         $offers = $serviceRequest->offers()
-            ->with('providerProfile.city:id,name')
+            // Etapas 6: conversation – „Rašyti žinutę" mygtukui (OfferMessaging), be N+1
+            ->with(['providerProfile.city:id,name', 'conversation'])
             // Pirma priimtas, tada laukiantys, tada kiti; tame pačiame lygyje – naujausi viršuje
             ->orderByRaw('CASE status WHEN ? THEN 0 WHEN ? THEN 1 ELSE 2 END', [OfferStatus::Accepted->value, OfferStatus::Pending->value])
             ->latest()
@@ -127,6 +129,7 @@ class ServiceRequestController extends Controller
             'offers' => $offers->map(fn (Offer $offer): array => [
                 ...OfferResource::make($offer)->resolve(),
                 'can' => ['accept' => $user->can('accept', $offer), 'decline' => $user->can('decline', $offer)],
+                'messaging' => OfferMessaging::for($user, $offer),
             ]),
             // Išrinkto teikėjo kontaktai – tik po priėmimo
             'acceptedContact' => $accepted === null ? null : [
@@ -168,6 +171,7 @@ class ServiceRequestController extends Controller
                 ...OfferResource::make($myOffer)->withFullMessage()->resolve(),
                 'is_chosen' => $isChosen,
                 'can' => ['withdraw' => $user->can('withdraw', $myOffer)],
+                'messaging' => OfferMessaging::for($user, $myOffer),
             ],
             'offerForm' => [
                 'allowed' => $offerPermission->allowed(),

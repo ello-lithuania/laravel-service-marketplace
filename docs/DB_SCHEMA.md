@@ -561,10 +561,10 @@ stulpeliu, todėl tinka ir FK reikmėms.
 **Etapas 6 papildė** (migracija `add_completion_reminders_to_service_requests_table`, `docs/STATES.md` 1 sk.
 „Papildomos taisyklės"):
 
-| Stulpelis               | Tipas        | Pastaba                                                                                |
-| ----------------------- | ------------ | -------------------------------------------------------------------------------------- |
+| Stulpelis               | Tipas        | Pastaba                                                                                  |
+| ----------------------- | ------------ | ---------------------------------------------------------------------------------------- |
 | completion_requested_at | `timestamp?` | kada teikėjas paskutinį kartą paprašė pažymėti darbą atliktu (kartoti – ne dažniau 3 d.) |
-| completion_reminded_at  | `timestamp?` | kada sistema priminė klientui, kad užklausa vykdoma jau 60 d. (siunčiama vieną kartą)   |
+| completion_reminded_at  | `timestamp?` | kada sistema priminė klientui, kad užklausa vykdoma jau 60 d. (siunčiama vieną kartą)    |
 
 _Kodėl stulpeliai, o ne cache ar `notifications` lentelė:_ tai verslo taisyklės („ne dažniau kaip kas 3 d.",
 „tik vieną kartą"), kurios turi išlikti išvalius cache, o UI turi parodyti „Paprašėte prieš 2 d.". Ieškoti

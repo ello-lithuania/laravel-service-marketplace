@@ -4,3 +4,4 @@ export * from './catalog';
 export * from './marketplace';
 export * from './navigation';
 export * from './ui';
+export * from './messages';
