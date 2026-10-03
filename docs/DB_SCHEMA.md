@@ -661,6 +661,13 @@ _Kodėl `last_read_message_id`, o ne `messages.read_at`:_ neperskaitytos žinut�
 o tai yra intervalas indekse. Be to, toks būdas veikia ir tada, kai dalyvių daugiau nei du (pvz. prie pokalbio
 prisijungia administratorius, nagrinėjantis skundą).
 
+**Įgyvendinta Etape 6.** Pokalbis sukuriamas per `StartConversation` (`createOrFirst` pagal `UNIQUE(offer_id)`), dalyviai –
+užklausos klientas ir pasiūlymo teikėjas. Pradėti gali klientas (bet kuriam savo užklausos pasiūlymui), teikėjas – tik
+priimtam; rašyti galima, kol pasiūlymas laukia atviroje užklausoje, o priimtam – visada (`ConversationPolicy`).
+Atidarius pokalbį `last_read_message_id` = paskutinės žinutės id (`MarkConversationRead`); siuntėjui – iš karto jo žinutės
+id. Neperskaitytų skaičius – `App\Services\Messaging\UnreadMessages` (sąrašui – `withCount`, meniu – vienas `COUNT`
+su `JOIN`).
+
 #### `messages`
 
 | Stulpelis       | Tipas                         | Pastaba                                         |
@@ -708,6 +715,14 @@ Priedai – medialibrary kolekcija `attachments`.
   pažymimas kitaip.
 - Stulpelio `is_verified` nededam: tai pigiai išvedama iš `service_request_id IS NOT NULL`. Nesaugom to, ką
   galima lengvai apskaičiuoti.
+
+**Įgyvendinta Etape 6** (`ReviewPolicy`, `app/Actions/Reviews`):
+
+- patvirtintą rašo tik užklausos klientas, per 60 d. nuo `completed_at`, vieną kartą; paskelbiamas iš karto;
+- pakvietimo – per pasirašytą nuorodą (`URL::temporarySignedRoute`, 30 d.), tik klientai, ne savo profiliui, vienas
+  tam pačiam teikėjui per 12 mėn. (tikrinama per `(author_id)` FK indeksą), būsena `pending` – paskelbia administratorius;
+- teikėjas atsako vieną kartą (`provider_reply IS NULL`);
+- `rating_avg` ir `reviews_count` perskaičiuoja `ReviewObserver` → `RecalculateProviderRating` (eilėje).
 
 **Indeksai ir kodėl:**
 
@@ -849,6 +864,12 @@ seną.
 „kiek skundų gavo šis atsiliepimas?" · `(status, created_at)` – admin eilė, seniausi viršuje ·
 `reporter_id`, `handled_by_id` – automatiškai (FK).
 
+**Įgyvendinta Etape 6.** `reportable_type` – enum `ReportableType` (tie patys trumpi vardai kaip morph map'e: `service_request`,
+`offer`, `review`, `message`, `provider_profile`). Tas pats pranešėjas apie tą patį įrašą gali turėti tik vieną
+neužbaigtą (`open` / `in_review`) skundą – tikrina `FileComplaint` (unikalaus indekso nėra, nes užbaigus skundą
+pranešti vėl galima). Nagrinėjimas – Filament `ComplaintResource`: `open → in_review → resolved / rejected`,
+išsprendus galima paslėpti atsiliepimą (`status = hidden`) ar žinutę (soft delete).
+
 #### `notifications` (Laravel)
 
 Sukuriama komanda `php artisan make:notifications-table`.
@@ -866,6 +887,8 @@ Lentelė naudojama `database` kanalui (varpelis svetainėje). El. laiškai siun�
 Notification klasės kodu, o ką siųsti, lemia `users.notification_settings`.
 Planuojami tipai: `NewMatchingRequest`, `NewOffer`, `OfferAccepted`, `OfferDeclined`, `NewMessage`, `NewReview`,
 `ReviewReplied`, `LowCredits`, `SubscriptionExpiring`, `PaymentSucceeded`, `ComplaintResolved`.
+Etape 6 sukurti: `NewMessage`, `NewReview`, `ReviewInvitation`, `ReviewReplied`, `CompletionRequested`,
+`CompletionReminder`, `ComplaintResolved` (pastarasis nustatymuose neišjungiamas – tai atsakymas į paties vartotojo veiksmą).
 **Indeksai:** `(notifiable_type, notifiable_id)` sukuriamas automatiškai. Jei neperskaitytų skaičiavimas sulėtės,
 pridėsim į indeksą `read_at` (spręsim pagal `EXPLAIN`).
 → https://laravel.com/docs/13.x/notifications#database-notifications
