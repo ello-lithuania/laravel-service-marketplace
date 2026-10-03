@@ -34,15 +34,20 @@ enum ProviderSort: string implements HasLabel
     }
 
     /**
-     * Rikiavimo pasirinkimai sąrašui; „Tinkamiausi" prasmingas tik ieškant tekstu.
+     * Rikiavimo pasirinkimai sąrašo formai; „Tinkamiausi" prasmingas tik ieškant tekstu.
      *
-     * @return list<self>
+     * @return list<array{value: string, label: string}>
      */
-    public static function options(bool $withRelevance = false): array
+    public static function selectOptions(bool $withRelevance = false): array
     {
-        return array_values(array_filter(
-            self::cases(),
-            fn (self $sort): bool => $withRelevance || $sort !== self::Relevance,
-        ));
+        $options = [];
+
+        foreach (self::cases() as $sort) {
+            if ($withRelevance || $sort !== self::Relevance) {
+                $options[] = ['value' => $sort->value, 'label' => $sort->label()];
+            }
+        }
+
+        return $options;
     }
 }

@@ -36,7 +36,20 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            @if (is_array($page['props']['seo'] ?? null))
+                {{-- Katalogo SEO žymos jau pirmame HTML (robotams ir nuorodų peržiūroms be JavaScript).
+                     Tie patys data-inertia raktai kaip SeoHead.vue head-key, todėl Vue jas perima, o ne dubliuoja. --}}
+                @php($seo = $page['props']['seo'])
+                <title>{{ $seo['title'] }} - {{ config('app.name') }}</title>
+                <meta name="description" content="{{ $seo['description'] }}" data-inertia="description">
+                <meta name="robots" content="{{ $seo['robots'] }}" data-inertia="robots">
+                <link rel="canonical" href="{{ $seo['canonical'] }}" data-inertia="canonical">
+                <meta property="og:title" content="{{ $seo['title'] }}" data-inertia="og:title">
+                <meta property="og:description" content="{{ $seo['description'] }}" data-inertia="og:description">
+                <meta property="og:url" content="{{ $seo['canonical'] }}" data-inertia="og:url">
+            @else
+                <title>{{ config('app.name', 'Laravel') }}</title>
+            @endif
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
