@@ -6,6 +6,7 @@ use App\Enums\ServiceRequestStatus;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Services\Matching\ProviderMatcher;
+use Illuminate\Auth\Access\Response;
 
 /**
  * Kas ką gali daryti su užklausa. Policy – vieta autorizacijai („ar šis vartotojas gali…"),
@@ -89,5 +90,29 @@ class ServiceRequestPolicy
     public function updatePhotos(User $user, ServiceRequest $serviceRequest): bool
     {
         return $serviceRequest->client_id === $user->id && $serviceRequest->acceptsPhotoChanges();
+    }
+
+    /**
+     * Paprašyti klientą pažymėti darbą atliktu – tik išrinktas teikėjas, kol užklausa vykdoma,
+     * ne dažniau kaip kas ServiceRequest::COMPLETION_REQUEST_COOLDOWN_DAYS d. (docs/STATES.md 1 sk.).
+     */
+    public function requestCompletion(User $user, ServiceRequest $serviceRequest): Response
+    {
+        $provider = $user->isProvider() ? $user->providerProfile : null;
+        $chosen = $provider !== null && $serviceRequest->acceptedOffer()->where('provider_profile_id', $provider->id)->exists();
+
+        if (! $chosen) {
+            return Response::deny(__('service_requests.completion.not_chosen'));
+        }
+
+        if ($serviceRequest->status !== ServiceRequestStatus::InProgress) {
+            return Response::deny(__('service_requests.completion.not_in_progress'));
+        }
+
+        return $serviceRequest->nextCompletionRequestAt() === null
+            ? Response::allow()
+            : Response::deny(__('service_requests.completion.too_soon', [
+                'days' => max(1, (int) ceil(now()->diffInDays($serviceRequest->nextCompletionRequestAt()))),
+            ]));
     }
 }

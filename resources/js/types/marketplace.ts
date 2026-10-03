@@ -51,6 +51,8 @@ export type ServiceRequestDetail = ServiceRequestSummary & {
     cancelled_at: string | null;
     cancellation_reason: string | null;
     views_count: number;
+    /** Etapas 6: kada teikėjas paprašė pažymėti darbą atliktu */
+    completion_requested_at: string | null;
     /** Etapas 6: užklausos nuotraukos (privačios, per /failai/{id}) */
     photos: PrivateFile[];
 };

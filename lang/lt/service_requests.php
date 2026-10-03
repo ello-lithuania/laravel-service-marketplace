@@ -51,4 +51,26 @@ return [
         'cancelled' => 'Grąžinimas: užklausa „:title" atšaukta',
         'expired' => 'Grąžinimas: užklausa „:title" pasibaigė, pasiūlymas neatidarytas',
     ],
+
+    // --- Etapas 6: prašymas pažymėti darbą atliktu ir 60 d. priminimas (docs/STATES.md 1 sk.) ---
+    'completion' => [
+        'not_chosen' => 'Paprašyti pažymėti darbą atliktu gali tik išrinktas teikėjas.',
+        'not_in_progress' => 'Užklausa nebevykdoma.',
+        'too_soon' => 'Priminimą jau siuntėte. Kitą galėsite išsiųsti po :days d.',
+        'flash' => 'Priminimas išsiųstas klientui.',
+        'requested' => [
+            'message' => ':provider prašo pažymėti, kad darbas „:title" atliktas',
+            'subject' => 'Ar darbas „:title" atliktas?',
+            'intro' => ':provider pažymėjo, kad darbas „:title" atliktas.',
+            'outro' => 'Jei viskas gerai – užklausos puslapyje paspauskite „Darbas atliktas" ir įvertinkite teikėją. Jei dar ne – parašykite teikėjui žinutę.',
+            'action' => 'Atidaryti užklausą',
+        ],
+        'reminder' => [
+            'message' => 'Užklausa „:title" vykdoma jau :days d. Ar darbas atliktas?',
+            'subject' => 'Ar darbas „:title" jau atliktas?',
+            'intro' => 'Jūsų užklausa „:title" vykdoma jau :days dienų.',
+            'outro' => 'Jei darbas atliktas – pažymėkite tai ir įvertinkite teikėją. Jei darbas neįvyko, užklausą galite atšaukti.',
+            'action' => 'Atidaryti užklausą',
+        ],
+    ],
 ];

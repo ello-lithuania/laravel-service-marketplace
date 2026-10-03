@@ -3,11 +3,13 @@ import {
     Bell,
     CircleCheck,
     CircleX,
+    ClipboardCheck,
     ClipboardList,
     FileText,
     Inbox,
     MessageSquare,
     MessageSquareReply,
+    ShieldCheck,
     Star,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -36,6 +38,11 @@ const icon = computed(() => {
             return Star;
         case 'ReviewReplied':
             return MessageSquareReply;
+        case 'CompletionRequested':
+        case 'CompletionReminder':
+            return ClipboardCheck;
+        case 'ComplaintResolved':
+            return ShieldCheck;
         default:
             return props.type.startsWith('ServiceRequest')
                 ? ClipboardList

@@ -147,6 +147,18 @@ function markCompleted(): void {
             </p>
         </section>
 
+        <!-- Etapas 6: teikėjas paprašė pažymėti darbą atliktu -->
+        <div
+            v-if="can.complete && serviceRequest.completion_requested_at"
+            class="rounded-lg border border-sky-300 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200"
+            data-test="completion-requested"
+        >
+            {{ acceptedContact?.name ?? 'Teikėjas' }} pažymėjo, kad darbas
+            atliktas ({{ timeAgo(serviceRequest.completion_requested_at) }}).
+            Jei viskas gerai – paspauskite „Darbas atliktas" ir įvertinkite
+            teikėją.
+        </div>
+
         <div v-if="can.complete || can.cancel" class="flex flex-wrap gap-3">
             <Button
                 v-if="can.complete"

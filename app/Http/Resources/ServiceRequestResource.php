@@ -35,6 +35,8 @@ class ServiceRequestResource extends JsonResource
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
             'cancellation_reason' => $this->cancellation_reason,
             'views_count' => $this->views_count,
+            // Etapas 6: teikėjas paprašė pažymėti darbą atliktu (klientui rodomas priminimas)
+            'completion_requested_at' => $this->completion_requested_at?->toIso8601String(),
             // Etapas 6: nuotraukos (privačios – URL per PrivateMediaController), kai media ryšys užkrautas
             'photos' => $this->whenLoaded('media', fn (): array => $this->resource->photosForInertia(), []),
         ];

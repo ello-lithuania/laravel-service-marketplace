@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ServiceRequestStatus;
 use App\Enums\StartPreference;
 use App\Support\PrivateMedia;
+use Carbon\CarbonInterface;
 use Database\Factories\ServiceRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -151,5 +152,25 @@ class ServiceRequest extends Model implements HasMedia
     public function acceptsPhotoChanges(): bool
     {
         return in_array($this->status, [ServiceRequestStatus::Pending, ServiceRequestStatus::Open], true);
+    }
+
+    // -------------------------------------------------------------------------
+    // Darbo užbaigimo priminimai (Etapas 6, docs/STATES.md 1 sk. „Papildomos taisyklės")
+    // -------------------------------------------------------------------------
+
+    /** Teikėjas gali pakartotinai paprašyti pažymėti darbą atliktu ne dažniau kaip kas tiek dienų. */
+    public const COMPLETION_REQUEST_COOLDOWN_DAYS = 3;
+
+    /** Po tiek dienų vykdymo klientui vieną kartą primenama pažymėti darbą atliktu. */
+    public const COMPLETION_REMINDER_AFTER_DAYS = 60;
+
+    /**
+     * Kada teikėjas vėl galės paprašyti (null – jau dabar).
+     */
+    public function nextCompletionRequestAt(): ?CarbonInterface
+    {
+        $next = $this->completion_requested_at?->addDays(self::COMPLETION_REQUEST_COOLDOWN_DAYS);
+
+        return $next !== null && $next->isFuture() ? $next : null;
     }
 }

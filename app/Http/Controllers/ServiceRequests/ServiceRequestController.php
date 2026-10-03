@@ -184,6 +184,10 @@ class ServiceRequestController extends Controller
                 'can' => ['withdraw' => $user->can('withdraw', $myOffer)],
                 'messaging' => OfferMessaging::for($user, $myOffer),
             ],
+            // --- Etapas 6: „Paprašyti pažymėti atliktu" – tik išrinktam teikėjui vykdomoje užklausoje ---
+            'completion' => $isChosen && $serviceRequest->status === ServiceRequestStatus::InProgress
+                ? $this->completionRequestState($user, $serviceRequest)
+                : null,
             'offerForm' => [
                 'allowed' => $offerPermission->allowed(),
                 'reason' => $offerPermission->denied() ? $offerPermission->message() : null,
@@ -195,6 +199,22 @@ class ServiceRequestController extends Controller
                 ),
             ],
         ]);
+    }
+
+    /**
+     * Etapas 6: ar teikėjas gali paprašyti pažymėti darbą atliktu ir kada paskutinį kartą prašė.
+     *
+     * @return array{can_request: bool, reason: string|null, requested_at: string|null}
+     */
+    private function completionRequestState(User $user, ServiceRequest $serviceRequest): array
+    {
+        $permission = Gate::forUser($user)->inspect('requestCompletion', $serviceRequest);
+
+        return [
+            'can_request' => $permission->allowed(),
+            'reason' => $permission->denied() ? $permission->message() : null,
+            'requested_at' => $serviceRequest->completion_requested_at?->toIso8601String(),
+        ];
     }
 
     /**

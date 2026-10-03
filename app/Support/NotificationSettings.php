@@ -38,7 +38,7 @@ final class NotificationSettings
         ],
         'request_updates' => [
             'label' => 'Mano užklausos',
-            'description' => 'Kai administratorius patvirtina ar atmeta jūsų užklausą.',
+            'description' => 'Kai administratorius patvirtina ar atmeta jūsų užklausą, teikėjas prašo pažymėti darbą atliktu ar primename apie neužbaigtą darbą.',
             'roles' => [UserRole::Client],
         ],
         'messages' => [

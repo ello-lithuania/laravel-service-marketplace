@@ -5,6 +5,7 @@
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Offers\OfferController;
 use App\Http\Controllers\Offers\OfferTransitionController;
+use App\Http\Controllers\ServiceRequests\CompletionRequestController;
 use App\Http\Controllers\ServiceRequests\ProviderFeedController;
 use App\Http\Controllers\ServiceRequests\ServiceRequestController;
 use App\Http\Controllers\ServiceRequests\ServiceRequestPhotoController;
@@ -54,6 +55,10 @@ Route::middleware('auth')->group(function () {
         Route::get('mano-pasiulymai', [OfferController::class, 'index'])->name('offers.index');
         Route::post('uzklausos/{serviceRequest:slug}/pasiulymai', [OfferController::class, 'store'])->name('offers.store');
         Route::post('pasiulymai/{offer}/atsaukti', [OfferTransitionController::class, 'withdraw'])->name('offers.withdraw');
+
+        // --- Etapas 6: išrinktas teikėjas prašo klientą pažymėti darbą atliktu (docs/STATES.md 1 sk.) ---
+        Route::post('uzklausos/{serviceRequest:slug}/prasyti-uzbaigti', CompletionRequestController::class)
+            ->name('service-requests.request-completion');
     });
 
     // Užklausos ir pasiūlymo puslapiai – klientui, tinkamam teikėjui ir administratoriui (Policy „view")

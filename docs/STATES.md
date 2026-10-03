@@ -58,6 +58,18 @@ Papildomos taisyklės:
 - Jei užklausa `in_progress` būsenoje stovi 60 d., klientui siunčiamas priminimas. Automatiškai jos neužbaigiam,
   kad nebūtų kvietimų vertinti darbus, kurie galbūt neįvyko.
 
+**Įgyvendinta Etape 6:**
+
+- Teikėjo prašymas – `RequestCompletion` (Policy `ServiceRequestPolicy::requestCompletion`: tik išrinktas teikėjas,
+  užklausa `in_progress`). Kartoti galima ne dažniau kaip kas 3 d. – riba saugoma stulpelyje
+  `service_requests.completion_requested_at` (ne cache: išlieka ir rodoma puslapyje „Paskutinį kartą prašėte…").
+  Klientui – `CompletionRequested`, o užklausos puslapyje – priminimas prie „Darbas atliktas".
+- 60 d. priminimas – kasdienė komanda `service-requests:remind-completion` (9:00 Lietuvos laiku), Action
+  `SendCompletionReminder`. „Vykdoma nuo" = priimto pasiūlymo `responded_at`. Siunčiama **vieną kartą**
+  (`completion_reminded_at`), klientui – `CompletionReminder`.
+- Užbaigus darbą (`CompleteServiceRequest`) klientas gauna `ReviewInvitation` ir per 60 d. gali palikti vieną
+  patvirtintą atsiliepimą.
+
 ---
 
 ## 2. Pasiūlymas (`OfferStatus`)
@@ -119,7 +131,9 @@ keisti, ir pasikeistų tik Action klasių logika, ne DB schema.
 | `pending`/`open`/`in_progress` → `cancelled` | `CancelServiceRequest`                   | `cancel` (savininkas arba admin)                           | `OfferDeclined` (su grąžintais kreditais), `ServiceRequestCancelled`, admin atveju klientui `ServiceRequestRejected` |
 | `open` → `in_progress`                       | `AcceptOffer`                            | `OfferPolicy::accept` (užklausos klientas)                 | `OfferAccepted` išrinktajam, `OfferDeclined` kitiems                                                                 |
 | `open` → `expired`                           | `ExpireServiceRequest`                   | sistema: `php artisan service-requests:expire` kas valandą | `OfferDeclined` (grąžinta tik už neatidarytus)                                                                       |
-| `in_progress` → `completed`                  | `CompleteServiceRequest`                 | `complete` (tik klientas)                                  | – (kvietimas palikti atsiliepimą – Etape 6)                                                                          |
+| `in_progress` → `completed`                  | `CompleteServiceRequest`                 | `complete` (tik klientas)                                  | klientui `ReviewInvitation` (Etapas 6)                                                                               |
+| `completion_requested_at` (ne būsena)        | `RequestCompletion`                      | `requestCompletion` (išrinktas teikėjas, kas 3 d.)         | klientui `CompletionRequested` (Etapas 6)                                                                            |
+| `completion_reminded_at` (ne būsena)         | `SendCompletionReminder`                 | sistema: `service-requests:remind-completion` kasdien      | klientui `CompletionReminder`, vieną kartą po 60 d. (Etapas 6)                                                       |
 | (naujas) → `pending` pasiūlymas              | `SendOffer`                              | `OfferPolicy::create` (tinkamas aktyvus teikėjas)          | klientui `NewOffer`                                                                                                  |
 | `pending` → `declined`                       | `DeclineOffer`                           | `decline` (užklausos klientas)                             | teikėjui `OfferDeclined`                                                                                             |
 | `pending` → `withdrawn`                      | `WithdrawOffer`                          | `withdraw` (pasiūlymo autorius)                            | –                                                                                                                    |

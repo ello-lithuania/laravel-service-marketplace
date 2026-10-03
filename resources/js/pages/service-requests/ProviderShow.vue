@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { formatDate, formatMoney, timeAgo } from '@/lib/marketplace';
 import { store, withdraw } from '@/routes/offers';
 import { index as feed } from '@/routes/provider-feed';
+import { requestCompletion } from '@/routes/service-requests';
 import type { Offer, OfferMessaging, ServiceRequestDetail } from '@/types';
 
 const props = defineProps<{
@@ -26,6 +27,12 @@ const props = defineProps<{
               messaging: OfferMessaging;
           })
         | null;
+    /** Etapas 6: „Paprašyti pažymėti atliktu" (tik išrinktam teikėjui, kai užklausa vykdoma) */
+    completion: {
+        can_request: boolean;
+        reason: string | null;
+        requested_at: string | null;
+    } | null;
     offerForm: {
         allowed: boolean;
         reason: string | null;
@@ -65,6 +72,21 @@ function submit(): void {
 }
 
 const withdrawing = ref(false);
+
+// Etapas 6: pats pažymėti darbo atliktu teikėjas negali – tik paprašyti klientą (docs/STATES.md 1 sk.)
+const requestingCompletion = ref(false);
+
+function askToComplete(): void {
+    router.post(
+        requestCompletion(props.serviceRequest.slug).url,
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => (requestingCompletion.value = true),
+            onFinish: () => (requestingCompletion.value = false),
+        },
+    );
+}
 
 function withdrawOffer(): void {
     if (
@@ -144,6 +166,39 @@ function withdrawOffer(): void {
                     <Mail class="size-4" /> {{ client.email }}
                 </a>
             </p>
+        </section>
+
+        <!-- Etapas 6: darbas atliktas? Paprašyti klientą pažymėti -->
+        <section
+            v-if="completion"
+            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4"
+        >
+            <div class="text-sm">
+                <p class="font-medium">Darbą jau atlikote?</p>
+                <p class="text-muted-foreground">
+                    Pažymėti atliktu gali tik klientas – paprašykite jo, ir jis
+                    galės palikti atsiliepimą.
+                    <template v-if="completion.requested_at">
+                        Paskutinį kartą prašėte
+                        {{ timeAgo(completion.requested_at) }}.
+                    </template>
+                </p>
+                <p
+                    v-if="!completion.can_request && completion.reason"
+                    class="mt-1 text-xs text-muted-foreground"
+                >
+                    {{ completion.reason }}
+                </p>
+            </div>
+            <Button
+                v-if="completion.can_request"
+                variant="outline"
+                :disabled="requestingCompletion"
+                data-test="request-completion"
+                @click="askToComplete"
+            >
+                Paprašyti pažymėti atliktu
+            </Button>
         </section>
 
         <!-- Mano pasiūlymas -->
