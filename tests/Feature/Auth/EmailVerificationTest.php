@@ -107,3 +107,16 @@ test('already verified user visiting verification link is redirected without fir
     Event::assertNotDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
 });
+
+test('teikėjas be užbaigto profilio, patvirtinęs el. paštą, nukreipiamas į profilio vedlį', function () {
+    $user = User::factory()->provider()->unverified()->create();
+
+    $verificationUrl = URL::temporarySignedRoute(
+        'verification.verify',
+        now()->addMinutes(60),
+        ['id' => $user->id, 'hash' => sha1($user->email)],
+    );
+
+    $this->actingAs($user)->get($verificationUrl)
+        ->assertRedirect(route('provider.wizard', absolute: false).'?verified=1');
+});
