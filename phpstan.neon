@@ -11,3 +11,7 @@ parameters:
         - routes/
 
     level: 7
+
+    # Larastan skaito modelių casts() metodo turinį (enum'ai, datos), o ne tik grąžinamą tipą „array".
+    # Be to $serviceRequest->status būtų „string", nors Eloquent grąžina ServiceRequestStatus enum'ą.
+    parseModelCastsMethod: true
