@@ -86,11 +86,18 @@ test('naujo pasiūlymo pranešimas veda tiesiai į pasiūlymą', function () {
         ->assertRedirect(route('offers.show', [$offer->serviceRequest, $offer]));
 });
 
-test('pranešimas be užklausos (pvz. žinutė – Etapas 6) veda į pranešimų sąrašą', function () {
+test('pranešimas be užklausos ir nežinomo tipo veda į pranešimų sąrašą', function () {
+    $user = User::factory()->create();
+    $id = storeNotification($user, 'SomethingOld', ['message' => 'Senas pranešimas']);
+
+    $this->actingAs($user)->get(route('notifications.open', $id))->assertRedirect(route('notifications.index'));
+});
+
+test('žinutės pranešimas (Etapas 6) veda į pokalbį', function () {
     $user = User::factory()->create();
     $id = storeNotification($user, 'NewMessage', ['conversation_id' => 5, 'message' => 'Gavote naują žinutę']);
 
-    $this->actingAs($user)->get(route('notifications.open', $id))->assertRedirect(route('notifications.index'));
+    $this->actingAs($user)->get(route('notifications.open', $id))->assertRedirect(route('conversations.show', 5));
 });
 
 test('svetimo pranešimo atidaryti ar pažymėti negalima (404)', function () {

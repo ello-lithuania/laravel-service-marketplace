@@ -28,6 +28,14 @@ return [
         'provider_cannot_start' => 'Pokalbį pradeda klientas. Kai jis parašys arba priims jūsų pasiūlymą, galėsite atsakyti.',
     ],
 
+    // NewMessage pranešimas: „message" – varpeliui, kiti – el. laiškui
+    'notification' => [
+        'message' => 'Nauja žinutė nuo :sender',
+        'subject' => 'Nauja žinutė nuo :sender',
+        'intro' => ':sender parašė jums žinutę:',
+        'action' => 'Atsakyti',
+    ],
+
     'system_sender' => 'Sistema',
     'hidden' => 'Žinutė paslėpta administratoriaus.',
     'attachment_only' => 'Priedas',
