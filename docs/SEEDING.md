@@ -68,7 +68,7 @@ todėl nurodyti apytiksliai (≈).
 | `credit_transactions`       |      ≈ 368 000 |          ≈ 18 600 | po vieną kiekvienam pasiūlymui + pirkimai, dovanos, prenumeratos |
 | `notifications`             |      ≈ 230 000 |          ≈ 10 500 | tik paskutinių 60 dienų įvykiai                                  |
 | `complaints`                |          3 000 |               150 |                                                                  |
-| `media`                     |              0 |                 0 | lentelė atsiras Etape 3                                          |
+| `media`                     |              0 |                 0 | lentelė sukurta Etape 3; demo nuotraukų dar nėra (`SEED_MEDIA`)  |
 | **Iš viso**                 | **≈ 1,9 mln.** |          ≈ 95 000 |                                                                  |
 
 Pranešimų išėjo daugiau nei planuota (≈ 100 000): paskutinėmis 60 dienomis yra visos atviros ir vykdomos
@@ -113,7 +113,7 @@ generatorių klasės `database/seeders/Demo/`. Jis dirba dviem fazėmis:
 | 11  | `CounterSync`             | perskaičiuoja denormalizuotus skaitliukus (`DB_SCHEMA.md` 2.10) vienu `UPDATE` lentelei                       |
 | –   | `WeightedPicker`          | svertinis atsitiktinis parinkimas (miestai pagal gyventojus, kategorijos pagal populiarumą)                   |
 
-Paveikslėlių (`MediaSeeder`, `SEED_MEDIA`) dar nėra – `media` lentelė atsiras Etape 3.
+Paveikslėlių (`MediaSeeder`, `SEED_MEDIA`) dar nėra: `media` lentelė sukurta Etape 3, o demo nuotraukos – vėliau.
 
 ---
 
@@ -310,7 +310,7 @@ produkcijos serveryje bus panašiai arba greičiau. Lėčiausios vietos – lent
 `PRAGMA cache_size` (256 MB DB puslapių atmintyje). Be jų pilnas seed'as truko 71 s. Seed'ui patikimumas
 nesvarbus – jei kompiuteris užlūš, DB vis tiek kuriama iš naujo. `memory_limit` seed'o metu pakeliamas iki 2 GB.
 
-**`SEED_MEDIA=true`** (bus Etape 3 kartu su medialibrary): prie ≈ 1 000 portfolio darbų ir ≈ 500 profilių
+**`SEED_MEDIA=true`** (planuojama; `media` lentelė jau yra nuo Etapo 3): prie ≈ 1 000 portfolio darbų ir ≈ 500 profilių
 prisegami paveikslėliai iš `database/data/images/`. Pagal nutylėjimą išjungta: medialibrary kiekvienam įrašui
 kopijuoja failą ir daro miniatiūras, o tai lėta ir užima vietos.
 
