@@ -25,14 +25,17 @@ Vartotojas moka PHP ir WordPress, Laravel – tik pagrindus.
 
 ## 3. MOKYMOSI REŽIMAS (galioja visoms sesijoms)
 
+> Atnaujinta vartotojo prašymu: be „PADARYK PATS" užduočių ir be pasitikrinimo klausimų.
+> Claude viską kuria pats, o vartotojas mokosi iš paaiškinimų.
+
 1. Prieš kiekvieną žingsnį trumpai paaiškink KĄ darom ir KODĖL, kokią Laravel sąvoką naudojam
    (migracija, Eloquent ryšys, policy, job ir t.t.) ir duok nuorodą į oficialią dokumentaciją.
 2. Dirbk mažais žingsniais. Kai yra keli būdai, parodyk alternatyvas ir paaiškink, kodėl rinkomės šitą.
-3. Kiekviename etape palik man 1–3 užduotis „PADARYK PATS" (pvz. parašyti migraciją, Eloquent ryšį,
-   validaciją, testą) su užuominomis, bet be atsakymų. Kai paprašysiu, peržiūrėk mano kodą ir paaiškink klaidas.
+3. Viską kurk pats. Vartotojo neįtrauk į užduotis, klausimus ar atsakinėjimą. Etapo pabaigoje papasakok,
+   kas ir kaip padaryta ir kodėl.
 4. Vesk `docs/LEARNING.md`: kiekvieno etapo išmoktos sąvokos, naudingos artisan komandos, dažnos klaidos.
-5. Commit'ai maži ir aiškiai aprašyti, kad galėčiau sekti istoriją.
-6. Etapo pabaigoje užduok man 3–5 klausimus pasitikrinti supratimą.
+5. Commit'ai maži ir aiškiai aprašyti, kad vartotojas galėtų sekti istoriją.
+6. Jei vartotojas pats paprašo peržiūrėti jo kodą, peržiūrėk jį ir paaiškink klaidas.
 
 ### Kaip tai taikyti praktiškai
 
@@ -41,11 +44,8 @@ Vartotojas moka PHP ir WordPress, Laravel – tik pagrindus.
 - Naują sąvoką pirmą kartą aiškink paprastais žodžiais. Kai tinka, palygink su WordPress
   (migracija ≈ `dbDelta()`, Eloquent ≈ `$wpdb`/`WP_Query`, events ≈ hooks, scheduler ≈ `wp_cron`,
   soft deletes ≈ „Šiukšliadėžė").
-- „PADARYK PATS" užduotims **atsakymų neduok**, tik užuominas. Užduotis rinkis taip, kad jos neblokuotų
-  tolesnio darbo. Jei užduotis blokuoja, pažymėk tai aiškiai, o kode palik `// TODO: PADARYK PATS #N`.
-- Peržiūrėdamas vartotojo kodą pirma pasakyk, kas gerai. Paskui išvardyk klaidas: kiekvienai paaiškink
-  KODĖL tai klaida ir duok nuorodą į dokumentaciją.
-- Pasitikrinimo klausimų atsakymus aptark tik tada, kai vartotojas atsako arba paprašo.
+- Etapo santrauka vartotojui: kas sukurta (failai), kaip tai veikia ir kodėl padaryta būtent taip
+  (su alternatyvomis). Rašyk paprastais žodžiais, be klausimų vartotojui.
 
 ## 4. Sesijos eiga
 
@@ -53,8 +53,8 @@ Vartotojas moka PHP ir WordPress, Laravel – tik pagrindus.
 2. `ROADMAP.md` rask **pirmą nepažymėtą etapą** ir tęsk nuo pirmo nepažymėto jo punkto.
 3. Dirbk mažais žingsniais, kiekvieną loginį žingsnį – atskiru commit'u.
 4. Sesijos pabaigoje pažymėk atliktus punktus `ROADMAP.md`, papildyk `docs/LEARNING.md`, commit'ink ir push'ink.
-5. Etapo pabaigoje duok „PADARYK PATS" užduotis ir 3–5 klausimus.
-   **Į kitą etapą nepereik, kol vartotojas nepatvirtina.**
+5. Etapo pabaigoje parašyk santrauką: kas padaryta, kaip ir kodėl.
+   **Kitą etapą pradėk tik tada, kai vartotojas parašo tęsti.**
 
 ## 5. Stack
 
@@ -158,7 +158,8 @@ tests/Feature, tests/Unit
 | `ROADMAP.md` | etapai 0–8 su checkbox'ais – kur esam |
 | `docs/DB_SCHEMA.md` | DB schema, ryšiai, indeksai, sprendimai |
 | `docs/SEEDING.md` | testinių duomenų (seed'ų) planas |
-| `docs/LEARNING.md` | mokymosi užrašai: sąvokos, komandos, klaidos, klausimai |
+| `docs/LEARNING.md` | mokymosi užrašai: sąvokos, komandos, dažnos klaidos |
+| `docs/STATES.md` | užklausos ir pasiūlymo būsenų perėjimai ir kreditų grąžinimo taisyklės |
 
 ## 9. Komandos (veiks nuo Etapo 1)
 
