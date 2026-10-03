@@ -25,7 +25,7 @@ test('išsaugotos reikšmės perrašo numatytąsias, nežinomi raktai ir ne bool
 });
 
 test('grupės pagal rolę', function () {
-    expect(NotificationSettings::groupsFor(UserRole::Provider))->toBe(['new_requests', 'offer_updates', 'messages'])
+    expect(NotificationSettings::groupsFor(UserRole::Provider))->toBe(['new_requests', 'offer_updates', 'messages', 'billing'])
         ->and(NotificationSettings::groupsFor(UserRole::Client))->toBe(['new_offers', 'request_updates', 'messages'])
         ->and(NotificationSettings::groupsFor(UserRole::Admin))->toBe([]);
 });

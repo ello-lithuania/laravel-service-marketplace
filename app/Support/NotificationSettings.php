@@ -46,6 +46,12 @@ final class NotificationSettings
             'description' => 'Kai gaunate naują žinutę.',
             'roles' => [UserRole::Client, UserRole::Provider],
         ],
+        // --- Etapas 7: PaymentSucceeded, SubscriptionExpiring, LowCredits ---
+        'billing' => [
+            'label' => 'Mokėjimai ir kreditai',
+            'description' => 'Gautas mokėjimas ir sąskaita, prenumeratos pratęsimas, baigiasi kreditai.',
+            'roles' => [UserRole::Provider],
+        ],
     ];
 
     /**

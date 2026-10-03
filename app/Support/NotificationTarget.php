@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Offer;
+use App\Models\Payment;
 use App\Models\ServiceRequest;
 use Illuminate\Notifications\DatabaseNotification;
 
@@ -16,6 +17,13 @@ final class NotificationTarget
     {
         $data = $notification->data;
         $type = class_basename($notification->type);
+
+        // --- Etapas 7: mokėjimai ir kreditai ---
+        $billingUrl = self::billingUrl($type, $data);
+
+        if ($billingUrl !== null) {
+            return $billingUrl;
+        }
 
         $requestId = isset($data['service_request_id']) && is_numeric($data['service_request_id']) ? (int) $data['service_request_id'] : null;
         $offerId = isset($data['offer_id']) && is_numeric($data['offer_id']) ? (int) $data['offer_id'] : null;
@@ -33,5 +41,23 @@ final class NotificationTarget
         }
 
         return route('service-requests.show', ['serviceRequest' => $slug]);
+    }
+
+    /**
+     * Etapas 7: mokėjimas → jo puslapis (sąskaita, „Apmokėti"), mažai kreditų → kreditų puslapis.
+     *
+     * @param  array<array-key, mixed>  $data
+     */
+    private static function billingUrl(string $type, array $data): ?string
+    {
+        $paymentUuid = isset($data['payment_uuid']) && is_string($data['payment_uuid']) ? $data['payment_uuid'] : null;
+
+        return match ($type) {
+            'PaymentSucceeded', 'SubscriptionExpiring' => $paymentUuid !== null && Payment::query()->where('uuid', $paymentUuid)->exists()
+                ? route('payments.show', ['payment' => $paymentUuid])
+                : route('credits.index'),
+            'LowCredits' => route('credits.index'),
+            default => null,
+        };
     }
 }

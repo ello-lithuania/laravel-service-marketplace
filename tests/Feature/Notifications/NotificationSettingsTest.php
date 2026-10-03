@@ -9,7 +9,7 @@ test('teikėjas mato savo grupes su numatytosiomis reikšmėmis', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/Notifications')
-            ->has('groups', 3)
+            ->has('groups', 4)
             ->where('groups.0.key', 'new_requests')
             ->where('groups.0.channels', ['mail' => true, 'database' => true])
             ->where('emailVerified', true));
