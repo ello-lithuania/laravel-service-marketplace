@@ -2,6 +2,7 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import { Check, Copy, Link2, Star } from '@lucide/vue';
 import { ref } from 'vue';
+import ReportDialog from '@/components/complaints/ReportDialog.vue';
 import InputError from '@/components/InputError.vue';
 import FormTextarea from '@/components/marketplace/FormTextarea.vue';
 import PaginationLinks from '@/components/marketplace/PaginationLinks.vue';
@@ -136,6 +137,10 @@ function submitReply(id: number): void {
                 class="rounded-xl border bg-card p-4"
             >
                 <ReviewCard :review="review" reply-label="Jūsų atsakymas">
+                    <!-- Netikras ar įžeidžiantis atsiliepimas – pranešti administratoriui -->
+                    <div class="flex justify-end">
+                        <ReportDialog type="review" :id="review.id" />
+                    </div>
                     <div v-if="review.can.reply" class="pt-1">
                         <Button
                             v-if="replyingTo !== review.id"

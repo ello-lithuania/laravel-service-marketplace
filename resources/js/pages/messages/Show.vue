@@ -2,6 +2,7 @@
 import { Head, Link, useForm, usePoll } from '@inertiajs/vue3';
 import { ArrowLeft, Lock, Paperclip, Send, X } from '@lucide/vue';
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
+import ReportDialog from '@/components/complaints/ReportDialog.vue';
 import InputError from '@/components/InputError.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
 import AttachmentList from '@/components/messages/AttachmentList.vue';
@@ -27,6 +28,15 @@ defineOptions({
 });
 
 const MAX_BODY = 5000;
+
+// Pranešti galima tik dalyviui (ne administratoriui) ir tik apie kito žmogaus žinutę
+const isParticipant = computed(
+    () => props.conversation.counterpart.role !== 'both',
+);
+
+function canReport(message: ChatMessage): boolean {
+    return !message.is_mine && !message.is_system && !message.is_hidden;
+}
 
 /*
  * Polling: kas 10 s Inertia paima tik žinutes (ir ar dar galima rašyti). Serveris tuo pačiu pažymi pokalbį
@@ -229,7 +239,9 @@ function onKeydown(event: KeyboardEvent): void {
                         :class="{ 'mt-2': message.body }"
                     />
                 </div>
-                <p class="px-1 text-xs text-muted-foreground">
+                <div
+                    class="flex items-center gap-1 px-1 text-xs text-muted-foreground"
+                >
                     <span v-if="!message.is_mine"
                         >{{ message.sender_name }} ·
                     </span>
@@ -238,7 +250,14 @@ function onKeydown(event: KeyboardEvent): void {
                         :datetime="message.created_at"
                         >{{ formatDateTime(message.created_at) }}</time
                     >
-                </p>
+                    <!-- Etapas 6: pranešti apie kito dalyvio žinutę -->
+                    <ReportDialog
+                        v-if="isParticipant && canReport(message)"
+                        type="message"
+                        :id="message.id"
+                        compact
+                    />
+                </div>
             </article>
         </section>
 

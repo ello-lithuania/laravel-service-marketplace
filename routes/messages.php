@@ -2,6 +2,7 @@
 
 // Žinutės, atsiliepimai, skundai (Etapas 6)
 
+use App\Http\Controllers\Complaints\ComplaintController;
 use App\Http\Controllers\Messages\ConversationController;
 use App\Http\Controllers\Messages\MessageController;
 use App\Http\Controllers\PrivateMediaController;
@@ -46,6 +47,11 @@ Route::middleware('auth')->group(function () {
             ->middleware('signed')
             ->name('reviews.invitation.store');
     });
+
+    // --- Skundai: „Pranešti apie pažeidimą" (užklausa, pasiūlymas, atsiliepimas, žinutė, profilis) ---
+    Route::post('skundai', [ComplaintController::class, 'store'])
+        ->middleware('verified')
+        ->name('complaints.store');
 
     // Teikėjo „Atsiliepimai": gauti atsiliepimai, atsakymai, pakvietimo nuoroda
     Route::middleware(['verified', 'role:provider', EnsureProviderProfileExists::class])->prefix('paskyra')->group(function () {

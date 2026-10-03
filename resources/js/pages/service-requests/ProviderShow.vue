@@ -6,6 +6,7 @@ import InputError from '@/components/InputError.vue';
 import FormTextarea from '@/components/marketplace/FormTextarea.vue';
 import RequestDetails from '@/components/marketplace/RequestDetails.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
+import ReportDialog from '@/components/complaints/ReportDialog.vue';
 import MessageButton from '@/components/messages/MessageButton.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +96,12 @@ function withdrawOffer(): void {
                     {{ serviceRequest.title }}
                 </h1>
                 <StatusBadge :status="serviceRequest.status" />
+                <!-- Etapas 6: pranešti apie netinkamą užklausą -->
+                <ReportDialog
+                    type="service_request"
+                    :id="serviceRequest.id"
+                    class="ml-auto"
+                />
             </div>
             <p
                 class="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground"

@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ArrowLeft, BadgeCheck, CalendarDays, Clock, Star } from '@lucide/vue';
 import { ref } from 'vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
+import ReportDialog from '@/components/complaints/ReportDialog.vue';
 import MessageButton from '@/components/messages/MessageButton.vue';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatMoney, plural, timeAgo } from '@/lib/marketplace';
@@ -113,7 +114,11 @@ function act(action: 'accept' | 'decline'): void {
                         </span>
                     </p>
                 </div>
-                <StatusBadge :status="offer.status" />
+                <div class="flex items-center gap-1">
+                    <StatusBadge :status="offer.status" />
+                    <!-- Etapas 6: pranešti apie netinkamą pasiūlymą -->
+                    <ReportDialog type="offer" :id="offer.id" compact />
+                </div>
             </div>
 
             <div

@@ -97,3 +97,22 @@ export type ReviewPrompt = {
     provider: string | null;
     completed_at: string | null;
 };
+
+// --- Skundai ---
+
+/** Ką galima skųsti (App\Enums\ReportableType – morph map trumpi vardai) */
+export type ReportableType =
+    | 'service_request'
+    | 'offer'
+    | 'review'
+    | 'message'
+    | 'provider_profile';
+
+/** App\Enums\ComplaintReason */
+export type ComplaintReason =
+    | 'spam'
+    | 'fraud'
+    | 'offensive'
+    | 'fake_review'
+    | 'wrong_info'
+    | 'other';

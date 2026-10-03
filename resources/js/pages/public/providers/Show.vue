@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import {
     BadgeCheck,
     BriefcaseBusiness,
@@ -14,6 +14,7 @@ import {
 } from '@lucide/vue';
 import { computed } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import ReportDialog from '@/components/complaints/ReportDialog.vue';
 import CatalogPagination from '@/components/catalog/CatalogPagination.vue';
 import RatingStars from '@/components/catalog/RatingStars.vue';
 import SeoHead from '@/components/catalog/SeoHead.vue';
@@ -73,6 +74,16 @@ function bucketPercent(count: number): number {
         ? 0
         : Math.round((count / ratingTotal.value) * 100);
 }
+
+// --- Etapas 6: „Pranešti" – tik prisijungusiems; savo profilio skųsti negalima (galutinai tikrina serveris) ---
+const page = usePage();
+// auth.user svečiui yra null, nors tipas to nerodo
+const isLoggedIn = computed(() => Boolean(page.props.auth.user));
+const canReportProfile = computed(
+    () =>
+        isLoggedIn.value &&
+        page.props.auth.user.provider_profile?.id !== props.provider.id,
+);
 </script>
 
 <template>
@@ -187,6 +198,12 @@ function bucketPercent(count: number): number {
                 <p class="text-xs text-muted-foreground md:text-right">
                     Nemokamai gausite pasiūlymus ir iš kitų teikėjų
                 </p>
+                <!-- Etapas 6: pranešti apie profilį (prisijungusiems, ne savininkui) -->
+                <ReportDialog
+                    v-if="canReportProfile"
+                    type="provider_profile"
+                    :id="provider.id"
+                />
             </div>
         </header>
 
@@ -338,12 +355,23 @@ function bucketPercent(count: number): number {
                                         Pagal pakvietimą
                                     </Badge>
                                 </div>
-                                <time
-                                    v-if="review.published_at"
-                                    :datetime="review.published_at"
-                                    class="text-xs text-muted-foreground"
-                                    >{{ formatDate(review.published_at) }}</time
-                                >
+                                <div class="flex items-center gap-1">
+                                    <time
+                                        v-if="review.published_at"
+                                        :datetime="review.published_at"
+                                        class="text-xs text-muted-foreground"
+                                        >{{
+                                            formatDate(review.published_at)
+                                        }}</time
+                                    >
+                                    <!-- Etapas 6: pranešti apie atsiliepimą -->
+                                    <ReportDialog
+                                        v-if="isLoggedIn"
+                                        type="review"
+                                        :id="review.id"
+                                        compact
+                                    />
+                                </div>
                             </div>
                             <p class="mt-2 text-sm whitespace-pre-line">
                                 {{ review.comment }}
