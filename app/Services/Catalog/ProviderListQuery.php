@@ -7,6 +7,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Teikėjų sąrašas katalogui: kategorijų, pradžios ir paieškos puslapiams.
@@ -17,6 +18,9 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 class ProviderListQuery
 {
     public const PER_PAGE = 20;
+
+    /** Kiek minučių laikomas bendras teikėjų skaičius (cachedTotal). */
+    public const COUNT_TTL_MINUTES = 5;
 
     /** Lietuviškas puslapio parametras URL: /meistrai?puslapis=2 */
     public const PAGE_NAME = 'puslapis';
@@ -38,10 +42,38 @@ class ProviderListQuery
      */
     public function paginate(ProviderFilters $filters, ?array $categoryIds = null): LengthAwarePaginator
     {
-        return $this->query($filters, $categoryIds)
-            ->paginate(self::PER_PAGE, pageName: self::PAGE_NAME)
+        $query = $this->query($filters, $categoryIds);
+
+        return $query
+            ->paginate(self::PER_PAGE, pageName: self::PAGE_NAME, total: $this->cachedTotal($query, $filters))
             // Puslapių nuorodose išlieka filtrai: ?miestas=vilnius&puslapis=2
             ->withQueryString();
+    }
+
+    /**
+     * Etapas 8: bendras teikėjų skaičius (puslapiavimui) laikomas cache kelias minutes.
+     *
+     * Kodėl: pilname seed'e (20 000 teikėjų) sąrašo užklausa su indeksu trunka 1–2 ms, o COUNT per plačią kategoriją
+     * su miestu – 25–85 ms (MySQL turi patikrinti kiekvieną aktyvų teikėją; docs/PERFORMANCE.md). Kategorijų ir
+     * „paslauga mieste" puslapius nuolat lanko ir robotai, o skaičius kelias minutes gali būti ir nevisai tikslus.
+     * Paieškos tekstu – ne: užklausų begalė, cache beveik nepasikartotų.
+     * Raktas – SQL su parametrais, todėl kiekvienas filtrų derinys turi savo skaičių.
+     *
+     * @param  Builder<ProviderProfile>  $query
+     */
+    private function cachedTotal(Builder $query, ProviderFilters $filters): ?int
+    {
+        if ($filters->search !== null) {
+            return null;
+        }
+
+        $base = $query->toBase();
+
+        return (int) Cache::remember(
+            'catalog:count:v1:'.sha1($base->toRawSql()),
+            now()->addMinutes(self::COUNT_TTL_MINUTES),
+            fn (): int => $base->getCountForPagination(),
+        );
     }
 
     /**
