@@ -327,12 +327,19 @@ Be `timestamps`: žinyninė lentelė keičiasi itin retai (modelyje `public $tim
 | ------------- | ------------------------ | -------------------------------------------------------------------------------- |
 | id            | `id`                     |                                                                                  |
 | region_id     | `FK → regions`, restrict |                                                                                  |
-| name          | `string(80)`             | „Vilnius", „Vilniaus r."                                                         |
+| name          | `string(80)`             | „Vilnius", „Vilniaus r.", „Jonava" (taisyklė – žemiau)                           |
 | name_locative | `string(80)`             | vietininkas SEO antraštėms: „Santechnikai **Vilniuje**", „… **Vilniaus rajone**" |
 | slug          | `string(80)` UNIQUE      | `vilnius`, `vilniaus-r`                                                          |
 | latitude      | `decimal(10,7)?`         | savivaldybės centras (žemėlapiui, ateityje – atstumui)                           |
 | longitude     | `decimal(10,7)?`         |                                                                                  |
 | sort_order    | `usmallint` = 0          | didmiesčiai sąrašo viršuje                                                       |
+
+**Pavadinimo taisyklė.** Žmonės ieško pagal miestą, todėl:
+
+- miesto savivaldybė – miesto vardu: „Kaunas";
+- rajono savivaldybė, kai yra atskira to miesto savivaldybė – „X r.": „Kauno r.";
+- kitos savivaldybės – centro miesto vardu: „Jonava" (Jonavos r. sav.), „Naujoji Akmenė" (Akmenės r. sav.),
+  „Druskininkai" (Druskininkų sav.).
 
 Be `timestamps`.
 **Ryšiai:** `belongsTo` Region · `hasMany` User, ProviderProfile (bazinis miestas), ServiceRequest ·
@@ -806,6 +813,8 @@ pridėsim į indeksą `read_at` (spręsim pagal `EXPLAIN`).
 
 #### `media` (spatie/laravel-medialibrary)
 
+> Kuriama **Etape 3**, kai diegsime paketą ir failų įkėlimą.
+
 Migraciją sukuria paketas. Svarbiausi stulpeliai: `model_type`/`model_id` (morphs), `uuid`, `collection_name`,
 `file_name`, `mime_type`, `disk`, `size`, `custom_properties` (json), `generated_conversions` (json), `order_column`.
 
@@ -892,7 +901,7 @@ datą failo pavadinime.
 | 23  | `create_payments_table`                                |                                                                                       |
 | 24  | `create_complaints_table`                              |                                                                                       |
 | 25  | `create_notifications_table`                           | `php artisan make:notifications-table`                                                |
-| 26  | `create_media_table`                                   | publikuojama iš medialibrary paketo                                                   |
+| 26  | `create_media_table`                                   | publikuojama iš medialibrary paketo – **Etape 3**                                     |
 
 **Kodėl `city_id` pridedam atskirai:** numatytoji `users` migracija turi seniausią datą (`0001_01_01_…`), todėl
 vykdoma pirma, kai `cities` dar nėra. Galima būtų pakeisti datas, bet atskira `add_…` migracija aiškiau parodo
