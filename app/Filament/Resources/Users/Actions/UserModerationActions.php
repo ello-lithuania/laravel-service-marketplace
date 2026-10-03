@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Users\Actions;
 
 use App\Actions\Moderation\BanUser;
 use App\Actions\Moderation\UnbanUser;
+use App\Actions\Privacy\AnonymizeUser;
 use App\Enums\ProviderStatus;
 use App\Exceptions\InvalidStateTransitionException;
 use App\Models\User;
@@ -73,6 +74,29 @@ final class UserModerationActions
                     ))
                     ->success()
                     ->send();
+            });
+    }
+
+    /**
+     * BDAR: paskyros anonimizavimas administratoriaus iniciatyva (žmogus paprašė el. paštu). Ta pati logika kaip
+     * savitarnoje (AnonymizeUser), todėl rezultatas vienodas.
+     */
+    public static function anonymize(): Action
+    {
+        return Action::make('anonymize')
+            ->label('Ištrinti duomenis (BDAR)')
+            ->icon(Heroicon::OutlinedTrash)
+            ->color('danger')
+            ->requiresConfirmation()
+            ->modalHeading('Anonimizuoti paskyrą?')
+            ->modalDescription('Vardas, el. paštas, telefonas, nuotraukos ir pranešimai bus negrįžtamai pašalinti, atviros '
+                .'užklausos ir pasiūlymai – atšaukti. Užklausos, atsiliepimai ir mokėjimai liks su „Ištrintas vartotojas".')
+            ->modalSubmitActionLabel('Anonimizuoti')
+            ->authorize('anonymize')
+            ->action(function (User $record): void {
+                app(AnonymizeUser::class)->handle($record);
+
+                Notification::make()->title('Paskyra anonimizuota')->success()->send();
             });
     }
 

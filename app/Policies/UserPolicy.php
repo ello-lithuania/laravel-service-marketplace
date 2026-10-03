@@ -9,7 +9,7 @@ use App\Models\User;
  * $user – kas veikia (administratorius), $model – su kuo veikiama.
  *
  * Kūrimo ir redagavimo teisių sąmoningai nėra: vartotojai registruojasi patys, o jų duomenis keičia tik jie
- * (BDAR – duomenų tikslumas). Administratorius blokuoja, atblokuoja ir vykdo BDAR ištrynimo prašymus.
+ * (BDAR – duomenų tikslumas). Administratorius blokuoja, atblokuoja ir vykdo BDAR ištrynimo prašymus (anonymize).
  * https://laravel.com/docs/13.x/authorization#creating-policies
  */
 class UserPolicy
@@ -38,5 +38,13 @@ class UserPolicy
     public function unban(User $user, User $model): bool
     {
         return $user->isAdmin() && $model->isBanned() && ! $model->trashed();
+    }
+
+    /**
+     * BDAR ištrynimo prašymas, gautas ne per svetainę (pvz. el. paštu): administratorius anonimizuoja paskyrą.
+     */
+    public function anonymize(User $user, User $model): bool
+    {
+        return $user->isAdmin() && ! $model->isAdmin() && ! $model->trashed();
     }
 }

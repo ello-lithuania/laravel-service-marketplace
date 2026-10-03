@@ -95,7 +95,10 @@ class User extends Authenticatable implements FilamentUser, HasMedia, MustVerify
      */
     protected function publicName(): Attribute
     {
-        return Attribute::get(fn (): string => trim($this->first_name.' '.mb_substr($this->last_name, 0, 1).'.'));
+        // Etapas 8: anonimizuotas vartotojas neturi pavardės – rodomas tik „Ištrintas vartotojas" (be taško)
+        return Attribute::get(fn (): string => $this->last_name === ''
+            ? $this->first_name
+            : trim($this->first_name.' '.mb_substr($this->last_name, 0, 1).'.'));
     }
 
     /** @return BelongsTo<City, $this> */

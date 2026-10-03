@@ -15,6 +15,7 @@ class ViewUser extends ViewRecord
         return [
             UserModerationActions::ban(),
             UserModerationActions::unban(),
+            UserModerationActions::anonymize(),
         ];
     }
 }

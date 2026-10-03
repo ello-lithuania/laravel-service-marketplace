@@ -25,3 +25,9 @@ Schedule::command('service-requests:expire')
     // Jei ankstesnis paleidimas dar nebaigė – naujo nepradedam (kitaip abu imtų tas pačias užklausas)
     ->withoutOverlapping()
     ->onOneServer();
+
+// --- Etapas 8 ---
+// BDAR archyvai saugomi 7 d. (DataExportStorage::RETENTION_DAYS), paskui ištrinami
+Schedule::command('privacy:prune-exports')
+    ->dailyAt('03:15')
+    ->onOneServer();

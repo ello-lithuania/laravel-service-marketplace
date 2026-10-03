@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Actions\Privacy\AnonymizeUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,18 +46,23 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's profile.
+     * Paskyros ištrynimas = anonimizavimas pagal BDAR (Etapas 8, AnonymizeUser): asmens duomenys pašalinami,
+     * o užklausos, atsiliepimai ir mokėjimai lieka su „Ištrintas vartotojas". Slaptažodį tikrina ProfileDeleteRequest.
      */
-    public function destroy(ProfileDeleteRequest $request): RedirectResponse
+    public function destroy(ProfileDeleteRequest $request, AnonymizeUser $anonymize): RedirectResponse
     {
+        /** @var User $user */
         $user = $request->user();
+
+        // Pirma anonimizuojam: jei nepavyktų, žmogus liktų prisijungęs ir galėtų bandyti dar kartą
+        $anonymize->handle($user);
 
         Auth::logout();
 
-        $user->delete();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('privacy.delete.deleted')]);
 
         return redirect('/');
     }
