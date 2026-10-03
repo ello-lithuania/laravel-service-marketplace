@@ -558,7 +558,20 @@ stulpeliu, todėl tinka ir FK reikmėms.
 `cancellation_reason` – `string(500)?`, administratoriaus atmetimo ar kliento atšaukimo priežastis
 (vykdomą užklausą klientas gali atšaukti tik su priežastimi – `docs/STATES.md` 1 sk.).
 
-Nuotraukos – medialibrary kolekcija `photos`.
+**Etapas 6 papildė** (migracija `add_completion_reminders_to_service_requests_table`, `docs/STATES.md` 1 sk.
+„Papildomos taisyklės"):
+
+| Stulpelis               | Tipas        | Pastaba                                                                                |
+| ----------------------- | ------------ | -------------------------------------------------------------------------------------- |
+| completion_requested_at | `timestamp?` | kada teikėjas paskutinį kartą paprašė pažymėti darbą atliktu (kartoti – ne dažniau 3 d.) |
+| completion_reminded_at  | `timestamp?` | kada sistema priminė klientui, kad užklausa vykdoma jau 60 d. (siunčiama vieną kartą)   |
+
+_Kodėl stulpeliai, o ne cache ar `notifications` lentelė:_ tai verslo taisyklės („ne dažniau kaip kas 3 d.",
+„tik vieną kartą"), kurios turi išlikti išvalius cache, o UI turi parodyti „Paprašėte prieš 2 d.". Ieškoti
+`notifications.data` JSON'e būtų lėta ir priklausytų nuo vartotojo pranešimų nustatymų (database kanalas gali būti
+išjungtas). Indeksų nereikia: kasdienė komanda atsirenka `in_progress` užklausas pagal `(status, published_at)`.
+
+Nuotraukos – medialibrary kolekcija `photos` (Etapas 6: iki 8, privatus diskas – žr. `media`).
 
 **Ryšiai:** `belongsTo` client (User, FK `client_id`), Category, City, acceptedOffer (Offer) ·
 `hasMany` Offer, Conversation · `hasOne` Review · `morphMany` media, complaints.
@@ -872,9 +885,15 @@ Migraciją sukuria paketas. Svarbiausi stulpeliai: `model_type`/`model_id` (morp
 | ProviderProfile | `logo`        | 1 (single) | `thumb` iki 256×256, `Fit::Max` (neapkerpa)                 | iškart (`nonQueued`) | 3      |
 | ProviderProfile | `cover`       | 1 (single) | `wide` 1200×400, `Fit::Crop`                                | iškart (`nonQueued`) | 3      |
 | PortfolioItem   | `images`      | iki 10     | `thumb` 480×360 `Fit::Crop`, `large` iki 1600 px `Fit::Max` | eilėje (queued)      | 3      |
-| ServiceRequest  | `photos`      |            |                                                             |                      | 5      |
-| Message         | `attachments` |            |                                                             |                      | 6      |
-| Complaint       | `evidence`    |            |                                                             |                      | 6      |
+| ServiceRequest  | `photos`      | iki 8      | `thumb` 480×360 `Fit::Crop`, `large` iki 1600 px `Fit::Max` | eilėje (queued)      | 6      |
+| Message         | `attachments` | iki 5      | `thumb` 480×360 `Fit::Crop` (tik nuotraukoms, ne PDF)       | eilėje (queued)      | 6      |
+| Complaint       | `evidence`    |            | (kol kas nedaroma – skundui užtenka aprašymo)               |                      | –      |
+
+- **Privatus diskas (Etapas 6).** Užklausos nuotraukos ir žinučių priedai saugomi `local` diske
+  (`storage/app/private`), o ne `public`: juos gali matyti tik užklausos klientas, tinkami teikėjai ar pokalbio
+  dalyviai. `public` diske failas pasiekiamas kiekvienam, kas atspėja URL (`/storage/{media_id}/{failas}`, o
+  `media_id` – iš eilės didėjantis skaičius). Todėl failą atiduoda `PrivateMediaController` (`/failai/{media}`), kuris
+  pirma patikrina Policy (`view` modeliui, kuriam failas priklauso).
 
 - **Diskas:** `public` (`storage/app/public`, URL `/storage/...`). Vieną kartą paleisti `php artisan storage:link`
   (sukuria `public/storage` nuorodą; Git'e ignoruojama). Produkcijoje diską galima pakeisti į S3 (`MEDIA_DISK`).
@@ -963,6 +982,7 @@ datą failo pavadinime.
 | 25  | `create_notifications_table`                           | `php artisan make:notifications-table`                                                |
 | 26  | `create_media_table`                                   | publikuota iš medialibrary paketo Etape 3 (`2026_10_03_170615_…`)                     |
 | 27  | `add_cancellation_reason_to_service_requests_table`    | **Etapas 5**: atmetimo / atšaukimo priežastis                                         |
+| 28  | `add_completion_reminders_to_service_requests_table`   | **Etapas 6**: teikėjo prašymas užbaigti ir 60 d. priminimas                           |
 
 **Kodėl `city_id` pridedam atskirai:** numatytoji `users` migracija turi seniausią datą (`0001_01_01_…`), todėl
 vykdoma pirma, kai `cities` dar nėra. Galima būtų pakeisti datas, bet atskira `add_…` migracija aiškiau parodo

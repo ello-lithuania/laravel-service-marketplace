@@ -43,6 +43,9 @@ class ServiceRequest extends Model
             'expires_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            // Etapas 6: teikėjo prašymas užbaigti ir 60 d. priminimas
+            'completion_requested_at' => 'datetime',
+            'completion_reminded_at' => 'datetime',
         ];
     }
 
