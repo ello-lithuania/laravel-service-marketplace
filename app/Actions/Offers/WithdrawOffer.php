@@ -30,7 +30,8 @@ class WithdrawOffer
             }
 
             $offer->forceFill(['status' => OfferStatus::Withdrawn])->save();
-            $request->decrement('offers_count');
+            // Sąlyga > 0: offers_count – UNSIGNED, todėl MySQL 0 − 1 meta klaidą (SQLite tyliai įrašytų −1)
+            $request->newQuery()->whereKey($request->getKey())->where('offers_count', '>', 0)->decrement('offers_count');
         });
 
         return $offer;

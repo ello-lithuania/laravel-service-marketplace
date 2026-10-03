@@ -25,7 +25,7 @@ test('paieška randa teikėjus ir tinkamas kategorijas', function () {
             ->has('categories', 1)
             ->where('categories.0.slug', $leaf->slug)
             ->where('categories.0.path', $root->name.' › '.$group->name));
-});
+})->skip(fn () => usesMysqlFulltext(), 'InnoDB FULLTEXT nemato neįrašytų eilučių transakcijoje (žr. usesMysqlFulltext())');
 
 test('paieška su miesto filtru', function () {
     $vilnius = City::factory()->create();
@@ -36,7 +36,7 @@ test('paieška su miesto filtru', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('providers.data', 1)
             ->where('providers.data.0.slug', $inVilnius->slug));
-});
+})->skip(fn () => usesMysqlFulltext(), 'InnoDB FULLTEXT nemato neįrašytų eilučių transakcijoje (žr. usesMysqlFulltext())');
 
 test('paieškos rezultatai neindeksuojami', function () {
     $this->get(route('search', ['q' => 'dažymas']))

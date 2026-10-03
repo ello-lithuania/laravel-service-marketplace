@@ -12,6 +12,7 @@
 use App\Models\Category;
 use App\Models\City;
 use App\Models\ProviderProfile;
+use Illuminate\Support\Facades\DB;
 
 /**
  * 3 lygių šaka: [1 lygis, 2 lygis, 3 lygis].
@@ -46,4 +47,15 @@ function catalogProvider(array $categories = [], array $zones = [], array $attri
     $provider->serviceAreas()->attach(array_map(fn (City $city) => $city->id, $zones));
 
     return $provider;
+}
+
+/**
+ * MySQL InnoDB FULLTEXT paieška nemato transakcijoje įterptų, dar neįrašytų (uncommitted) eilučių,
+ * o RefreshDatabase kiekvieną testą vykdo transakcijoje. Todėl paieškos tekstu testai MySQL'e praleidžiami
+ * (FULLTEXT kelias patikrintas rankiniu būdu; SQLite – LIKE kelias – testuojamas visada).
+ * https://dev.mysql.com/doc/refman/8.4/en/innodb-fulltext-index.html#innodb-fulltext-index-transaction
+ */
+function usesMysqlFulltext(): bool
+{
+    return DB::getDriverName() === 'mysql';
 }

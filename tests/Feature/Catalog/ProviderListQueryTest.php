@@ -158,7 +158,7 @@ test('paieška tekstu SQLite: LIKE per pavadinimą, antraštę ir aprašymą, vi
     expect($search('plytelės'))->toEqualCanonicalizing([$byName->id, $byHeadline->id, $byDescription->id])
         ->and($search('plytelių vonioje'))->toBe([$byHeadline->id])
         ->and($search('santechnikas'))->toBe([]);
-});
+})->skip(fn () => usesMysqlFulltext(), 'InnoDB FULLTEXT nemato neįrašytų eilučių transakcijoje (žr. usesMysqlFulltext())');
 
 test('rikiuojant pagal aktualumą pavadinimo atitikmuo pirmesnis už aprašymo', function () {
     $byDescription = catalogProvider(attributes: ['rating_avg' => 5, 'headline' => null, 'description' => 'Atlieku stogo remontą']);
@@ -167,4 +167,4 @@ test('rikiuojant pagal aktualumą pavadinimo atitikmuo pirmesnis už aprašymo',
     $filters = new ProviderFilters(sort: ProviderSort::Relevance, search: SearchTerms::parse('stogai'));
 
     expect(listedProviderIds($filters))->toBe([$byName->id, $byDescription->id]);
-});
+})->skip(fn () => usesMysqlFulltext(), 'InnoDB FULLTEXT nemato neįrašytų eilučių transakcijoje (žr. usesMysqlFulltext())');
