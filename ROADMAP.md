@@ -18,11 +18,11 @@ Kiekvieno etapo pabaigoje:
 **Sąvokos:** migracija, Eloquent ryšiai, indeksai, normalizacija ir denormalizacija, soft deletes, enum'ai,
 ledger, idempotencija, seeder, factory, Faker.
 
-- [ ] DB schema su paaiškinimais, ryšiais ir indeksais → `docs/DB_SCHEMA.md`
-- [ ] Seed'ų planas (Faker lt_LT; 20k teikėjų, 100k užklausų, 300k pasiūlymų, 100k atsiliepimų, 200k žinučių) → `docs/SEEDING.md`
-- [ ] `CLAUDE.md` – stack'as, konvencijos, struktūra, mokymosi režimas
-- [ ] `ROADMAP.md` – etapai 0–8
-- [ ] `docs/LEARNING.md` – Etapo 0 sąvokos, komandos, klaidos, klausimai
+- [x] DB schema su paaiškinimais, ryšiais ir indeksais → `docs/DB_SCHEMA.md`
+- [x] Seed'ų planas (Faker lt_LT; 20k teikėjų, 100k užklausų, 300k pasiūlymų, 100k atsiliepimų, 200k žinučių) → `docs/SEEDING.md`
+- [x] `CLAUDE.md` – stack'as, konvencijos, struktūra, mokymosi režimas
+- [x] `ROADMAP.md` – etapai 0–8
+- [x] `docs/LEARNING.md` – Etapo 0 sąvokos, komandos, klaidos, klausimai
 - [ ] **Vartotojas peržiūrėjo ir patvirtino schemą** (pageidaujami pakeitimai – atskiru commit'u)
 
 **PADARYK PATS**
