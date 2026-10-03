@@ -41,4 +41,22 @@ class ProviderProfilePolicy
     {
         return $user->isProvider() && $profile->user_id === $user->id;
     }
+
+    // --- Etapas 8: moderavimas Filament panelėje (ProviderProfileResource) --------
+
+    /**
+     * Teikėjų sąrašas admin panelėje.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
+     * Būsenos keitimas (paslėpti, užblokuoti, aktyvuoti) ir ženklelis „Patikrintas".
+     */
+    public function moderate(User $user, ProviderProfile $profile): bool
+    {
+        return $user->isAdmin();
+    }
 }
