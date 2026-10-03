@@ -1,27 +1,33 @@
-# Laravel + Vue Starter Kit
+# Paslaugų platforma
 
-## Introduction
+Paslaugų platforma lietuvių kalba (funkcionalumas kaip paslaugos.lt): klientai skelbia užklausas, teikėjai siunčia
+pasiūlymus, žinutės, atsiliepimai, kreditai ir prenumeratos, Filament admin panelė.
 
-Our Vue starter kit provides a robust, modern starting point for building Laravel applications with a Vue frontend using [Inertia](https://inertiajs.com).
+**Stack:** Laravel 13 · Inertia 3 + Vue 3 (TypeScript) · Tailwind CSS 4 · Filament · MySQL / SQLite · Pest.
 
-Inertia allows you to build modern, single-page Vue applications using classic server-side routing and controllers. This lets you enjoy the frontend power of Vue combined with the incredible backend productivity of Laravel and lightning-fast Vite compilation.
+## Paleidimas
 
-This Vue starter kit utilizes Vue 3 and the Composition API, TypeScript, Tailwind, and the [shadcn-vue](https://www.shadcn-vue.com) component library.
+Reikia: PHP 8.3+, Composer, Node.js 22+.
 
-## Official Documentation
+```bash
+composer setup     # priklausomybės, .env, raktas, migracijos, frontend build
+composer run dev   # serveris http://localhost:8000 + eilės + Vite + logai
+```
 
-Documentation for all Laravel starter kits can be found on the [Laravel website](https://laravel.com/docs/starter-kits).
+Testai ir kodo stilius:
 
-## Contributing
+```bash
+composer test      # Pint + PHPStan + testai
+npm run check      # frontend lint ir formatavimas
+```
 
-Thank you for considering contributing to our starter kit! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Dokumentai
 
-All contributions to the Starter Kits from now on should be made through [Maestro](https://github.com/laravel/maestro).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## License
-
-The Laravel + Vue starter kit is open-sourced software licensed under the MIT license.
+| Failas | Kam |
+|---|---|
+| [`CLAUDE.md`](CLAUDE.md) | stack'as, konvencijos, darbo taisyklės |
+| [`ROADMAP.md`](ROADMAP.md) | etapai 0–8 ir kur esam |
+| [`docs/DB_SCHEMA.md`](docs/DB_SCHEMA.md) | duomenų bazės schema |
+| [`docs/SEEDING.md`](docs/SEEDING.md) | testinių duomenų planas |
+| [`docs/STATES.md`](docs/STATES.md) | užklausų ir pasiūlymų būsenos |
+| [`docs/LEARNING.md`](docs/LEARNING.md) | mokymosi užrašai |

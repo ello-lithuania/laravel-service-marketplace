@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/vue-starter-kit",
+    "name": "ello-lithuania/laravel-service-marketplace",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Paslaugų platforma: Laravel 13 + Inertia + Vue + Filament.",
     "keywords": [
         "laravel",
         "framework"
