@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProviderStatus;
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
@@ -22,6 +23,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * Visi prisijungiantys žmonės: klientai, teikėjai, administratoriai (docs/DB_SCHEMA.md → users).
@@ -51,10 +55,10 @@ use Illuminate\Support\Carbon;
 #[Fillable(['first_name', 'last_name', 'email', 'phone', 'city_id', 'password', 'notification_settings'])]
 #[Hidden(['password', 'remember_token'])]
 #[Appends(['name'])]
-class User extends Authenticatable implements FilamentUser, MustVerifyEmail
+class User extends Authenticatable implements FilamentUser, HasMedia, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, InteractsWithMedia, Notifiable, SoftDeletes;
 
     /**
      * Get the attributes that should be cast.
@@ -199,5 +203,48 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function isClient(): bool
     {
         return $this->role === UserRole::Client;
+    }
+
+    /**
+     * Teikėjas dar neužbaigė profilio vedlio (profilio nėra arba jis „pending").
+     * Tokį teikėją po registracijos ir el. pašto patvirtinimo nukreipiam į vedlį.
+     */
+    public function needsProviderOnboarding(): bool
+    {
+        if (! $this->isProvider()) {
+            return false;
+        }
+
+        $profile = $this->providerProfile;
+
+        return $profile === null || $profile->status === ProviderStatus::Pending;
+    }
+
+    // --- Failai (spatie/laravel-medialibrary, docs/DB_SCHEMA.md → media) -------------
+
+    /**
+     * Avataras – viena nuotrauka: singleFile() įkėlus naują senąją ištrina pats.
+     * Miniatiūra daroma iškart (nonQueued), nes ją rodom tame pačiame puslapyje po įkėlimo.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('avatar')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->registerMediaConversions(function (): void {
+                $this->addMediaConversion('thumb')
+                    ->nonQueued()
+                    ->fit(Fit::Crop, 128, 128);
+            });
+    }
+
+    /**
+     * Avataro miniatiūros URL arba null, jei avataro nėra.
+     */
+    public function avatarUrl(): ?string
+    {
+        $url = $this->getFirstMediaUrl('avatar', 'thumb');
+
+        return $url !== '' ? $url : null;
     }
 }

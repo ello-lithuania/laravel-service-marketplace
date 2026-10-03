@@ -15,21 +15,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * Teikėjo vieši ir verslo duomenys, 1:1 su User (docs/DB_SCHEMA.md → provider_profiles).
  *
  * Ne Fillable: user_id (nustatomas per $user->providerProfile()->create()), status, verified_at
  * ir denormalizuoti laukai (credits_balance, rating_avg…) – juos keičia tik sistema.
+ *
+ * Enum tipai PHPStan'ui (jis neskaito casts() metodo, todėl be šių eilučių laikytų juos string):
+ *
+ * @property ProviderType $type
+ * @property ProviderStatus $status
  */
 #[Fillable([
     'type', 'display_name', 'slug', 'headline', 'description', 'city_id', 'company_code',
     'vat_code', 'website', 'years_experience', 'serves_whole_country',
 ])]
-class ProviderProfile extends Model
+class ProviderProfile extends Model implements HasMedia
 {
     /** @use HasFactory<ProviderProfileFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected function casts(): array
     {
@@ -121,6 +129,59 @@ class ProviderProfile extends Model
     public function isVerified(): bool
     {
         return $this->verified_at !== null;
+    }
+
+    /**
+     * Ar užpildyti privalomi vedlio žingsniai: duomenys (profilis jau yra), bent viena kategorija
+     * ir aptarnavimo zona („visa Lietuva" arba bent viena savivaldybė). Kainos – neprivalomos.
+     */
+    public function hasRequiredSteps(): bool
+    {
+        return $this->categories()->exists()
+            && ($this->serves_whole_country || $this->serviceAreas()->exists());
+    }
+
+    // --- Failai (spatie/laravel-medialibrary, docs/DB_SCHEMA.md → media) -------------
+
+    /**
+     * logo ir cover – po vieną failą. Miniatiūros daromos iškart (nonQueued):
+     * failas vienas, o teikėjas rezultatą nori matyti tuoj pat po įkėlimo.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('logo')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->registerMediaConversions(function (): void {
+                // Fit::Max – sumažina iki 256×256 neiškirpdamas (logotipo kraštų nukirpti negalima)
+                $this->addMediaConversion('thumb')
+                    ->nonQueued()
+                    ->fit(Fit::Max, 256, 256);
+            });
+
+        $this->addMediaCollection('cover')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->registerMediaConversions(function (): void {
+                // Fit::Crop – užpildo visą 1200×400 plotą, perteklių iškerpa per vidurį
+                $this->addMediaConversion('wide')
+                    ->nonQueued()
+                    ->fit(Fit::Crop, 1200, 400);
+            });
+    }
+
+    public function logoUrl(): ?string
+    {
+        $url = $this->getFirstMediaUrl('logo', 'thumb');
+
+        return $url !== '' ? $url : null;
+    }
+
+    public function coverUrl(): ?string
+    {
+        $url = $this->getFirstMediaUrl('cover', 'wide');
+
+        return $url !== '' ? $url : null;
     }
 
     /**
