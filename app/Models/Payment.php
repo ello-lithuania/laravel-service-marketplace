@@ -43,6 +43,7 @@ class Payment extends Model
             'amount_cents' => 'integer',
             'paid_at' => 'datetime',
             'meta' => 'array',
+            'billing_details' => 'array',
         ];
     }
 
@@ -66,5 +67,59 @@ class Payment extends Model
     public function creditTransactions(): MorphMany
     {
         return $this->morphMany(CreditTransaction::class, 'source');
+    }
+
+    // --- Etapas 7: mokėjimai ir sąskaitos ------------------------------------------
+
+    /**
+     * Kurios prenumeratos laikotarpis apmokamas (pratęsimas). Pirmo plano pirkimo metu – null,
+     * prenumerata priskiriama apmokėjus (docs/DB_SCHEMA.md → payments).
+     *
+     * @return BelongsTo<Subscription, $this>
+     */
+    public function subscription(): BelongsTo
+    {
+        return $this->belongsTo(Subscription::class);
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === PaymentStatus::Paid;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === PaymentStatus::Pending;
+    }
+
+    public function hasInvoice(): bool
+    {
+        return $this->isPaid() && $this->invoice_number !== null;
+    }
+
+    /**
+     * Ką žmogus perka – sąrašams, sąskaitai ir Paysera mokėjimo paskirčiai.
+     * purchasable ryšys turi būti užkrautas iš anksto (preventLazyLoading).
+     */
+    public function description(): string
+    {
+        $purchasable = $this->purchasable;
+
+        return match (true) {
+            $purchasable instanceof CreditPackage => __('billing.purchasable.credit_package', ['name' => $purchasable->name]),
+            $purchasable instanceof SubscriptionPlan => __('billing.purchasable.subscription_plan', [
+                'name' => $purchasable->name,
+                'period' => $purchasable->billing_period->label(),
+            ]),
+            default => __('billing.purchasable.unknown'),
+        };
+    }
+
+    /**
+     * Viešas URL parametras – uuid, o ne id: kitų mokėjimų numerių negalima atspėti.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
     }
 }

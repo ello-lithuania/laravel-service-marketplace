@@ -9,6 +9,8 @@ use App\Models\SubscriptionPlan;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
+ * Numatytoji būsena – aktyvi prenumerata, kreditai už einamąjį laikotarpį jau suteikti.
+ *
  * @extends Factory<Subscription>
  */
 class SubscriptionFactory extends Factory
@@ -26,6 +28,8 @@ class SubscriptionFactory extends Factory
             'ends_at' => now()->addDays(20),
             'cancelled_at' => null,
             'auto_renew' => true,
+            // Etapas 7: kaip seed'uose – kreditai suteikti iki apmokėto laikotarpio pabaigos
+            'credits_granted_until' => fn (array $attributes) => $attributes['ends_at'],
         ];
     }
 
@@ -46,5 +50,27 @@ class SubscriptionFactory extends Factory
             'cancelled_at' => now(),
             'auto_renew' => false,
         ]);
+    }
+
+    // --- Etapas 7 ---
+
+    /**
+     * Laikotarpis baigėsi, pratęsimas neapmokėtas – malonės laikotarpis.
+     */
+    public function pastDue(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SubscriptionStatus::PastDue,
+            'starts_at' => now()->subDays(31),
+            'ends_at' => now()->subDay(),
+        ]);
+    }
+
+    /**
+     * Ką tik nupirkta: kreditai dar nesuteikti nė už vieną laikotarpį.
+     */
+    public function withoutGrantedCredits(): static
+    {
+        return $this->state(fn (array $attributes) => ['credits_granted_until' => null]);
     }
 }

@@ -192,6 +192,10 @@ Paveikslėlių (`MediaSeeder`, `SEED_MEDIA`) dar nėra: `media` lentelė sukurta
   balanso neužtenka, prieš pasiūlymą įterpiamas paketo pirkimas (mokėjimas `paid` + `purchase` įrašas).
   Taip `balance_after` niekada nebūna neigiamas, o pabaigoje `credits_balance` lygus paskutiniam `balance_after`.
 - 3 % mokėjimų – `failed` arba `cancelled` (be kreditų).
+- **Etapas 7:** prenumeratos laikotarpio mokėjimas turi `subscription_id`, o prenumeratos
+  `credits_granted_until = ends_at` – kreditai už visus laikotarpius jau įrašyti, todėl Scheduler'is
+  (`subscriptions:grant-credits`) jų antrą kartą nesuteiks. Sąskaitų numeriai `SF-{metai}-{mokėjimo ID}`;
+  naujų mokėjimų numeracija tęsiama nuo didžiausio tų metų numerio (`invoice_sequences`).
 - Kreditų grąžinimai (`refund`) generuojami pagal `docs/STATES.md` 3 sk.: atšauktų atvirų užklausų `pending`
   pasiūlymams ir pasibaigusių užklausų pasiūlymams, kurių klientas neatidarė.
 

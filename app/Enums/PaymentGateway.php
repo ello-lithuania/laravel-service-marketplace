@@ -6,7 +6,7 @@ use App\Enums\Concerns\HasFilamentLabel;
 use Filament\Support\Contracts\HasLabel;
 
 /**
- * Mokėjimų tiekėjas.
+ * Mokėjimų tiekėjas. Kodas, kuris su juo kalbasi, – app/Services/Payments (sąsaja PaymentGateway).
  */
 enum PaymentGateway: string implements HasLabel
 {
@@ -15,6 +15,8 @@ enum PaymentGateway: string implements HasLabel
     case Paysera = 'paysera';
     case Stripe = 'stripe';
     case Manual = 'manual';
+    // Etapas 7: netikras tiekėjas dev'ui ir testams – „apmokama" vienu mygtuku, be tikrų pinigų
+    case Fake = 'fake';
 
     /**
      * Lietuviškas pavadinimas UI.
@@ -25,6 +27,7 @@ enum PaymentGateway: string implements HasLabel
             self::Paysera => 'Paysera',
             self::Stripe => 'Stripe',
             self::Manual => 'Rankinis',
+            self::Fake => 'Testinis',
         };
     }
 }

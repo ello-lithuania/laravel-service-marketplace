@@ -126,6 +126,8 @@ final class MonetizationGenerator
             'ends_at' => $c->date($end),
             'cancelled_at' => $c->nullableDate($cancelled),
             'auto_renew' => $status === SubscriptionStatus::Active,
+            // Etapas 7: ledger() įrašo kreditus už kiekvieną laikotarpį, todėl jie suteikti iki pat pabaigos
+            'credits_granted_until' => $c->date($end),
             'created_at' => $c->date($start),
             'updated_at' => $c->date(max($start, $cancelled, min($end, $c->now) - self::PERIOD)),
         ]);
@@ -160,7 +162,7 @@ final class MonetizationGenerator
 
             if ($periodTime <= $offerTime && $periodTime <= $refundTime) {
                 $period = $periods[$i++];
-                $paidAt = $this->payment($p, 'subscription_plan', $period['plan']['id'], $period['plan']['price'], max($last, $period['time']));
+                $paidAt = $this->payment($p, 'subscription_plan', $period['plan']['id'], $period['plan']['price'], max($last, $period['time']), $period['subscription']);
                 $balance += $period['plan']['credits'];
                 $last = $paidAt;
                 $this->transaction($p, $period['plan']['credits'], $balance, TxType::Subscription, 'subscription', $period['subscription'], 'Prenumerata „'.$period['plan']['name'].'"', $last);
@@ -195,21 +197,21 @@ final class MonetizationGenerator
     /**
      * Sėkmingas mokėjimas (3 % atvejų prieš jį – nepavykęs ar atšauktas). Grąžina apmokėjimo laiką.
      */
-    private function payment(int $p, string $type, int $purchasableId, int $amount, int $time): int
+    private function payment(int $p, string $type, int $purchasableId, int $amount, int $time, ?int $subscriptionId = null): int
     {
         $c = $this->ctx;
 
         if ($c->chance(0.03)) {
-            $this->paymentRow($p, $type, $purchasableId, $amount, $c->chance(0.5) ? PaymentStatus::Failed : PaymentStatus::Cancelled, $time - $c->between(60, 600), 0);
+            $this->paymentRow($p, $type, $purchasableId, $amount, $c->chance(0.5) ? PaymentStatus::Failed : PaymentStatus::Cancelled, $time - $c->between(60, 600), 0, $subscriptionId);
         }
 
         $paidAt = min($c->now, $time + $c->between(10, 300));
-        $this->paymentRow($p, $type, $purchasableId, $amount, PaymentStatus::Paid, $time, $paidAt);
+        $this->paymentRow($p, $type, $purchasableId, $amount, PaymentStatus::Paid, $time, $paidAt, $subscriptionId);
 
         return $paidAt;
     }
 
-    private function paymentRow(int $p, string $type, int $purchasableId, int $amount, PaymentStatus $status, int $time, int $paidAt): void
+    private function paymentRow(int $p, string $type, int $purchasableId, int $amount, PaymentStatus $status, int $time, int $paidAt, ?int $subscriptionId): void
     {
         $c = $this->ctx;
         $id = ++$this->paymentId;
@@ -223,6 +225,8 @@ final class MonetizationGenerator
             'gateway_reference' => $gateway === PaymentGateway::Paysera ? sprintf('PS%010d', $id) : null,
             'purchasable_type' => $type,
             'purchasable_id' => $purchasableId,
+            // Etapas 7: kurios prenumeratos laikotarpis (kreditų paketams – null)
+            'subscription_id' => $subscriptionId,
             'amount_cents' => $amount,
             'currency' => 'EUR',
             'status' => $status->value,
@@ -265,6 +269,11 @@ final class MonetizationGenerator
     {
         if (($this->buffers[$table] ?? []) === []) {
             return;
+        }
+
+        // payments.subscription_id – FK, todėl prenumeratos turi atsidurti DB anksčiau už jų mokėjimus
+        if ($table === 'payments') {
+            $this->flush('subscriptions');
         }
 
         DB::table($table)->insert($this->buffers[$table]);
