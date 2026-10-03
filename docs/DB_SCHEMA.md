@@ -305,13 +305,13 @@ todėl naujam vartotojui nieko įrašyti nereikia, o pridėjus naują grupę sen
 }
 ```
 
-| Grupė             | Kam      | Notification klasės                                                                 |
-| ----------------- | -------- | ----------------------------------------------------------------------------------- |
-| `new_requests`    | teikėjui | `NewMatchingRequest`                                                                |
-| `offer_updates`   | teikėjui | `OfferAccepted`, `OfferDeclined`, `ServiceRequestCancelled`                         |
-| `new_offers`      | klientui | `NewOffer`                                                                          |
-| `request_updates` | klientui | `ServiceRequestPublished`, `ServiceRequestRejected`                                 |
-| `messages`        | abiem    | `NewMessage` (Etapas 6)                                                             |
+| Grupė             | Kam      | Notification klasės                                         |
+| ----------------- | -------- | ----------------------------------------------------------- |
+| `new_requests`    | teikėjui | `NewMatchingRequest`                                        |
+| `offer_updates`   | teikėjui | `OfferAccepted`, `OfferDeclined`, `ServiceRequestCancelled` |
+| `new_offers`      | klientui | `NewOffer`                                                  |
+| `request_updates` | klientui | `ServiceRequestPublished`, `ServiceRequestRejected`         |
+| `messages`        | abiem    | `NewMessage` (Etapas 6)                                     |
 
 Kodas: `App\Support\NotificationSettings` (numatytosios reikšmės, skaitymas, grupės pagal rolę). El. laiškas
 nesiunčiamas, kol vartotojas nepatvirtino el. pašto – nepatvirtintu adresu laiškų nesiunčiam.
@@ -536,8 +536,11 @@ stulpeliu, todėl tinka ir FK reikmėms.
 | expires_at        | `timestamp?`                | po kiek laiko užsidaro, jei niekas nepriimta |
 | completed_at      | `timestamp?`                |                                              |
 | cancelled_at      | `timestamp?`                |                                              |
-| cancellation_reason | `string(500)?`            | admin atmetimo ar kliento atšaukimo priežastis (Etapas 5, atskira migracija) |
 |                   | `timestamps`, `softDeletes` |                                              |
+
+**Etapas 5 papildė** (atskira migracija `add_cancellation_reason_to_service_requests_table`):
+`cancellation_reason` – `string(500)?`, administratoriaus atmetimo ar kliento atšaukimo priežastis
+(vykdomą užklausą klientas gali atšaukti tik su priežastimi – `docs/STATES.md` 1 sk.).
 
 Nuotraukos – medialibrary kolekcija `photos`.
 
@@ -928,7 +931,7 @@ datą failo pavadinime.
 | 24  | `create_complaints_table`                              |                                                                                       |
 | 25  | `create_notifications_table`                           | `php artisan make:notifications-table`                                                |
 | 26  | `create_media_table`                                   | publikuojama iš medialibrary paketo – **Etape 3**                                     |
-| 27  | `add_cancellation_reason_to_service_requests_table`    | **Etapas 5**: atmetimo / atšaukimo priežastis                                          |
+| 27  | `add_cancellation_reason_to_service_requests_table`    | **Etapas 5**: atmetimo / atšaukimo priežastis                                         |
 
 **Kodėl `city_id` pridedam atskirai:** numatytoji `users` migracija turi seniausią datą (`0001_01_01_…`), todėl
 vykdoma pirma, kai `cities` dar nėra. Galima būtų pakeisti datas, bet atskira `add_…` migracija aiškiau parodo
