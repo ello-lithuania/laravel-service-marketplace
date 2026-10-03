@@ -86,7 +86,9 @@ return [
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
             'username' => env('LOG_SLACK_USERNAME', env('APP_NAME', 'Laravel')),
             'emoji' => env('LOG_SLACK_EMOJI', ':boom:'),
-            'level' => env('LOG_LEVEL', 'critical'),
+            // Etapas 8: atskiras lygis Slack'ui. Numatytasis LOG_LEVEL (pvz. info) į kanalą siųstų kiekvieną įrašą,
+            // o Slack'e norim tik to, dėl ko reikia keltis naktį (docs/DEPLOYMENT.md → „Logai")
+            'level' => env('LOG_SLACK_LEVEL', 'critical'),
             'replace_placeholders' => true,
         ],
 
