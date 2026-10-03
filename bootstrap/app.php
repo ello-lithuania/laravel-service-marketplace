@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\EnsureUserIsNotBanned;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,6 +35,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // Mokėjimų tiekėjo callback'ą siunčia jo SERVERIS, o ne mūsų forma, todėl CSRF žetono jame nėra.
         // Apsauga čia – tiekėjo parašas (PaymentGateway::handleCallback). https://laravel.com/docs/13.x/csrf#csrf-excluding-uris
         $middleware->preventRequestForgery(except: ['mokejimai/callback/*']);
+
+        // --- Etapas 8 ---
+        // Užblokuotas vartotojas atjungiamas prie kito paspaudimo (BanUser, docs/DEPLOYMENT.md → saugumas)
+        $middleware->web(append: [
+            EnsureUserIsNotBanned::class,
+        ]);
+
+        // Saugos antraštės (CSP, HSTS, X-Frame-Options…) – globaliai, kad apimtų ir Filament panelę (config/security.php)
+        $middleware->append(SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

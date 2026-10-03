@@ -5,7 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
-        <script>
+        {{-- Etapas 8: nonce – be jo saugos antraštė (CSP, SecurityHeaders) šio skripto nevykdytų --}}
+        <script nonce="{{ Vite::cspNonce() }}">
             (function() {
                 const appearance = '{{ $appearance ?? "system" }}';
 
@@ -47,6 +48,10 @@
                 <meta property="og:title" content="{{ $seo['title'] }}" data-inertia="og:title">
                 <meta property="og:description" content="{{ $seo['description'] }}" data-inertia="og:description">
                 <meta property="og:url" content="{{ $seo['canonical'] }}" data-inertia="og:url">
+                {{-- Etapas 8: schema.org JSON-LD. Tekstas jau užkoduotas serveryje (SeoMeta, JSON_HEX_TAG) --}}
+                @if (! empty($seo['json_ld']))
+                    <script type="application/ld+json" data-inertia="json-ld">{!! $seo['json_ld'] !!}</script>
+                @endif
             @else
                 <title>{{ config('app.name', 'Laravel') }}</title>
             @endif

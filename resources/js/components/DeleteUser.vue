@@ -26,7 +26,7 @@ const passwordInput = useTemplateRef('passwordInput');
         <Heading
             variant="small"
             title="Paskyros ištrynimas"
-            description="Ištrinkite savo paskyrą ir visus jos duomenis"
+            description="Asmens duomenys bus pašalinti, o užklausos ir atsiliepimai liks be jūsų vardo"
         />
         <div
             class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
@@ -57,10 +57,10 @@ const passwordInput = useTemplateRef('passwordInput');
                                 >Ar tikrai norite ištrinti paskyrą?</DialogTitle
                             >
                             <DialogDescription>
-                                Ištrynus paskyrą, visi jos duomenys bus
-                                pašalinti. Įveskite slaptažodį, kad
-                                patvirtintumėte, jog tikrai norite ištrinti savo
-                                paskyrą.
+                                Jūsų vardas, el. paštas, telefonas ir nuotraukos
+                                bus pašalinti, atviros užklausos ir laukiantys
+                                pasiūlymai – atšaukti. Prisijungti nebegalėsite.
+                                Įveskite slaptažodį, kad patvirtintumėte.
                             </DialogDescription>
                         </DialogHeader>
 

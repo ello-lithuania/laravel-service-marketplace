@@ -3,6 +3,7 @@
 namespace App\Services\Catalog;
 
 use App\Models\ProviderProfile;
+use App\Services\Seo\StructuredData;
 
 /**
  * Katalogo puslapių SEO tekstai vienoje vietoje: administratoriaus įrašyti (meta_title, meta_description)
@@ -14,6 +15,9 @@ use App\Models\ProviderProfile;
  */
 class CatalogSeo
 {
+    // Etapas 8: kategorijos tėvai „duonos trupiniams" JSON-LD (BreadcrumbList) imami iš medžio cache
+    public function __construct(private readonly CatalogCache $catalog) {}
+
     public function home(): SeoMeta
     {
         return new SeoMeta(
@@ -21,6 +25,7 @@ class CatalogSeo
             description: 'Raskite patikimą meistrą ar paslaugų teikėją savo mieste: palyginkite atsiliepimus ir kainas, '
                 .'aprašykite darbą ir gaukite pasiūlymus nemokamai.',
             canonical: route('home'),
+            structuredData: [StructuredData::website(), StructuredData::organization()],
         );
     }
 
@@ -58,7 +63,34 @@ class CatalogSeo
             canonical: $this->withPageQuery($canonical, $page),
             // Tuščias „paslauga mieste" puslapis – „plonas" turinys, jo neindeksuojam
             indexable: $total > 0 || $city === null,
+            structuredData: [StructuredData::breadcrumbs($this->categoryBreadcrumbs($category, $city))],
         );
+    }
+
+    /**
+     * Pradžia → Paslaugos → tėvai → kategorija (→ miestas).
+     *
+     * @return list<array{name: string, url: string}>
+     */
+    private function categoryBreadcrumbs(CachedCategory $category, ?CachedCity $city): array
+    {
+        $items = [
+            ['name' => 'Pradžia', 'url' => route('home')],
+            ['name' => 'Paslaugos', 'url' => route('categories.index')],
+        ];
+
+        foreach ([...$this->catalog->categories()->ancestors($category->id), $category] as $node) {
+            $items[] = ['name' => $node->name, 'url' => route('categories.show', ['category' => $node->slug])];
+        }
+
+        if ($city !== null) {
+            $items[] = [
+                'name' => $category->name.' '.$city->nameLocative,
+                'url' => route('categories.city', ['category' => $category->slug, 'city' => $city->slug]),
+            ];
+        }
+
+        return $items;
     }
 
     public function providers(?CachedCity $city, int $page): SeoMeta
@@ -81,10 +113,13 @@ class CatalogSeo
             ? sprintf('Įvertinimas %s iš 5, atsiliepimų: %d. ', number_format((float) $provider->rating_avg, 1, ',', ''), $provider->reviews_count)
             : '';
 
+        $canonical = route('providers.show', ['providerProfile' => $provider->slug]);
+
         return new SeoMeta(
             title: $title,
             description: $provider->display_name.'. '.$rating.($provider->description ?? $provider->headline ?? ''),
-            canonical: route('providers.show', ['providerProfile' => $provider->slug]),
+            canonical: $canonical,
+            structuredData: [StructuredData::provider($provider, $canonical)],
         );
     }
 

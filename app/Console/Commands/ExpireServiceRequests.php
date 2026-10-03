@@ -25,7 +25,7 @@ class ExpireServiceRequests extends Command
     {
         $count = 0;
 
-        // Indeksas (status, published_at) atrenka atviras; chunkById – dalimis, kad neužkrautume visų iš karto
+        // Indeksas (status, expires_at) – Etapas 8; chunkById – dalimis, kad neužkrautume visų iš karto
         ServiceRequest::query()
             ->where('status', ServiceRequestStatus::Open)
             ->where('expires_at', '<=', now())

@@ -47,6 +47,8 @@ export type SeoMeta = {
     description: string;
     canonical: string;
     robots: string;
+    /** Etapas 8: schema.org JSON-LD (jau užkoduotas JSON tekstas) */
+    json_ld: string | null;
 };
 
 export type PriceFrom = {

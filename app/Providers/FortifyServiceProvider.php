@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Actions\Fortify\AuthenticateUser;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Enums\UserRole;
@@ -49,6 +50,10 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        // --- Etapas 8 ---
+        // Prisijungimas su užblokuotų paskyrų patikra (Fortify numatytoji logika + banned_at)
+        Fortify::authenticateUsing(new AuthenticateUser);
     }
 
     /**
