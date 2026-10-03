@@ -16,11 +16,23 @@ use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Routing\Router;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
+    /**
+     * --- Etapas 8 ---
+     * Filament registruoja eksporto ir importo atsisiuntimo maršrutus (/filament/exports/…), kurių nenaudojam
+     * (lentelių exports/imports nėra). Be „auth" svečias gaudavo 500 klaidą (route model binding ieško lentelės).
+     * Su „auth" svečias nukreipiamas prisijungti dar prieš binding'ą. Autorizacijos auditas: RouteAuthorizationTest.
+     */
+    public function boot(Router $router): void
+    {
+        $router->middlewareGroup('filament.actions', ['web', 'auth']);
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
