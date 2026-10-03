@@ -56,7 +56,7 @@
 - **Scheduler** – `php artisan service-requests:expire` kas valandą uždaro pasibaigusias užklausas ir grąžina kreditus
   tik už neatidarytus pasiūlymus.
 - **Nauja migracija** `add_cancellation_reason_to_service_requests_table` – atmetimo / atšaukimo priežastis.
-- **Testai**: 149 nauji (iš viso 265): visas srautas per HTTP, visos `STATES.md` 3 sk. grąžinimo taisyklės, Policies,
+- **Testai**: 150 naujų (iš viso 266): visas srautas per HTTP, visos `STATES.md` 3 sk. grąžinimo taisyklės, Policies,
   Filament veiksmai, varpelis, laiškų tekstai, Scheduler.
 
 ### Išmoktos sąvokos
@@ -286,6 +286,8 @@ Larastan pagal nutylėjimą žiūri tik į `casts()` metodo grąžinamą tipą (
 - **Pranešimas siunčiamas transakcijos viduje.** Jei transakcija vėliau nepavyks, žmogus gaus žinią apie neįvykusį
   dalyką. Pranešimus siunčiam po `DB::transaction()`, job'ams – `->afterCommit()`.
 - **`lockForUpdate()` be transakcijos** – užraktas atleidžiamas iškart po `SELECT`, t. y. nieko nesaugo.
+- **`chunk()`, kai cikle keičiama ta pati sąlyga** (`status = open` → `expired`) – kitas „puslapis" (`OFFSET`)
+  praleidžia dalį eilučių. Naudok `chunkById()`: jis tęsia nuo paskutinio ID (`WHERE id > ?`).
 - **Būsena tikrinama tik Policy'je.** Tarp puslapio atidarymo ir paspaudimo ji gali pasikeisti – Action turi tikrinti
   dar kartą, užrakinusi eilutę.
 - **`loadMissing('ryšys:id,name')` pranešime** – modelio ryšys lieka su dalimi stulpelių, ir kitas kodas (pvz.
