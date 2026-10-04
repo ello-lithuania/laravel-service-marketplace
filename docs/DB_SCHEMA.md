@@ -1151,6 +1151,11 @@ nereikalingas.
 Pats failas – medialibrary kolekcija `photo` (single file). Kodėl atskira lentelė, o ne failai `public/images`:
 nuotrauką galima pakeisti per admin panelę, ji turi miniatiūras ir autoriaus duomenis kaip visi kiti failai.
 
+**Etapas 10a:** eilutės kuriamos pagal poreikį – `SitePhoto::forKey($key)` (`firstOrCreate`). Jį kviečia admin
+puslapis „Svetainės nuotraukos" (po eilutę kiekvienam `SitePhotoKey` case), `php artisan photos:download` ir
+`StockPhotoSeeder`, todėl naujai vietai migracijos ar seed'o nereikia. Alternatyvusis tekstas iš
+`database/data/photo_queries.php` įrašomas tik į tuščią `alt` – administratoriaus pakeisto neperrašom.
+
 #### `media` (spatie/laravel-medialibrary)
 
 > **Sukurta Etape 3:** `spatie/laravel-medialibrary` 11, migracija `2026_10_03_170615_create_media_table`
@@ -1191,10 +1196,25 @@ Migraciją sukuria paketas. Svarbiausi stulpeliai: `model_type`/`model_id` (morp
 - Ištrynus modelį, medialibrary ištrina ir jo failus (soft delete atveju – ne).
 - **Svetainės nuotraukos (Etapas 10).** Kategorijų nuotraukos (`Category` → `image`) ir svetainės dizaino nuotraukos
   (`SitePhoto` → `photo`, žr. `site_photos`) laikomos tame pačiame `public` diske. Jas gali įkelti administratorius
-  arba automatiškai atsisiųsti komanda iš nemokamų nuotraukų bankų.
+  (Filament: kategorijos forma, „Svetainės nuotraukos") arba atsisiųsti komanda `php artisan photos:download` iš
+  nemokamų nuotraukų bankų (Pexels, Openverse).
 - **Nuotraukos autorius (`custom_properties.credit`).** Jei nuotrauka ne sava, prie media įrašo saugom:
-  `{"author": "…", "author_url": "…", "source": "Pexels|Openverse|…", "source_url": "…", "license": "…", "license_url": "…"}`.
-  Iš jų sudaromas puslapis „Nuotraukų autoriai" (kai kurios licencijos, pvz. CC BY, autorių nurodyti reikalauja).
+  `{"author": "…", "author_url": "…", "source": "Pexels|Flickr|Wikimedia Commons|…", "source_url": "…", "license": "…", "license_url": "…", "title": "…"}`.
+  Iš jų sudaromas puslapis „Nuotraukų autoriai" (`/nuotrauku-autoriai`; kai kurios licencijos, pvz. CC BY, autorių
+  nurodyti reikalauja). **Etapas 10a:** `title` (nuotraukos pavadinimas, nebūtinas) – CC rekomenduojamam autorystės
+  nurodymui „pavadinimas, autorius, šaltinis, licencija"; `source` – kur nuotrauka paskelbta (Openverse nuotraukai – ne
+  „Openverse", o tikras šaltinis: Flickr, Wikimedia Commons…), `source_url` – tos nuotraukos puslapis. Nuorodos
+  saugomos ir rodomos tik `http(s)` (`App\Services\Photos\PhotoCredit` – kitaip `javascript:` nuoroda iš išorinio
+  API taptų XSS).
+- **`custom_properties.stock_id` (Etapas 10a).** Atsisiųstos nuotraukos ID šaltinyje: `pexels:2014422`,
+  `openverse:{uuid}`. Pagal jį komanda atpažįsta savo nuotraukas (`--force` keičia tik jas, administratoriaus įkeltų –
+  ne), nedubliuoja tos pačios nuotraukos kelioms vietoms, o autorių puslapis demo rinkinio nuotrauką, prisegtą prie daug
+  darbų, rodo vieną kartą (`GROUP BY custom_properties->stock_id`).
+- **Vietinė nuotraukų biblioteka (Etapas 10a).** Atsisiųsti originalai – diske `stock-photos`
+  (`storage/app/stock-photos`, Git'e ignoruojama): `categories/`, `site/`, `portfolio/{1 lygio slug}/`, kiekviename –
+  `credits.json` (vardas → failas, `stock_id`, `credit`, matmenys). Tai ne DB lentelė, o failai: po
+  `migrate:fresh --seed` media lentelė tuščia, o iš bibliotekos nuotraukos vėl prisegamos be interneto
+  (`StockPhotoSeeder`, `MediaGenerator` – `docs/SEEDING.md` 7 sk.).
 
 ---
 
