@@ -14,6 +14,7 @@ import {
     ShieldCheck,
     Receipt,
     Star,
+    Undo2,
 } from '@lucide/vue';
 import { computed } from 'vue';
 
@@ -46,6 +47,9 @@ const icon = computed(() => {
             return CalendarClock;
         case 'LowCredits':
             return Coins;
+        // --- Etapas 9b: grąžintas mokėjimas ---
+        case 'PaymentRefunded':
+            return Undo2;
         case 'ReviewReplied':
             return MessageSquareReply;
         case 'CompletionRequested':

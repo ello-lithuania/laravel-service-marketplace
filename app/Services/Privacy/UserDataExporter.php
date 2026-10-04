@@ -44,6 +44,15 @@ final class UserDataExporter
             'mokejimai' => $this->rows(DB::table('payments')->where('user_id', $user->id)->orderBy('id'), [
                 'uuid', 'gateway', 'amount_cents', 'currency', 'status', 'paid_at', 'invoice_number', 'created_at',
             ]),
+            // --- Etapas 9b: grąžinimai ir kreditinės sąskaitos (kas grąžino – nerodom) ---
+            'grazinimai' => $this->rows(
+                DB::table('refunds')
+                    ->join('payments', 'payments.id', '=', 'refunds.payment_id')
+                    ->where('payments.user_id', $user->id)
+                    ->orderBy('refunds.id'),
+                ['payments.uuid as mokejimas', 'refunds.amount_cents', 'refunds.reason', 'refunds.credits_reversed',
+                    'refunds.credits_shortfall', 'refunds.credit_note_number', 'refunds.created_at'],
+            ),
             'kreditu_operacijos' => $profile === null ? [] : $this->rows(
                 DB::table('credit_transactions')->where('provider_profile_id', $profile->id)->orderBy('id'),
                 ['amount', 'balance_after', 'type', 'description', 'created_at'],

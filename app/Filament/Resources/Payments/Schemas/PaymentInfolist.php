@@ -48,6 +48,29 @@ class PaymentInfolist
                         TextEntry::make('user.email')->label('El. paštas')->copyable(),
                     ]),
 
+                // --- Etapas 9b: grąžinimas ir kreditinė sąskaita ---
+                Section::make('Grąžinimas')
+                    ->description('Kreditinė sąskaita faktūra ir atimti kreditai')
+                    ->columnSpanFull()
+                    ->columns(3)
+                    ->visible(fn (Payment $record): bool => $record->refund !== null)
+                    ->schema([
+                        TextEntry::make('refund.credit_note_number')->label('Kreditinė sąskaita')->weight('bold')->copyable(),
+                        TextEntry::make('refund.created_at')->label('Grąžinta')->dateTime('Y-m-d H:i', 'Europe/Vilnius'),
+                        TextEntry::make('refunded_by')
+                            ->label('Grąžino')
+                            ->state(fn (Payment $record): ?string => $record->refund?->loadMissing('refundedBy')->refundedBy?->name)
+                            ->placeholder('–'),
+                        TextEntry::make('refund.amount_cents')
+                            ->label('Grąžinta suma')
+                            ->formatStateUsing(fn (int $state): string => Money::format(-$state)),
+                        TextEntry::make('refund.credits_reversed')->label('Atimta kreditų'),
+                        TextEntry::make('refund.credits_shortfall')
+                            ->label('Nepavyko atimti (jau išleisti)')
+                            ->color(fn (int $state): string => $state > 0 ? 'danger' : 'gray'),
+                        TextEntry::make('refund.reason')->label('Priežastis')->columnSpanFull(),
+                    ]),
+
                 Section::make('Tiekėjo atsakymas')
                     ->description('payments.meta – be asmens duomenų')
                     ->columnSpanFull()

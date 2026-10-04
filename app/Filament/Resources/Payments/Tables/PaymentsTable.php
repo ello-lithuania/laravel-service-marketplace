@@ -4,7 +4,9 @@ namespace App\Filament\Resources\Payments\Tables;
 
 use App\Enums\PaymentGateway;
 use App\Enums\PaymentStatus;
+use App\Filament\Resources\Payments\Actions\CreditNoteAction;
 use App\Filament\Resources\Payments\Actions\InvoiceAction;
+use App\Filament\Resources\Payments\Actions\RefundPaymentAction;
 use App\Models\Payment;
 use App\Support\Money;
 use Filament\Actions\ViewAction;
@@ -56,6 +58,8 @@ class PaymentsTable
                 TextColumn::make('invoice_number')
                     ->label('Sąskaita')
                     ->placeholder('–')
+                    // Etapas 9b: grąžinto mokėjimo kreditinės sąskaitos numeris po sąskaitos numeriu
+                    ->description(fn (Payment $record): ?string => $record->refund?->credit_note_number)
                     ->searchable(),
                 TextColumn::make('uuid')
                     ->label('Užsakymo Nr.')
@@ -88,6 +92,9 @@ class PaymentsTable
             ->recordActions([
                 ViewAction::make(),
                 InvoiceAction::make(),
+                // --- Etapas 9b ---
+                CreditNoteAction::make(),
+                RefundPaymentAction::make(),
             ]);
     }
 }

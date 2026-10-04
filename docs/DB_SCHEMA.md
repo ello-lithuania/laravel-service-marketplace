@@ -186,6 +186,8 @@ Vartotojo ištrynimas pagal BDAR = **anonimizavimas**: vardas tampa „Ištrinta
 | `restrict` | finansai (`payments`, `credit_transactions`, `subscriptions`), užklausos kategorija ir miestas, atsiliepimo autorius                                          | negalima netyčia ištrinti istorijos ar naudojamo žinyno įrašo |
 | `set null` | neprivalomos nuorodos: `users.city_id`, `portfolio_items.category_id`, `messages.sender_id`, `complaints.handled_by_id`, `service_requests.accepted_offer_id` | įrašas lieka, tik be nuorodos                                 |
 
+**Etapas 9:** `refunds.payment_id` – `restrict` (finansai), `refunds.refunded_by_id` – `set null`.
+
 `users` ir `service_requests` naudoja soft deletes, todėl tikras `DELETE` vyksta retai. Šios taisyklės yra saugiklis.
 
 ### 2.13 Morph map (polimorfiniai tipai)
@@ -292,6 +294,8 @@ erDiagram
     credit_packages |o--o{ payments : "purchasable (morph)"
     subscription_plans |o--o{ payments : "purchasable (morph)"
     subscriptions |o--o{ payments : "subscription_id (laikotarpiai)"
+    payments ||--o| refunds : "grąžinimas, kreditinė sąskaita (Etapas 9)"
+    users |o--o{ refunds : "refunded_by_id"
     users |o--o{ complaints : "reporter_id"
     users |o--o{ complaints : "handled_by_id"
     users ||--o{ notifications : "notifiable (morph)"
@@ -940,20 +944,112 @@ seną.
   numeracija ištisinė (be tarpų) ir nesikartoja. Seed'ų numeriai naudoja mokėjimo ID (`SF-2025-001234`), todėl
   pirmą kartą metų skaitiklis pradedamas nuo didžiausio jau esančio tų metų numerio.
 
-#### `invoice_sequences` (Etapas 7)
+**Būsenų perėjimai (Etapas 9: `PaymentStatus::allowedTransitions()`):**
 
-**Paskirtis:** sąskaitų faktūrų numerių skaitiklis kiekvieniems metams.
+| Iš → į                           | Kada                                                   | Kas daro                                                                |
+| -------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------- |
+| (naujas) → `pending`             | teikėjas spaudžia „Pirkti" arba kuriamas pratęsimas    | `CreatePayment`, `CreateRenewalPayment`                                 |
+| `pending` → `paid`               | patikrintas tiekėjo callback'as                        | `ProcessPaymentResult` → `CompletePayment`                              |
+| `pending` → `failed`/`cancelled` | tiekėjas atmetė, pirkėjas atšaukė, prenumerata baigėsi | `ProcessPaymentResult`, `CancelPayment`, `CancelPendingRenewalPayments` |
+| `failed`/`cancelled` → `paid`    | tiekėjas vėliau vis tiek patvirtino apmokėjimą         | `ProcessPaymentResult` (pinigus gavom – juos užskaitom)                 |
+| `paid` → `refunded`              | administratorius grąžino pinigus (Filament)            | `RefundPayment` (Etapas 9, žr. `refunds`)                               |
+| `refunded` → –                   | galutinė būsena                                        |                                                                         |
 
-| Stulpelis   | Tipas          | Pastaba                             |
-| ----------- | -------------- | ----------------------------------- |
-| year        | `usmallint` PK | 2026                                |
-| last_number | `uint` = 0     | paskutinis išduotas tų metų numeris |
-|             | `timestamps`   |                                     |
+Grąžinto mokėjimo sąskaita faktūra **lieka galioti ir atsisiunčiama** (ją koreguoja kreditinė sąskaita), todėl
+`Payment::hasInvoice()` tinka ir `paid`, ir `refunded` būsenai.
+
+#### `invoice_sequences` (Etapas 7, serijos – Etapas 9)
+
+**Paskirtis:** sąskaitų numerių skaitiklis kiekvienai **serijai** ir kiekvieniems metams.
+
+| Stulpelis   | Tipas                  | Pastaba                                                                |
+| ----------- | ---------------------- | ---------------------------------------------------------------------- |
+| series      | `string(20)` = invoice | **Etapas 9**: enum `InvoiceSeries`: `invoice` (SF), `credit_note` (KS) |
+| year        | `usmallint`            | 2026                                                                   |
+| last_number | `uint` = 0             | paskutinis išduotas tos serijos tų metų numeris                        |
+|             | `timestamps`           |                                                                        |
+
+**Pirminis raktas:** `(series, year)` (Etape 7 buvo tik `year`). Kiekviena serija turi savo ištisinę numeraciją:
+`SF-2026-000123` (sąskaitos faktūros) ir `KS-2026-000001` (kreditinės sąskaitos). Serijos raidės (prefiksas) imamos
+iš `config/invoices.php`, o DB saugomas loginis vardas (`invoice`, `credit_note`) – pakeitus prefiksą, skaitiklis
+nesusimaišo. Migracija `add_series_to_invoice_sequences_table` esamoms eilutėms įrašo `invoice`.
 
 **Kodėl atskira lentelė, o ne `MAX(invoice_number) + 1`:** dvi vienu metu apmokamos sąskaitos abi perskaitytų tą patį
 `MAX` ir gautų tą patį numerį. Skaitiklio eilutė užrakinama (`lockForUpdate`), todėl antroji transakcija palaukia,
 kol pirmoji baigsis, ir gauna kitą numerį. Jei transakcija atšaukiama, atšaukiamas ir skaitiklio padidinimas – tarpų
 numeracijoje nelieka.
+
+**Kodėl serija – stulpelis, o ne atskira skaitiklių lentelė kreditinėms sąskaitoms:** logika ta pati (užraktas,
+pradžia nuo didžiausio esamo numerio, metai pagal Lietuvos laiką), skiriasi tik raktas. Viena lentelė su sudėtiniu
+raktu = vienas generatorius: `InvoiceNumberGenerator::next($data, InvoiceSeries::CreditNote)`.
+
+#### `refunds` (Etapas 9)
+
+**Paskirtis:** mokėjimo grąžinimas ir jo **kreditinė sąskaita faktūra** (atskira numeracija, PDF).
+
+| Stulpelis          | Tipas                     | Pastaba                                                                       |
+| ------------------ | ------------------------- | ----------------------------------------------------------------------------- |
+| id                 | `id`                      |                                                                               |
+| payment_id         | `FK → payments`, restrict | UNIQUE: vienas grąžinimas mokėjimui (grąžinama visa suma)                     |
+| refunded_by_id     | `FK → users ?`, set null  | administratorius, kuris grąžino                                               |
+| amount_cents       | `uint`                    | grąžinta suma (= `payments.amount_cents`); kreditinėje sąskaitoje – su minusu |
+| reason             | `string(500)`             | priežastis: rodoma kreditinėje sąskaitoje ir pranešime teikėjui               |
+| credits_reversed   | `uint` = 0                | kiek kreditų atimta iš balanso (ledger eilutė `payment_refund`)               |
+| credits_shortfall  | `uint` = 0                | kiek kreditų atimti nepavyko – teikėjas juos jau išleido                      |
+| credit_note_number | `string(30)` UNIQUE       | `KS-2026-000001` (serija `credit_note`, žr. `invoice_sequences`)              |
+| billing_details    | `json`                    | rekvizitų snapshot'as – kopija iš `payments.billing_details`                  |
+|                    | `timestamps`              | `created_at` – grąžinimo ir kreditinės sąskaitos data                         |
+
+**Indeksai:** `UNIQUE(payment_id)` – paskutinis saugiklis nuo dvigubo grąžinimo (kaip `UNIQUE(gateway,
+gateway_reference)` mokėjimams) ir kartu FK indeksas · `UNIQUE(credit_note_number)` · `refunded_by_id` – automatiškai (FK).
+
+**Kodėl atskira lentelė, o ne stulpeliai `payments` lentelėje:** kreditinė sąskaita – atskiras buhalterinis dokumentas
+su savo numeriu, data, suma ir priežastimi. Stulpeliai `payments` lentelėje (`refunded_at`, `refund_reason`,
+`credit_note_number`…) būtų tušti beveik visose eilutėse. Atskira lentelė taip pat leistų vėliau daryti dalinius
+grąžinimus (tada `UNIQUE(payment_id)` būtų pašalintas, o likusi suma tikrinama kode). `amount_cents` saugomas
+teigiamas, kaip ir `payments.amount_cents`; minusas – dokumento vaizdavimo reikalas.
+
+**Kaip veikia grąžinimas (`RefundPayment`, Filament → Mokėjimai → „Grąžinti pinigus"):**
+
+1. Administratorius nurodo priežastį ir pažymi, kad pinigus grąžins Paysera savitarnoje. **Paysera grąžinimo API
+   nekviečiam:** grąžinimų būna vienetai per mėnesį, savitarnoje tai užtrunka minutę, o API reikalautų atskiros
+   prieigos, naujos parašų logikos ir klaidų apdorojimo (dalinis grąžinimas, nepakankamas likutis Paysera
+   sąskaitoje, pakartojimai). Mūsų sistema fiksuoja buhalterinę pusę: būseną, kreditus, kreditinę sąskaitą.
+2. Vienoje DB transakcijoje, užraktų tvarka **mokėjimas → teikėjas → prenumerata → numerių skaitiklis** (kaip
+   `CompletePayment`): mokėjimas užrakinamas ir tikrinama būsena (`paid` → `refunded`; antras kartas – klaida, o ne
+   dvigubas grąžinimas), atimami kreditai, keičiama prenumerata, išduodamas `KS` numeris, sukuriama `refunds` eilutė.
+3. Po COMMIT teikėjui siunčiamas `PaymentRefunded` (mail + database, nustatymų grupė `billing`).
+
+**Kreditų taisyklė (balansas niekada < 0):**
+
+- **Kreditų paketas** – atimama tiek, kiek šis mokėjimas suteikė (`SUM(amount)` ledger eilučių su `source = payment`).
+- **Prenumeratos mokėjimas** – žr. žemiau; atimama `credits_per_period`, jei kreditai už atimamą laikotarpį jau suteikti.
+- Atimama **ne daugiau nei dabartinis balansas**. Jei teikėjas dalį kreditų jau išleido pasiūlymams, atimama tiek,
+  kiek yra, o skirtumas įrašomas į `credits_shortfall` ir parodomas administratoriui (prieš patvirtinant ir po to)
+  bei teikėjui. Kreditinėje sąskaitoje jis nerodomas – ji apie pinigus. Pinigai grąžinami visi: ar grąžinti,
+  sprendžia administratorius, matydamas, kiek kreditų jau išleista.
+- Ledger eilutė: `type = payment_refund`, `source = payment` (iš ledger'io matyti, kuris grąžinimas atėmė kreditus).
+- _Alternatyvos:_ (a) neleisti grąžinti, jei kreditai išleisti – bet grąžinimas gali būti privalomas (pvz. vartotojų
+  teisių ginčas); (b) leisti neigiamą balansą („skola") – sulaužytų ledger'io taisyklę `balance_after ≥ 0` ir
+  pasiūlymų siuntimo logiką; (c) grąžinti proporcingą pinigų dalį – reikėtų dalinių kreditinių sąskaitų.
+
+**Prenumeratos mokėjimas – „vienas mokėjimas = vienas laikotarpis":** grąžinus mokėjimą, prenumerata sutrumpinama
+vienu (paskutiniu apmokėtu) laikotarpiu nuo galo. Laikotarpių ribos skaičiuojamos nuo `starts_at` tuo pačiu
+`BillingPeriod::addTo()`, kaip jas skaičiuoja `GrantSubscriptionCredits`.
+
+| Atimamas laikotarpis                                             | Prenumerata                                                         | Kreditai                                                    |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------- |
+| jau prasidėjo (dažniausias atvejis – ką tik nupirktas planas)    | baigiama iškart: `expired`, `ends_at = now` (jei dar nepraėjo)      | atimami už tą laikotarpį; `credits_granted_until = ends_at` |
+| dar neprasidėjo (iš anksto apmokėtas pratęsimas)                 | `ends_at` grąžinamas atgal; `active` → `cancelled` (nebepratęsiama) | dar nesuteikti – nieko neatimama                            |
+| suplanuota prenumerata (plano keitimas), vienintelis laikotarpis | niekada neprasidės: `expired`, `ends_at = starts_at`                | dar nesuteikti                                              |
+
+Seed'ų prenumeratoms kreditai suteikti iš anksto ir už būsimus laikotarpius (`credits_granted_until = ends_at`) – tada
+ir neprasidėjusio laikotarpio kreditai atimami, o `credits_granted_until` grąžinamas iki naujos pabaigos. Taisyklė
+viena: kreditai atimami, jei `credits_granted_until` > atimamo laikotarpio pradžia.
+
+Visais atvejais `auto_renew = false`, o laukiantys pratęsimo mokėjimai atšaukiami (`CancelPendingRenewalPayments`).
+Kodėl ne tiesiog `CancelSubscription`: atšaukta prenumerata galioja iki apmokėto laikotarpio pabaigos, bet grąžinus
+pinigus tas laikotarpis nebėra apmokėtas.
 
 ---
 
@@ -1087,6 +1183,10 @@ Visi enum'ai bus `app/Enums` kataloge, backed `string`, su metodu `label()` (lie
 | `ComplaintReason`       | `spam` (Šlamštas), `fraud` (Sukčiavimas), `offensive` (Įžeidžiantis turinys), `fake_review` (Netikras atsiliepimas), `wrong_info` (Klaidinga informacija), `other` (Kita)  |
 | `ComplaintStatus`       | `open` (Naujas), `in_review` (Nagrinėjamas), `resolved` (Išspręstas), `rejected` (Atmestas)                                                                                |
 
+**Etapas 9:** `CreditTransactionType` papildytas reikšme `payment_refund` (Mokėjimo grąžinimas – kreditai atimti
+grąžinus mokėjimą); naujas enum `InvoiceSeries`: `invoice` (Sąskaita faktūra, prefiksas `SF`), `credit_note`
+(Kreditinė sąskaita faktūra, prefiksas `KS`); `PaymentStatus` gavo `allowedTransitions()` (žr. `payments`).
+
 Leistini perėjimai tarp statusų (kas, kada ir su kokiomis pasekmėmis) bei kreditų grąžinimo taisyklės
 aprašyti `docs/STATES.md`.
 
@@ -1131,6 +1231,8 @@ datą failo pavadinime.
 | 30  | `add_credits_granted_until_to_subscriptions_table`     | **Etapas 7**: kreditų suteikimo idempotencija                                         |
 | 31  | `create_invoice_sequences_table`                       | **Etapas 7**: sąskaitų numerių skaitiklis                                             |
 | 32  | `tune_indexes_after_explain`                           | **Etapas 8**: indeksų korekcijos pagal `EXPLAIN` (`docs/PERFORMANCE.md`)              |
+| 33  | `add_series_to_invoice_sequences_table`                | **Etapas 9**: numeracijos serijos, pirminis raktas `(series, year)`                   |
+| 34  | `create_refunds_table`                                 | **Etapas 9**: grąžinimai ir kreditinės sąskaitos                                      |
 
 **Kodėl `city_id` pridedam atskirai:** numatytoji `users` migracija turi seniausią datą (`0001_01_01_…`), todėl
 vykdoma pirma, kai `cities` dar nėra. Galima būtų pakeisti datas, bet atskira `add_…` migracija aiškiau parodo
@@ -1220,3 +1322,6 @@ srautas – 1–7 ms net aktyviausiam teikėjui (`docs/PERFORMANCE.md`).
 | Mokamos TOP pozicijos kataloge                                                | galima įjungti per `subscription_plans.features` vėliau                            |
 | Atskira `invoices` lentelė                                                    | kol kas užtenka `payments.invoice_number` + `billing_details` (Etapas 7)           |
 | Nuolaidų kodai, CMS puslapiai, tinklaraštis, veiksmų žurnalas (activity log)  | ne platformos šerdis                                                               |
+
+**Daliniai grąžinimai** (dalis sumos, kelios kreditinės sąskaitos vienam mokėjimui) – kol kas ne: Etapas 9 grąžina
+visą sumą. `refunds` lentelė tam paruošta – reikėtų pašalinti `UNIQUE(payment_id)` ir tikrinti likusią sumą kode.

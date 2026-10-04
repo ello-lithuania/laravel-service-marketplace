@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
@@ -97,9 +98,13 @@ class Payment extends Model
         return $this->status === PaymentStatus::Pending;
     }
 
+    /**
+     * Etapas 9: grąžinto mokėjimo sąskaita faktūra lieka galioti (ją koreguoja kreditinė sąskaita), todėl
+     * ji atsisiunčiama ir „refunded" būsenoje.
+     */
     public function hasInvoice(): bool
     {
-        return $this->isPaid() && $this->invoice_number !== null;
+        return ($this->isPaid() || $this->isRefunded()) && $this->invoice_number !== null;
     }
 
     /**
@@ -126,5 +131,22 @@ class Payment extends Model
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    // --- Etapas 9b: grąžinimai ir kreditinės sąskaitos -----------------------------
+
+    /**
+     * Grąžinimas ir jo kreditinė sąskaita (vienas mokėjimui – UNIQUE(payment_id)).
+     *
+     * @return HasOne<Refund, $this>
+     */
+    public function refund(): HasOne
+    {
+        return $this->hasOne(Refund::class);
+    }
+
+    public function isRefunded(): bool
+    {
+        return $this->status === PaymentStatus::Refunded;
     }
 }

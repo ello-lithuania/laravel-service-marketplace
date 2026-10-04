@@ -58,6 +58,27 @@ class PaymentPolicy
         return ($user->isAdmin() || $this->owns($user, $payment)) && $payment->hasInvoice();
     }
 
+    // --- Etapas 9b: grąžinimai ir kreditinės sąskaitos ---
+
+    /**
+     * „Grąžinti pinigus" (Filament) – tik administratorius ir tik apmokėtą mokėjimą. Būseną dar kartą,
+     * užrakinusi eilutę, patikrina RefundPayment (lygiagretus antras paspaudimas negrąžins dukart).
+     */
+    public function refund(User $user, Payment $payment): bool
+    {
+        return $user->isAdmin() && $payment->isPaid();
+    }
+
+    /**
+     * Kreditinė sąskaita PDF: savininkui ir administratoriui, jei grąžinimas yra. loadMissing – sąrašuose
+     * ryšys užkraunamas iš anksto (be N+1), o vienam mokėjimui – viena užklausa.
+     */
+    public function downloadCreditNote(User $user, Payment $payment): bool
+    {
+        return ($user->isAdmin() || $this->owns($user, $payment))
+            && $payment->loadMissing('refund')->refund !== null;
+    }
+
     private function owns(User $user, Payment $payment): bool
     {
         return $payment->user_id === $user->id;

@@ -75,5 +75,21 @@ export type PaymentItem = {
     invoice_number: string | null;
     created_at: string | null;
     paid_at: string | null;
-    can: { pay: boolean; download_invoice: boolean };
+    can: {
+        pay: boolean;
+        download_invoice: boolean;
+        // Etapas 9b
+        download_credit_note: boolean;
+    };
+    // Etapas 9b: grąžinimas ir kreditinė sąskaita (tik kai užkrauta)
+    refund: PaymentRefund | null;
+};
+
+// --- Etapas 9b ---
+export type PaymentRefund = {
+    credit_note_number: string;
+    refunded_at: string | null;
+    reason: string;
+    credits_reversed: number;
+    credits_shortfall: number;
 };

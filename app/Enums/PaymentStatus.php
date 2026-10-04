@@ -45,4 +45,27 @@ enum PaymentStatus: string implements HasColor, HasLabel
             self::Cancelled, self::Refunded => 'gray',
         };
     }
+
+    // --- Etapas 9b ---
+
+    /**
+     * Leidžiami perėjimai (lentelė – docs/DB_SCHEMA.md → payments). Nepavykęs ar atšauktas mokėjimas dar gali
+     * tapti apmokėtu (tiekėjas patvirtino vėliau), o grąžintas – galutinis.
+     *
+     * @return list<self>
+     */
+    public function allowedTransitions(): array
+    {
+        return match ($this) {
+            self::Pending => [self::Paid, self::Failed, self::Cancelled],
+            self::Failed, self::Cancelled => [self::Paid],
+            self::Paid => [self::Refunded],
+            self::Refunded => [],
+        };
+    }
+
+    public function canTransitionTo(self $to): bool
+    {
+        return in_array($to, $this->allowedTransitions(), true);
+    }
 }

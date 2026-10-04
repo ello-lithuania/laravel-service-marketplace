@@ -61,7 +61,9 @@ final class NotificationTarget
         $paymentUuid = isset($data['payment_uuid']) && is_string($data['payment_uuid']) ? $data['payment_uuid'] : null;
 
         return match ($type) {
-            'PaymentSucceeded', 'SubscriptionExpiring' => $paymentUuid !== null && Payment::query()->where('uuid', $paymentUuid)->exists()
+            'PaymentSucceeded', 'SubscriptionExpiring',
+            // --- Etapas 9b: grąžintas mokėjimas → jo puslapis (kreditinė sąskaita) ---
+            'PaymentRefunded' => $paymentUuid !== null && Payment::query()->where('uuid', $paymentUuid)->exists()
                 ? route('payments.show', ['payment' => $paymentUuid])
                 : route('credits.index'),
             'LowCredits' => route('credits.index'),

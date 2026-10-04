@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\CreditTransactionType;
 use App\Models\CreditTransaction;
 use App\Models\ProviderProfile;
 use App\Notifications\LowCredits;
@@ -25,6 +26,12 @@ class CreditTransactionObserver implements ShouldHandleEventsAfterCommit
 
         // Tik kai balansas PEREINA ribą (buvo ≥ ribos, tapo < ribos) – kitaip kiekvienas pasiūlymas siųstų laišką
         if ($transaction->amount >= 0 || $transaction->balance_after >= $threshold || $balanceBefore < $threshold) {
+            return;
+        }
+
+        // --- Etapas 9b --- Grąžinus mokėjimą teikėjas jau gauna PaymentRefunded su atimtais kreditais –
+        // antras laiškas „baigiasi kreditai" tą pačią minutę būtų triukšmas
+        if ($transaction->type === CreditTransactionType::PaymentRefund) {
             return;
         }
 

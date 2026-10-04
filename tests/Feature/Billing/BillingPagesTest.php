@@ -116,11 +116,11 @@ test('mokėjimų puslapis: tik savi mokėjimai, sąskaitos ir „Apmokėti" teis
             ->component('billing/Payments')
             ->has('payments.data', 2)
             ->where('payments.data.0.uuid', $pending->uuid)
-            ->where('payments.data.0.can', ['pay' => true, 'download_invoice' => false])
+            ->where('payments.data.0.can', ['pay' => true, 'download_invoice' => false, 'download_credit_note' => false])
             ->where('payments.data.1.uuid', $paid->uuid)
             ->where('payments.data.1.description', 'Kreditų paketas „10 kreditų"')
             ->where('payments.data.1.invoice_number', $paid->invoice_number)
-            ->where('payments.data.1.can', ['pay' => false, 'download_invoice' => true])
+            ->where('payments.data.1.can', ['pay' => false, 'download_invoice' => true, 'download_credit_note' => false])
             ->etc());
 });
 
