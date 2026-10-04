@@ -68,7 +68,7 @@ Vartotojas moka PHP ir WordPress, Laravel – tik pagrindus.
 | Admin panelė            | Filament 5 (veikia ant Livewire 4)                   | `/admin`                                                                              |
 | CSS ir UI               | Tailwind CSS 4 + shadcn-vue komponentai              | `resources/js/components/ui`                                                          |
 | Frontend įrankiai       | Vite+ (`vp`)                                         | build, lint, formatavimas (`npm run check`)                                           |
-| Šriftas                 | Instrument Sans per Fontsource                       | su `latin-ext` rinkiniu (lietuviškos raidės)                                          |
+| Šriftas                 | Archivo (kintamas) per Fontsource                    | su `latin-ext` rinkiniu (lietuviškos raidės); Etapas 11                               |
 | DB                      | MySQL 8.4 LTS (prod/staging), SQLite (dev ir testai) | kodas turi veikti abiejose                                                            |
 | Failai                  | spatie/laravel-medialibrary                          | viena polimorfinė `media` lentelė (Etapas 3)                                          |
 | Testai                  | Pest 4                                               |                                                                                       |

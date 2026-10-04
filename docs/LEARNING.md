@@ -3238,3 +3238,98 @@ php artisan tinker --execute 'app(App\Services\Site\SiteHighlights::class)->forg
 - **Bendras prop'as su DB užklausa** kiekvienam puslapiui – N+1 testai su šaltu cache tai pagauna; skaičiuoti tik ten,
   kur reikia, ir imti iš cache.
 - **Nuotraukų nėra** – nepalikti tuščių `<img>`: `PhotoSlot` rodo atsarginį dizainą ir tada, kai URL yra, bet failas dingo.
+
+---
+
+## Etapas 11 – Dizainas sekcijomis (variantas A)
+
+Etapo 10 dizainas vartotojui atrodė „toks pat šablonas". Todėl pirma padarytos **trys skirtingos peržiūros**
+(Design canvas artefakte): A – ryškus mėlynas ir geltonas, B – tamsus solidus, C – šviesus šiltas. Vartotojas pasirinko
+**A**. Svetainė perdaroma **po vieną sekciją**: pirmoji – antraštė, pradžios puslapio viršus, skaičiai ir kategorijos.
+
+### 11a – Spalvos, šriftas, antraštė, viršus ir kategorijos
+
+#### Ką darėm ir kodėl
+
+- **Spalvos visai svetainei vienu pakeitimu.** Etape 10 visos spalvos tapo CSS kintamaisiais (tokenais), todėl naujai
+  paletei užteko pakeisti reikšmes `:root` ir `.dark` blokuose `resources/css/app.css`. Klasės komponentuose
+  (`bg-primary`, `text-cta-foreground`) nepasikeitė, o nauja spalva iškart atsirado visur – kataloge, profilyje,
+  paskyroje. WordPress analogija: kaip pakeisti temos `theme.json` paletę, o ne kiekvieno bloko spalvą.
+  - `--primary` `#1d3fd8` (sodri mėlyna) – nuorodos ir mygtukai baltame fone.
+  - **Nauji** `--brand`, `--brand-foreground`, `--brand-muted` – antraštės ir pradžios puslapio viršaus fonas bei
+    tekstas ant jo. Šviesiame režime `brand` = `primary`, tamsiame – skiriasi (fonas lieka sodrus, o `primary`
+    šviesėja, kad nuorodos matytųsi tamsiame fone). Todėl tai du atskiri tokenai.
+  - `--cta` `#ffc93c` (geltona) su tamsiu tekstu – tik pagrindiniams veiksmams („Sukurti užklausą", „Rasti meistrą").
+  - Kontrastas (WCAG AA): baltas ant mėlynos 7,6:1, `brand-muted` ant mėlynos 6:1, tamsus ant geltonos 12:1.
+- **Šriftas – Archivo** (kintamas, `@fontsource-variable/archivo`). Vienas failas visiems storiams 100–900: tas pats
+  šriftas tekstui ir labai storoms antraštėms (`font-black`). Ankstesni du šriftai (Instrument Sans, Bricolage
+  Grotesque) pašalinti iš `package.json` – mažiau failų naršyklei.
+- **Antraštė** (`layouts/PublicLayout.vue`) – mėlyna, pradžios puslapyje susilieja su tokios pat spalvos viršumi.
+  Geltonas logotipo ženklas (`BrandLogo`, `AppLogo`), šviesios meniu nuorodos, „Tapti meistru" (tik rėmelis – antras
+  pagal svarbą veiksmas) ir geltonas „Sukurti užklausą". Paieška antraštėje gavo `tone="brand"` (permatomas laukas).
+- **Viršus** (`pages/public/Home.vue`, `components/home/HeroVisual.vue`): didelė antraštė su geltona antra eilute,
+  balta paieškos kortelė su geltonu „Rasti meistrą" (`SearchForm size="hero"`), populiarių paslaugų nuorodos,
+  dešinėje – nuotrauka su „plaukiojančiomis" kortelėmis (geriausiai įvertintas teikėjas iš tikrų duomenų ir geltonas
+  ženklelis). Be nuotraukos – iliustracija „užklausa ir gauti pasiūlymai". Telefone antraštės mygtukas netelpa, todėl
+  „Sukurti užklausą" rodomas po paieška (`sm:hidden`).
+- **Skaičių kortelė** užlenda ant mėlyno viršaus krašto (neigiama paraštė `-mt-16`, `relative z-10`).
+- **Kategorijos** – vienodos kortelės: nuotrauka viršuje, apačioje pavadinimas ir **kiek aktyvių teikėjų** dirba
+  srityje. Skaičius – tikras, iš DB (žr. žemiau). Antraštės (`SectionHeading`) – mėlynas „eyebrow" ir `font-black`.
+
+#### Teikėjų skaičius srityje – SQL
+
+Teikėjas renkasi 1–3 lygio kategorijas, o kortelė rodo 1 lygį (sritį). Reikia kiekvieną pasirinkimą „pakelti" iki
+šaknies ir suskaičiuoti **skirtingus** teikėjus (`App\Services\Site\SiteHighlights::loadCategoryProviderCounts`):
+
+```php
+DB::table('category_provider_profile as pivot')
+    ->join('categories as category', 'category.id', '=', 'pivot.category_id')
+    ->leftJoin('categories as parent', 'parent.id', '=', 'category.parent_id')
+    ->whereIn('pivot.provider_profile_id', ProviderProfile::query()->active()->select('id'))
+    ->selectRaw('CASE WHEN category.parent_id IS NULL THEN category.id
+                      WHEN parent.parent_id IS NULL THEN parent.id
+                      ELSE parent.parent_id END as root_id')
+    ->selectRaw('COUNT(DISTINCT pivot.provider_profile_id) as providers')
+    ->groupBy('root_id')
+    ->get();
+```
+
+- **Tos pačios lentelės prijungimas du kartus** (self-join) su skirtingais vardais (`category`, `parent`) – taip
+  pasiekiamas tėvas, o tėvo `parent_id` jau yra senelis.
+- **`CASE`** – SQL „if": 1 lygis → pati kategorija, 2 lygis → tėvas, 3 lygis → senelis.
+- **`COUNT(DISTINCT …)`** – teikėjas, pasirinkęs „Plytelių klijavimą" ir „Vonios plyteles", skaičiuojamas vieną kartą.
+- **`whereIn` su subužklausa**, o ne `join` su `provider_profiles`: `active()` scope'as rašo `where('status', …)` be
+  lentelės vardo, o po kelių `join` toks stulpelis gali būti dviprasmiškas. Eloquent builder'į galima tiesiog perduoti
+  į `whereIn` – Laravel iš jo padaro `IN (SELECT id FROM …)`.
+- Veikia ir MySQL, ir SQLite (`CASE`, `GROUP BY` pagal alias). Rezultatas – cache 1 val., kaip ir kiti skaičiai.
+  → https://laravel.com/docs/13.x/queries#joins · https://laravel.com/docs/13.x/queries#where-exists-clauses
+
+#### Sprendimai ir alternatyvos
+
+| Klausimas                   | Pasirinkta                                  | Alternatyva ir kodėl ne                                                                              |
+| --------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Kaip rinktis dizainą        | 3 skirtingos peržiūros prieš kodą           | iškart koduoti – vėl rizika „ne tai, ką įsivaizdavau", o perdaryti kodą brangiau nei peržiūrą        |
+| Antraštės ir viršaus fonas  | atskiri `--brand*` tokenai                  | `bg-primary` – tamsiame režime `primary` šviesi (nuorodoms), antraštė taptų blyški                   |
+| Šriftas                     | vienas kintamas Archivo                     | du šriftai (tekstas + antraštės) – daugiau failų, o Archivo storas variantas jau pakankamai ryškus   |
+| Teikėjų skaičius srityje    | vienas SQL su `CASE` + `COUNT(DISTINCT)`    | denormalizuotas stulpelis `categories.providers_count` – reikėtų atnaujinti kiekvienam pasirinkimui  |
+| Kategorijų tinklelis        | vienodos kortelės 4 stulpeliais (12 sričių) | Etapo 10 „bento" (pirma kortelė 2 × 2) – variante A visos kortelės lygios, 12 telpa į 3 eilutes      |
+| Teiginiai ant viršaus       | tik tai, ką galima pagrįsti                 | „Patikrinti meistrai", „3 pasiūlymai per 2 val." iš peržiūros – ne visi patikrinti, laikas nežinomas |
+
+#### Naudingos komandos
+
+```bash
+npm install @fontsource-variable/archivo           # naujas šriftas
+npm uninstall @fontsource/instrument-sans           # nebereikalingas paketas
+npm run build && php artisan serve                  # peržiūra su sukompiliuotais failais
+php artisan test --filter=SiteHighlights            # skaičių testai (ir srities teikėjų skaičius)
+php artisan cache:clear                             # jei po seed'o skaičiai seni (cache 1 val.)
+```
+
+#### Dažnos klaidos
+
+- **Kortelių tvarka teste** – šaknys rikiuojamos pagal `sort_order`, tada `name`, o factory vardai atsitiktiniai.
+  Teste, kuris tikrina `categories.0`, reikia nurodyti `sort_order`.
+- **`pkill -f "artisan serve"`** iš to paties terminalo komandos gali „nužudyti" ir pačią komandą (jos tekste yra tas
+  pats šablonas). Serverį geriau stabdyti pagal PID arba Ctrl+C.
+- **Permatomumas ant spalvoto fono** – `hover:bg-cta/90` ant mėlynos tampa žalsvas (geltona + mėlyna). Geltonam
+  mygtukui naudojam `hover:brightness-95`.

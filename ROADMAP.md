@@ -203,3 +203,25 @@ autorių nurodymas, medialibrary kitiems modeliams, Artisan komandos su HTTP kli
 - [x] Naujas viešos dalies dizainas: spalvos, tipografija, pradžios puslapis, kategorijos, teikėjai, profilis, poraštė
 - [x] Paskyros ir prisijungimo puslapių stilius pagal naują dizainą
 - [x] Testai, `docs/LEARNING.md`: Etapas 10
+
+---
+
+## Etapas 11 – Dizainas sekcijomis (pasirinktas variantas A)
+
+**Tikslas:** vartotojas iš trijų peržiūrų (A – ryškus mėlynas ir geltonas, B – tamsus, C – šviesus šiltas) pasirinko
+**A**. Svetainė perdaroma po vieną sekciją, kad kiekvieną būtų galima pamatyti ir pataisyti.
+**Sąvokos:** dizaino tokenai (CSS kintamieji), kintamas šriftas, SQL `CASE` + `COUNT(DISTINCT)` agregatai, cache.
+
+- [x] Spalvos ir šriftas visai svetainei (mėlyna `brand`/`primary`, geltona `cta`, Archivo)
+- [x] Antraštė: mėlyna, geltonas logotipo ženklas, „Prisijungti", „Tapti meistru", „Sukurti užklausą"
+- [x] Pradžios puslapio viršus: didelė antraštė, paieška su „Rasti meistrą", populiarios paslaugos, nuotrauka su kortelėmis
+- [x] Skaičių kortelė ant viršaus krašto (meistrai, atsiliepimai, įvertinimas, savivaldybės)
+- [x] Kategorijų tinklelis su aktyvių teikėjų skaičiumi kiekvienoje srityje
+- [ ] „Kaip tai veikia"
+- [ ] Geriausiai įvertinti teikėjai (kortelės)
+- [ ] Atsiliepimai
+- [ ] Miestai ir kvietimas teikėjams
+- [ ] DUK ir poraštė
+- [ ] Kategorijos puslapis ir paieška
+- [ ] Teikėjo profilis
+- [ ] Prisijungimas, registracija, paskyra
