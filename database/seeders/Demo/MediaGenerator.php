@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
  * Trys fazės:
  * 1. Planas: kam ir koks paveikslėlis (vienas atsitiktinumo srautas, todėl planas atkartojamas).
  * 2. Piešimas: tik reikalingi paveikslėliai, kiekvienas su savo sėkla (turinys nepriklauso nuo SEED_SCALE).
- *    Portfolio ir viršeliai – nedidelis bendras rinkinys (≤ 60 failų), logotipai – pagal inicialus.
+ *    Portfolio ir viršeliai – nedidelis bendras rinkinys (≤ 72 failai), logotipai – pagal inicialus.
  * 3. Prisegimas: addMedia()->preservingOriginal() – tas pats failas kopijuojamas daug kartų, o ne piešiamas iš naujo.
  */
 final class MediaGenerator
@@ -33,8 +33,11 @@ final class MediaGenerator
     /** Kokia dalis profilių su logotipu turi ir viršelį. */
     private const COVER_SHARE = 0.4;
 
-    /** Portfolio paveikslėlių variantų kiekvienai 1 lygio kategorijai (12 × 4 = 48) ir viršelių (12 × 1). */
-    private const PORTFOLIO_VARIANTS = 4;
+    /**
+     * Portfolio paveikslėlių variantų kiekvienai 1 lygio kategorijai (12 × 5 = 60) ir viršelių (12 × 1).
+     * Su 4 variantais gretimi tos pačios srities darbai per dažnai atrodė vienodai.
+     */
+    private const PORTFOLIO_VARIANTS = 5;
 
     private const LOGO_SHAPES = 5;
 
@@ -151,8 +154,9 @@ final class MediaGenerator
 
     /**
      * Aktyvūs teikėjai „populiarumo" tvarka: kuo daugiau atsiliepimų, tuo didesnė tikimybė būti priekyje
-     * (ir turėti logotipą – kaip tikrovėje). Svertinis atsitiktinis rikiavimas be pasikartojimų
-     * (Efraimidis–Spirakis): raktas = ln(u) / svoris, rikiuojama mažėjančiai.
+     * (ir turėti logotipą – kaip tikrovėje: veiklūs teikėjai labiau rūpinasi profiliu). Svertinis atsitiktinis
+     * rikiavimas be pasikartojimų (Efraimidis–Spirakis): raktas = ln(u) / svoris, rikiuojama mažėjančiai.
+     * Svoris (1 + atsiliepimai)² – kad katalogo pirmame puslapyje (populiariausi) paveikslėlių būtų matyti.
      *
      * @return list<int> provider_profiles.id
      */
@@ -166,7 +170,7 @@ final class MediaGenerator
             ->pluck('reviews_count', 'id');
 
         foreach ($rows as $id => $reviews) {
-            $keys[(int) $id] = log(max($this->ctx->rand01(), 1e-12)) / (1 + (int) $reviews);
+            $keys[(int) $id] = log(max($this->ctx->rand01(), 1e-12)) / (1 + (int) $reviews) ** 2;
         }
 
         arsort($keys);
