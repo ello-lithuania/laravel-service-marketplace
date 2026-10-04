@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { SearchX } from '@lucide/vue';
+import { ArrowRight, BadgeCheck, MessageSquareText, Star } from '@lucide/vue';
 import { computed } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
-import CatalogPagination from '@/components/catalog/CatalogPagination.vue';
-import ProviderCard from '@/components/catalog/ProviderCard.vue';
-import ProviderFilters from '@/components/catalog/ProviderFilters.vue';
+import ProviderResults from '@/components/catalog/ProviderResults.vue';
 import SeoHead from '@/components/catalog/SeoHead.vue';
 import { filtersToQuery, visitWithFilters } from '@/lib/catalog';
-import { plural } from '@/lib/format';
 import { home } from '@/routes';
 import { index as categoriesIndex } from '@/routes/categories';
 import { index } from '@/routes/providers';
@@ -46,70 +43,78 @@ function applyFilters(next: CatalogFilters): void {
 <template>
     <SeoHead :seo="seo" />
 
-    <div class="mx-auto max-w-6xl px-4 py-8 md:py-12">
-        <Breadcrumbs
-            :breadcrumbs="[
-                { title: 'Pradžia', href: home() },
-                { title: 'Meistrai', href: index() },
-            ]"
-        />
-
-        <h1 class="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
-            {{
-                selectedCity
-                    ? `Meistrai ir paslaugų teikėjai ${selectedCity.name_locative}`
-                    : 'Meistrai ir paslaugų teikėjai'
-            }}
-        </h1>
-        <p class="mt-2 max-w-2xl text-muted-foreground">
-            Ieškote konkrečios paslaugos?
-            <Link :href="categoriesIndex()" class="text-primary hover:underline"
-                >Išsirinkite kategoriją</Link
+    <section
+        class="border-b bg-gradient-to-b from-secondary/70 to-background dark:from-secondary/30"
+    >
+        <div class="page-container pt-6 pb-10 md:pt-8 md:pb-12">
+            <Breadcrumbs
+                :breadcrumbs="[
+                    { title: 'Pradžia', href: home() },
+                    { title: 'Meistrai', href: index() },
+                ]"
+            />
+            <div
+                class="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"
             >
-            – pamatysite tik ją teikiančius meistrus ir jų kainas.
-        </p>
-
-        <div class="mt-6 flex justify-end">
-            <p class="text-sm text-muted-foreground">
-                Rasta
-                {{
-                    plural(providers.meta.total, [
-                        'teikėjas',
-                        'teikėjai',
-                        'teikėjų',
-                    ])
-                }}
-            </p>
+                <div class="max-w-2xl">
+                    <h1
+                        class="text-4xl leading-[1.08] font-bold text-balance md:text-5xl"
+                    >
+                        {{
+                            selectedCity
+                                ? `Meistrai ir paslaugų teikėjai ${selectedCity.name_locative}`
+                                : 'Meistrai ir paslaugų teikėjai'
+                        }}
+                    </h1>
+                    <p class="mt-4 text-lg text-muted-foreground">
+                        Ieškote konkrečios paslaugos?
+                        <Link
+                            :href="categoriesIndex()"
+                            class="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+                            >Išsirinkite kategoriją
+                            <ArrowRight class="size-4" aria-hidden="true"
+                        /></Link>
+                        – pamatysite tik ją teikiančius meistrus ir jų kainas.
+                    </p>
+                </div>
+                <ul
+                    class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground"
+                >
+                    <li class="flex items-center gap-2">
+                        <Star
+                            class="size-4 fill-star text-star"
+                            aria-hidden="true"
+                        />
+                        Tikri klientų atsiliepimai
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <BadgeCheck
+                            class="size-4 text-primary"
+                            aria-hidden="true"
+                        />
+                        Patikrinti teikėjai
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <MessageSquareText
+                            class="size-4 text-primary"
+                            aria-hidden="true"
+                        />
+                        Pasiūlymai nemokamai
+                    </li>
+                </ul>
+            </div>
         </div>
+    </section>
 
-        <ProviderFilters
-            class="mt-2"
+    <div class="page-container pt-10 pb-20">
+        <ProviderResults
+            title="Visi teikėjai"
+            :providers="providers"
             :filters="filters"
             :cities="cities"
             :sort-options="sortOptions"
+            empty-text="Pabandykite pasirinkti kitą miestą arba išjungti dalį filtrų. Arba aprašykite darbą – tinkami teikėjai patys atsiųs pasiūlymus."
             @change="applyFilters"
         />
-
-        <div v-if="providers.data.length" class="mt-4 grid gap-3">
-            <ProviderCard
-                v-for="provider in providers.data"
-                :key="provider.id"
-                :provider="provider"
-            />
-        </div>
-        <div
-            v-else
-            class="mt-4 flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-12 text-center"
-        >
-            <SearchX class="size-8 text-muted-foreground" aria-hidden="true" />
-            <p class="font-medium">
-                Pagal pasirinktus filtrus teikėjų neradome
-            </p>
-            <p class="text-sm text-muted-foreground">
-                Pabandykite pasirinkti kitą miestą arba išjungti dalį filtrų.
-            </p>
-        </div>
-
-        <CatalogPagination class="mt-6" :paginated="providers" />
     </div>
 </template>

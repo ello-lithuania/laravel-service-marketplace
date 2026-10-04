@@ -6,7 +6,10 @@ import { cn } from '@/lib/utils';
 import { search } from '@/routes';
 
 // Greita paieška antraštėje: tik tekstas → /paieska?q=… (tuščia paieška serveryje nukreipia į /meistrai)
-const props = defineProps<{ class?: string; inputId?: string }>();
+const props = withDefaults(
+    defineProps<{ class?: string; inputId?: string; autofocus?: boolean }>(),
+    { class: undefined, inputId: undefined, autofocus: false },
+);
 
 const emit = defineEmits<{ submitted: [] }>();
 
@@ -34,6 +37,7 @@ function submit(): void {
         <input
             :id="inputId ?? 'header-search'"
             v-model="text"
+            v-focus="autofocus"
             type="search"
             name="q"
             maxlength="100"

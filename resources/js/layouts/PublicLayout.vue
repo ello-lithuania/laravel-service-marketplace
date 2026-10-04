@@ -5,9 +5,11 @@ import {
     BadgeCheck,
     Menu,
     MessageSquareText,
+    Search,
     ShieldCheck,
+    X,
 } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import BrandLogo from '@/components/site/BrandLogo.vue';
 import HeaderSearch from '@/components/site/HeaderSearch.vue';
 import { Button } from '@/components/ui/button';
@@ -30,7 +32,16 @@ import { index as providersIndex } from '@/routes/providers';
 // Poraštės sritys ir miestai – bendras prop'as „site" (HandleInertiaRequests, Inertia::once).
 const page = usePage();
 const mobileMenuOpen = ref(false);
+const searchOpen = ref(false);
 const year = new Date().getFullYear();
+
+// Perėjus į kitą puslapį paieškos juosta užsidaro
+watch(
+    () => page.url,
+    () => {
+        searchOpen.value = false;
+    },
+);
 
 const user = computed(() => page.props.auth.user);
 const site = computed(() => page.props.site);
@@ -108,7 +119,7 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
                         :key="link.href"
                         :href="link.href"
                         :aria-current="isActive(link.href) ? 'page' : undefined"
-                        class="rounded-full px-3 py-1.5 font-medium text-foreground/75 transition-colors hover:bg-accent hover:text-foreground aria-[current=page]:bg-secondary aria-[current=page]:text-secondary-foreground"
+                        class="rounded-full px-3 py-1.5 font-medium whitespace-nowrap text-foreground/75 transition-colors hover:bg-accent hover:text-foreground aria-[current=page]:bg-secondary aria-[current=page]:text-secondary-foreground"
                         :class="
                             link.wide ? 'hidden xl:inline-flex' : 'inline-flex'
                         "
@@ -118,10 +129,28 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
                 </nav>
 
                 <div class="ml-auto flex items-center gap-2">
+                    <!-- Paieška: labai plačiame ekrane – laukas, kitur – mygtukas, atveriantis juostą po antrašte -->
                     <HeaderSearch
                         v-if="showHeaderSearch"
-                        class="hidden w-52 lg:block xl:w-60"
+                        class="hidden w-64 2xl:block"
                     />
+                    <Button
+                        v-if="showHeaderSearch"
+                        variant="ghost"
+                        size="icon"
+                        class="hidden lg:inline-flex 2xl:hidden"
+                        :aria-expanded="searchOpen"
+                        aria-controls="header-search-panel"
+                        :aria-label="
+                            searchOpen
+                                ? 'Uždaryti paiešką'
+                                : 'Ieškoti paslaugos'
+                        "
+                        @click="searchOpen = !searchOpen"
+                    >
+                        <X v-if="searchOpen" class="size-5" />
+                        <Search v-else class="size-5" />
+                    </Button>
 
                     <template v-if="user">
                         <Button
@@ -270,6 +299,24 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
                             </div>
                         </SheetContent>
                     </Sheet>
+                </div>
+            </div>
+
+            <div
+                v-if="searchOpen"
+                id="header-search-panel"
+                class="hidden border-t border-border/70 lg:block 2xl:hidden"
+            >
+                <div class="page-container flex items-center gap-4 py-3">
+                    <HeaderSearch
+                        autofocus
+                        input-id="header-search-panel-input"
+                        class="w-full max-w-xl"
+                    />
+                    <span class="text-sm text-muted-foreground"
+                        >Pvz. santechnikas, plytelių klijavimas,
+                        kraustymas</span
+                    >
                 </div>
             </div>
         </header>
