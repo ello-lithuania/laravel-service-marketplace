@@ -3,8 +3,10 @@
 namespace App\Services\Invoices;
 
 use App\Models\Payment;
+use App\Support\AmountInWords;
 use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -63,6 +65,8 @@ class InvoicePdf
             'net' => Money::format($net),
             'vat' => Money::format($vat),
             'gross' => Money::format($gross),
+            // Etapas 9: suma žodžiais (Str::ucfirst – daugiabaitis, todėl „Š" tampa didžiąja teisingai)
+            'amount_in_words' => Str::ucfirst(AmountInWords::eur($gross)),
             'payment_method' => $payment->gateway->label(),
             'payment_reference' => $payment->uuid,
         ];

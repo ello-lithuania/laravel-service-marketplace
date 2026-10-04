@@ -108,3 +108,15 @@ test('rekvizitai užfiksuojami apmokėjimo metu – vėlesni profilio pakeitimai
     expect(app(InvoicePdf::class)->data($payment->refresh())['buyer']['name'])->toBe('UAB Senas')
         ->and(app(InvoicePdf::class)->data($payment)['title'])->toBe('Sąskaita faktūra');
 });
+
+// --- Etapas 9b: suma žodžiais ---
+
+test('sąskaitoje – suma žodžiais lietuviškai', function () {
+    $payment = Billing::complete(Payment::factory()->fake()->pending()->forPackage($this->package)->for(Billing::provider())->create());
+
+    $data = app(InvoicePdf::class)->data($payment);
+    $html = view('invoices.invoice', $data)->render();
+
+    expect($data['amount_in_words'])->toBe('Dvidešimt keturi eurai 20 ct')
+        ->and($html)->toContain('Suma žodžiais: <strong>Dvidešimt keturi eurai 20 ct</strong>');
+});

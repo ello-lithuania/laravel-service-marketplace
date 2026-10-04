@@ -23,6 +23,7 @@
         .totals { width: 45%; margin-left: 55%; margin-top: 12px; border-collapse: collapse; }
         .totals td { padding: 4px; }
         .totals .grand td { font-weight: bold; font-size: 13px; border-top: 1px solid #1f2937; }
+        .in-words { margin-top: 12px; }
         .footer { margin-top: 32px; font-size: 10px; }
     </style>
 </head>
@@ -79,6 +80,8 @@
         @endif
         <tr class="grand"><td>Iš viso mokėti</td><td class="right">{{ $gross }}</td></tr>
     </table>
+
+    <div class="in-words">Suma žodžiais: <strong>{{ $amount_in_words }}</strong></div>
 
     <div class="footer muted">
         Apmokėta: {{ $payment_method }}, {{ $date }}. Užsakymo Nr. {{ $payment_reference }}.<br>
