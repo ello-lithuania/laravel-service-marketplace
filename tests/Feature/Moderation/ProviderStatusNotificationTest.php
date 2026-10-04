@@ -147,14 +147,19 @@ test('blokuojant paskyrą pranešimo nėra, o atblokavus su profiliu – „vėl
         fn (ProviderStatusChanged $notification) => $notification->status === ProviderStatus::Pending);
 });
 
-test('atblokavus be profilio atkūrimo pranešimo nėra', function () {
+test('atblokavus be profilio atkūrimo arba anonimizuotą vartotoją pranešimo nėra', function () {
     Notification::fake();
     $profile = moderatedProfile();
     app(BanUser::class)->handle($profile->user, $this->admin, 'Taisyklių pažeidimas');
 
     app(UnbanUser::class)->handle($profile->user->refresh(), restoreProfile: false);
-
     expect($profile->refresh()->status)->toBe(ProviderStatus::Suspended);
+
+    $deleted = moderatedProfile();
+    app(BanUser::class)->handle($deleted->user, $this->admin, 'Taisyklių pažeidimas');
+    $deleted->user->delete();
+    app(UnbanUser::class)->handle($deleted->user);
+
     Notification::assertNothingSent();
 });
 

@@ -42,7 +42,8 @@ final class UnbanUser
             return $profile;
         });
 
-        if ($restored !== null) {
+        // Anonimizuotam (soft deleted) vartotojui pranešti nėra kam – jo el. paštas jau pakeistas
+        if ($restored !== null && ! $user->trashed()) {
             $user->notify(new ProviderStatusChanged($restored, $restored->status));
         }
     }
