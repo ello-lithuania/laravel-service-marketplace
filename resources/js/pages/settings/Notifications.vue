@@ -90,6 +90,13 @@ function submit(): void {
                 </div>
             </div>
 
+            <!-- Etapas 9c: neišjungiami pranešimai (IgnoresNotificationSettings, ComplaintResolved) -->
+            <p class="text-xs text-muted-foreground">
+                Svarbūs pranešimai apie jūsų paskyrą (pvz. administratoriaus
+                pakeista profilio būsena ar išnagrinėtas skundas) siunčiami
+                visada.
+            </p>
+
             <Button
                 :disabled="form.processing"
                 data-test="save-notification-settings"
