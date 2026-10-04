@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    // --- Etapas 10a ---
+    // Pexels nuotraukų API (php artisan photos:download). Nemokamas raktas: https://www.pexels.com/api/
+    'pexels' => [
+        'key' => env('PEXELS_API_KEY'),
+    ],
+
 ];
