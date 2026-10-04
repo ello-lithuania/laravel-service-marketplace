@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Coins, Images, LayoutGrid, Receipt, UserRoundPen } from '@lucide/vue';
+import {
+    Coins,
+    House,
+    Images,
+    LayoutGrid,
+    Receipt,
+    UserRoundPen,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMarketplace from '@/components/marketplace/NavMarketplace.vue';
@@ -15,7 +22,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { dashboard, home } from '@/routes';
 import { index as creditsIndex } from '@/routes/credits';
 import { index as paymentsIndex } from '@/routes/payments';
 import { index as portfolioIndex } from '@/routes/portfolio';
@@ -82,6 +89,17 @@ const mainNavItems = computed<NavItem[]>(() => {
         </SidebarContent>
 
         <SidebarFooter>
+            <!-- Etapas 10: grįžimas į viešą svetainę (katalogą, teikėjų profilius) -->
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton as-child tooltip="Grįžti į svetainę">
+                        <Link :href="home()">
+                            <House />
+                            <span>Grįžti į svetainę</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
             <NavUser />
         </SidebarFooter>
     </Sidebar>

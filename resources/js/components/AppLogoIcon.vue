@@ -27,7 +27,7 @@ defineProps<Props>();
         v-bind="$attrs"
         aria-hidden="true"
     >
-        <path d="M3.5 11.5 12 4.25l8.5 7.25" />
-        <path d="m8.25 14.25 2.75 2.75 5-5.25" />
+        <path fill="none" d="M3.5 11.5 12 4.25l8.5 7.25" />
+        <path fill="none" d="m8.25 14.25 2.75 2.75 5-5.25" />
     </svg>
 </template>
