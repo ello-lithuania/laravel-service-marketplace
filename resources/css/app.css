@@ -1,12 +1,9 @@
 @import 'tailwindcss';
 
-/* Šriftai iš npm (Fontsource): įeina latin-ext rinkinys su lietuviškomis raidėmis, kompiliuojant internetas nereikalingas */
-@import '@fontsource/instrument-sans/400.css';
-@import '@fontsource/instrument-sans/500.css';
-@import '@fontsource/instrument-sans/600.css';
-/* Etapas 10: antraščių šriftas – Bricolage Grotesque (kintamas: storis + optinis dydis). Failai suskirstyti pagal
-   unicode-range, todėl naršyklė parsisiunčia tik latin ir latin-ext dalis (ą č ę ė į š ų ū ž) */
-@import '@fontsource-variable/bricolage-grotesque/opsz.css';
+/* Šriftas iš npm (Fontsource): įeina latin-ext rinkinys su lietuviškomis raidėmis, kompiliuojant internetas nereikalingas.
+   Etapas 11: Archivo – kintamas šriftas (storis 100–900), todėl vienas failas tinka ir tekstui, ir labai storoms
+   antraštėms (font-black). Failai suskirstyti pagal unicode-range: naršyklė parsisiunčia tik latin ir latin-ext dalis */
+@import '@fontsource-variable/archivo';
 
 @import 'tw-animate-css';
 
@@ -22,12 +19,10 @@
 */
 @theme inline {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+        'Archivo Variable', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
-    --font-display:
-        'Bricolage Grotesque Variable', 'Instrument Sans', ui-sans-serif,
-        system-ui, sans-serif;
+    --font-display: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
 
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
@@ -68,9 +63,12 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
-    /* Etapas 10: prekės ženklo spalvos */
+    /* Etapas 10–11: prekės ženklo spalvos */
     --color-cta: var(--cta);
     --color-cta-foreground: var(--cta-foreground);
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-brand-muted: var(--brand-muted);
     --color-brand-deep: var(--brand-deep);
     --color-brand-deep-foreground: var(--brand-deep-foreground);
     --color-brand-deep-muted: var(--brand-deep-muted);
@@ -94,93 +92,102 @@
 }
 
 /*
-  Spalvos (Etapas 10). Šviesus režimas: šiltas „popieriaus" fonas, gilus pušų žalias (pasitikėjimas, darbas su
-  namais ir gamta) ir šiltas oranžinis tik pagrindiniams veiksmams („Sukurti užklausą"). Kontrastas tikrintas pagal
-  WCAG AA: tekstas ant fono ≥ 4,5:1 (pvz. muted-foreground ant background – 5,5:1, baltas ant primary – 8:1).
+  Spalvos (Etapas 11, dizaino variantas A „Ryškus ir energingas"). Sodriai mėlyna (pasitikėjimas, aiškumas) –
+  antraštės ir viršaus fonas bei nuorodos, geltona – tik pagrindiniams veiksmams („Sukurti užklausą", „Rasti meistrą").
+  Kontrastas tikrintas pagal WCAG AA: baltas ant mėlynos – 7,6:1, brand-muted ant mėlynos – 6:1,
+  tamsus tekstas ant geltonos – 12:1, muted-foreground ant balto – 7,6:1.
+  --brand – antraštės ir pradžios puslapio viršaus fonas; --primary – mygtukai ir nuorodos baltame fone
+  (šviesiame režime sutampa, tamsiame – primary šviesesnė, kad matytųsi tamsiame fone).
   Pastaba: shadcn --accent yra ne prekės ženklo spalva, o švelnus „hover" fonas (meniu, ghost mygtukai).
 */
 :root {
-    --background: #f7f5f0;
-    --foreground: #17231e;
-    --surface: #fbfaf7;
+    --background: #ffffff;
+    --foreground: #0b1020;
+    --surface: #f5f7fc;
     --card: #ffffff;
-    --card-foreground: #17231e;
+    --card-foreground: #0b1020;
     --popover: #ffffff;
-    --popover-foreground: #17231e;
-    --primary: #0f5b45;
+    --popover-foreground: #0b1020;
+    --primary: #1d3fd8;
     --primary-foreground: #ffffff;
-    --secondary: #e6efe9;
-    --secondary-foreground: #123d30;
-    --muted: #efebe3;
-    --muted-foreground: #5b665f;
-    --accent: #e9f0eb;
-    --accent-foreground: #0f3d30;
+    --secondary: #e8edff;
+    --secondary-foreground: #142fa8;
+    --muted: #f1f3f9;
+    --muted-foreground: #4b5563;
+    --accent: #eef1fd;
+    --accent-foreground: #142fa8;
     --destructive: #c62828;
     --destructive-foreground: #ffffff;
-    --border: #e4ded2;
-    --input: #d8d1c4;
-    --ring: #0f5b45;
+    --border: #e6e9f2;
+    --input: #d5dae6;
+    --ring: #1d3fd8;
 
-    --cta: #f28c28;
-    --cta-foreground: #1f1206;
-    --brand-deep: #0b2e25;
-    --brand-deep-foreground: #e6efe9;
-    --brand-deep-muted: #a7c4b6;
+    --cta: #ffc93c;
+    --cta-foreground: #0b1020;
+    --brand: #1d3fd8;
+    --brand-foreground: #ffffff;
+    --brand-muted: #dbe3ff;
+    --brand-deep: #0b1435;
+    --brand-deep-foreground: #e3e8ff;
+    --brand-deep-muted: #a9b5e6;
     --star: #f5a524;
 
     --elevation-1:
-        0 1px 2px rgb(23 35 30 / 0.05), 0 2px 10px -4px rgb(23 35 30 / 0.08);
+        0 1px 2px rgb(11 16 32 / 0.05), 0 2px 10px -4px rgb(11 16 32 / 0.08);
     --elevation-2:
-        0 2px 4px rgb(23 35 30 / 0.04), 0 14px 32px -14px rgb(23 35 30 / 0.22);
+        0 2px 4px rgb(11 16 32 / 0.04), 0 14px 32px -14px rgb(11 16 32 / 0.2);
     --elevation-3:
-        0 4px 10px rgb(23 35 30 / 0.06), 0 24px 48px -16px rgb(23 35 30 / 0.3);
+        0 4px 10px rgb(11 16 32 / 0.05), 0 24px 60px -16px rgb(15 23 42 / 0.22);
 
-    --chart-1: #0f5b45;
-    --chart-2: #f28c28;
-    --chart-3: #3f7cac;
-    --chart-4: #8a6d1d;
-    --chart-5: #a2492b;
+    --chart-1: #1d3fd8;
+    --chart-2: #f59e0b;
+    --chart-3: #0e9f9a;
+    --chart-4: #7c3aed;
+    --chart-5: #e0533d;
     --radius: 0.75rem;
 
-    --sidebar-background: #f1eee7;
-    --sidebar: #f1eee7;
-    --sidebar-foreground: #2c3a33;
-    --sidebar-primary: #0f5b45;
+    --sidebar-background: #f5f7fc;
+    --sidebar: #f5f7fc;
+    --sidebar-foreground: #1f2a44;
+    --sidebar-primary: #1d3fd8;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #e3ebe5;
-    --sidebar-accent-foreground: #0f3d30;
-    --sidebar-border: #e2dccf;
-    --sidebar-ring: #0f5b45;
+    --sidebar-accent: #e8edff;
+    --sidebar-accent-foreground: #142fa8;
+    --sidebar-border: #e6e9f2;
+    --sidebar-ring: #1d3fd8;
 }
 
-/* Tamsus režimas: žalsvai juodas fonas, šviesesnė mėtų žalia (tamsiame fone tamsi žalia būtų per blanki) */
+/* Tamsus režimas: tamsiai mėlynas fonas, šviesesnė mėlyna nuorodoms (tamsiame fone sodri mėlyna būtų per blanki) */
 .dark {
-    --background: #0e1513;
-    --foreground: #e7eeea;
-    --surface: #111a17;
-    --card: #141d1a;
-    --card-foreground: #e7eeea;
-    --popover: #141d1a;
-    --popover-foreground: #e7eeea;
-    --primary: #3fb68b;
-    --primary-foreground: #04130d;
-    --secondary: #1c2925;
-    --secondary-foreground: #d5e4dc;
-    --muted: #19231f;
-    --muted-foreground: #9aaba3;
-    --accent: #1f2d28;
-    --accent-foreground: #e7eeea;
+    --background: #0a0f1f;
+    --foreground: #e6eaf5;
+    --surface: #0d1428;
+    --card: #111a33;
+    --card-foreground: #e6eaf5;
+    --popover: #111a33;
+    --popover-foreground: #e6eaf5;
+    --primary: #7d98ff;
+    --primary-foreground: #050a1c;
+    --secondary: #18224a;
+    --secondary-foreground: #d6deff;
+    --muted: #141d3a;
+    --muted-foreground: #9aa6c8;
+    --accent: #1a2550;
+    --accent-foreground: #e6eaf5;
     --destructive: #ef5350;
     --destructive-foreground: #ffffff;
-    --border: #25322d;
-    --input: #2e3c36;
-    --ring: #3fb68b;
+    --border: #222d52;
+    --input: #2c3862;
+    --ring: #7d98ff;
 
-    --cta: #f59a3c;
-    --cta-foreground: #1f1206;
-    --brand-deep: #0a1c17;
-    --brand-deep-foreground: #dbe7e0;
-    --brand-deep-muted: #8fb3a3;
+    --cta: #ffc93c;
+    --cta-foreground: #0b1020;
+    --brand: #1a35b8;
+    --brand-foreground: #ffffff;
+    --brand-muted: #cdd7ff;
+    --brand-deep: #070c1c;
+    --brand-deep-foreground: #dfe5fb;
+    --brand-deep-muted: #93a0cc;
     --star: #f5b041;
 
     --elevation-1: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 10px -4px rgb(0 0 0 / 0.4);
@@ -189,21 +196,21 @@
     --elevation-3:
         0 4px 10px rgb(0 0 0 / 0.35), 0 24px 48px -16px rgb(0 0 0 / 0.7);
 
-    --chart-1: #3fb68b;
-    --chart-2: #f59a3c;
-    --chart-3: #6aa6d6;
-    --chart-4: #d4b04a;
-    --chart-5: #e07a55;
+    --chart-1: #7d98ff;
+    --chart-2: #fbbf24;
+    --chart-3: #2dd4bf;
+    --chart-4: #a78bfa;
+    --chart-5: #f87171;
 
-    --sidebar-background: #0b120f;
-    --sidebar: #0b120f;
-    --sidebar-foreground: #d5e4dc;
-    --sidebar-primary: #3fb68b;
-    --sidebar-primary-foreground: #04130d;
-    --sidebar-accent: #1a2622;
-    --sidebar-accent-foreground: #e7eeea;
-    --sidebar-border: #1f2b27;
-    --sidebar-ring: #3fb68b;
+    --sidebar-background: #080d1b;
+    --sidebar: #080d1b;
+    --sidebar-foreground: #d6deff;
+    --sidebar-primary: #7d98ff;
+    --sidebar-primary-foreground: #050a1c;
+    --sidebar-accent: #161f42;
+    --sidebar-accent-foreground: #e6eaf5;
+    --sidebar-border: #1b2547;
+    --sidebar-ring: #7d98ff;
 }
 
 /*
@@ -239,12 +246,11 @@
         color-scheme: dark;
     }
 
-    /* Antraštės – charakteringas display šriftas; optinis dydis (opsz) parenkamas pagal raidžių dydį */
+    /* Antraštės – stambios ir glaudžios (variantas A); storį nustato klasės (font-black, font-extrabold) */
     h1,
     h2 {
         font-family: var(--font-display);
-        font-optical-sizing: auto;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.03em;
     }
 
     ::selection {

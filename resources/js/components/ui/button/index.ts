@@ -19,9 +19,9 @@ export const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
-        // Etapas 10: pagrindinis veiksmas („Sukurti užklausą") – šilta oranžinė su tamsiu tekstu (kontrastas 7,5:1)
+        // Etapas 10–11: pagrindinis veiksmas („Sukurti užklausą") – geltona su tamsiu tekstu (kontrastas 12:1)
         cta:
-          "bg-cta text-cta-foreground font-semibold shadow-soft hover:bg-cta/90 hover:shadow-lift",
+          "bg-cta text-cta-foreground font-bold shadow-soft hover:brightness-95 hover:shadow-lift",
         // Etapas 10: ant tamsaus (brand-deep) fono arba nuotraukos
         "on-dark":
           "border border-white/25 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20",
