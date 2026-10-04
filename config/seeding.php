@@ -18,6 +18,9 @@ return [
     // Ar kurti didelius testinius duomenis (false – tik žinyniniai duomenys)
     'demo' => (bool) env('SEED_DEMO', true),
 
+    // Ar prisegti demo paveikslėlius (logotipai, viršeliai, portfolio). Išjungta: lėčiau ir užima vietos diske
+    'media' => (bool) env('SEED_MEDIA', false),
+
     // Kokia dalis atliktų užklausų gauna patvirtintą atsiliepimą
     'verified_review_ratio' => (float) env('SEED_VERIFIED_REVIEW_RATIO', 0.9),
 

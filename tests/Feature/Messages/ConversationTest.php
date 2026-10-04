@@ -111,7 +111,7 @@ test('ne dalyvis rašyti negali, administratorius – mato, bet nerašo', functi
         ->assertInertia(fn (Assert $page) => $page
             ->component('messages/Show')
             ->where('can.send', false)
-            ->has('messages', 1)
+            ->has('messages.data', 1)
             ->where('conversation.counterpart.role', 'both'));
     $this->actingAs($admin)->post(route('messages.store', $conversation), ['body' => 'Labas'])->assertForbidden();
 });
@@ -187,10 +187,11 @@ test('atidarius pokalbį jis pažymimas perskaitytu', function () {
 
     $this->actingAs($client)->get(route('conversations.show', $conversation))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('messages', 2)
-            ->where('messages.0.is_mine', true)
-            ->where('messages.1.body', 'Atsakymas')
-            ->where('messages.1.sender_name', $offer->providerProfile->display_name)
+            // Puslapis – nuo naujausių (seniausias viršuje sudėliojamas Show.vue)
+            ->has('messages.data', 2)
+            ->where('messages.data.0.body', 'Atsakymas')
+            ->where('messages.data.0.sender_name', $offer->providerProfile->display_name)
+            ->where('messages.data.1.is_mine', true)
             ->where('can.send', true));
 
     expect($conversation->participants()->find($client->id)?->pivot?->last_read_message_id)->toBe($reply->id);
@@ -208,9 +209,9 @@ test('paslėpta žinutė rodoma be teksto', function () {
 
     $this->actingAs(Messaging::client($offer))->get(route('conversations.show', $conversation))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('messages', 1)
-            ->where('messages.0.is_hidden', true)
-            ->where('messages.0.body', null));
+            ->has('messages.data', 1)
+            ->where('messages.data.0.is_hidden', true)
+            ->where('messages.data.0.body', null));
 });
 
 test('teikėjas mato kliento vardą „Vardas P."', function () {
@@ -223,7 +224,7 @@ test('teikėjas mato kliento vardą „Vardas P."', function () {
     $this->actingAs(Messaging::provider($offer))->get(route('conversations.show', $conversation))
         ->assertInertia(fn (Assert $page) => $page
             ->where('conversation.counterpart', ['name' => 'Rūta J.', 'role' => 'client'])
-            ->where('messages.0.sender_name', 'Rūta J.'));
+            ->where('messages.data.0.sender_name', 'Rūta J.'));
 });
 
 // --- „Rašyti žinutę" mygtukas (App\Support\OfferMessaging) -----------------------------------
