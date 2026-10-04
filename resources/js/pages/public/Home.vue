@@ -285,17 +285,17 @@ const faq = [
     <section class="page-container" aria-label="Platforma skaičiais">
         <dl
             v-if="showStats"
-            class="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-border shadow-soft sm:grid-cols-3 lg:grid-cols-5"
+            class="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-border shadow-soft sm:grid-cols-6 lg:grid-cols-5"
         >
             <div
                 v-for="(item, index) in statItems"
                 :key="item.label"
-                class="flex flex-col bg-card px-5 py-5 lg:px-6 lg:py-6"
-                :class="
-                    index === statItems.length - 1
-                        ? 'col-span-2 sm:col-span-1'
-                        : ''
-                "
+                class="flex flex-col bg-card px-5 py-5 lg:col-span-1 lg:px-6 lg:py-6"
+                :class="[
+                    // Telefone 2 stulpeliai (paskutinis per visą plotį), planšetėje 3 + 2, kompiuteryje 5 vienoje eilėje
+                    index === statItems.length - 1 ? 'col-span-2' : '',
+                    index < 3 ? 'sm:col-span-2' : 'sm:col-span-3',
+                ]"
             >
                 <dt class="order-2 mt-1 text-sm text-muted-foreground">
                     {{ item.label }}
@@ -355,22 +355,23 @@ const faq = [
             </template>
         </SectionHeading>
 
+        <!-- Fiksuotas eilučių aukštis (auto-rows): visos kortelės vienodo aukščio, o pirmoji plačiame ekrane
+             užima 2 × 2 langelius („bento" tinklelis) -->
         <ul
-            class="mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
+            class="mt-10 grid auto-rows-[10.5rem] grid-cols-2 gap-3 sm:auto-rows-[12rem] sm:gap-4 md:grid-cols-3 lg:auto-rows-[13.5rem] lg:grid-cols-4"
         >
             <li
                 v-for="(category, index) in categories"
                 :key="category.id"
-                :class="index === 0 ? 'col-span-2 lg:row-span-2' : ''"
+                :class="
+                    index === 0
+                        ? 'col-span-2 row-span-2 sm:row-span-1 lg:row-span-2'
+                        : ''
+                "
             >
                 <Link
                     :href="categoryShow(category.slug)"
                     class="group relative isolate flex h-full flex-col justify-end overflow-hidden rounded-2xl bg-muted p-4 text-white shadow-soft transition-shadow duration-300 hover:shadow-lift focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none sm:p-5"
-                    :class="
-                        index === 0
-                            ? 'aspect-[4/3] sm:aspect-[2/1] lg:aspect-auto lg:min-h-full'
-                            : 'aspect-[4/3]'
-                    "
                 >
                     <PhotoSlot
                         :src="category.image_url"
@@ -432,7 +433,7 @@ const faq = [
                         </span>
                         <span
                             v-if="index === 0"
-                            class="mt-4 hidden items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-foreground transition-colors group-hover:bg-cta group-hover:text-cta-foreground sm:inline-flex"
+                            class="mt-4 hidden items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand-deep transition-colors group-hover:bg-cta group-hover:text-cta-foreground lg:inline-flex"
                         >
                             Rasti meistrą
                             <ArrowRight class="size-4" aria-hidden="true" />
@@ -444,7 +445,7 @@ const faq = [
             <li class="col-span-2 md:col-span-3 lg:col-span-1">
                 <a
                     :href="createRequestUrl"
-                    class="group flex h-full min-h-40 flex-col justify-between gap-4 rounded-2xl border-2 border-dashed border-primary/25 bg-secondary/50 p-5 transition-colors hover:border-primary/50 hover:bg-secondary"
+                    class="group flex h-full flex-col justify-between gap-3 rounded-2xl border-2 border-dashed border-primary/25 bg-secondary/50 p-5 transition-colors hover:border-primary/50 hover:bg-secondary"
                 >
                     <span
                         class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground"

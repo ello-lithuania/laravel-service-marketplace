@@ -20,7 +20,7 @@ defineProps<{
         <!-- Su nuotrauka -->
         <template v-if="photo">
             <div
-                class="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] bg-muted shadow-float sm:aspect-[5/4] lg:aspect-[4/5]"
+                class="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] bg-muted shadow-float md:aspect-[16/10] lg:aspect-[4/5]"
             >
                 <PhotoSlot
                     :src="photo.url"

@@ -59,7 +59,7 @@ const props = withDefaults(
                 class="inline-flex items-center gap-2 rounded-full bg-white/15 py-1 pr-3 pl-1 text-sm font-medium ring-1 ring-white/25 backdrop-blur-sm"
             >
                 <span
-                    class="flex size-6 items-center justify-center rounded-full bg-white text-foreground"
+                    class="flex size-6 items-center justify-center rounded-full bg-white text-brand-deep"
                 >
                     <CategoryIcon :name="icon" class="size-3.5" />
                 </span>

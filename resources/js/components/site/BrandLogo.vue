@@ -32,7 +32,7 @@ const parts = computed(() => {
             :class="[
                 size === 'lg' ? 'size-11' : 'size-9',
                 tone === 'light'
-                    ? 'bg-white text-primary dark:text-[#0f5b45]'
+                    ? 'bg-white text-brand-deep'
                     : 'bg-primary text-primary-foreground',
             ]"
         >
