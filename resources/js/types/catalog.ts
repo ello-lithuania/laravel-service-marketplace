@@ -66,6 +66,8 @@ export type ProviderCard = {
     city: string;
     serves_whole_country: boolean;
     is_verified: boolean;
+    /** Etapas 9c: galiojanti prenumerata su ženkleliu (PlanBenefits::hasBadge) */
+    has_pro_badge: boolean;
     rating_avg: number;
     reviews_count: number;
     completed_jobs_count: number;
@@ -116,6 +118,8 @@ export type PublicProviderProfile = {
     serves_whole_country: boolean;
     service_areas: { name: string; slug: string }[];
     is_verified: boolean;
+    /** Etapas 9c: galiojanti prenumerata su ženkleliu (PlanBenefits::hasBadge) */
+    has_pro_badge: boolean;
     years_experience: number | null;
     rating_avg: number;
     reviews_count: number;

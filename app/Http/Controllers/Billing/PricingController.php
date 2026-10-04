@@ -11,6 +11,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Services\Catalog\SeoMeta;
+use App\Services\Subscriptions\PlanBenefits;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,7 +23,7 @@ use Inertia\Response;
  */
 class PricingController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, PlanBenefits $benefits): Response
     {
         /** @var User|null $user */
         $user = $request->user();
@@ -43,6 +44,8 @@ class PricingController extends Controller
                 'min' => (int) ($offerCost->min_cost ?? 1),
                 'max' => (int) ($offerCost->max_cost ?? 1),
             ],
+            // Etapas 9c: su kuo lyginti planų „Iki N kategorijų" (vedlio nuoroda „Daugiau kategorijų" veda čia)
+            'freeMaxCategories' => $benefits->freeMaxCategories(),
             'viewer' => [
                 'role' => $user?->role->value,
                 'can_purchase' => $provider !== null,

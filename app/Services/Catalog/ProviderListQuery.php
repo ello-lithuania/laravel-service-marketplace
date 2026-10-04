@@ -109,6 +109,13 @@ class ProviderListQuery
                 'city:id,name,slug',
                 // Tik logotipas (medialibrary „logo" kolekcija) – kortelei kitų failų nereikia
                 'media' => fn (Relation $query) => $query->where('collection_name', 'logo'),
+                // Etapas 9c: ženkleliui „PRO" – dabar galiojančios prenumeratos, viena užklausa visam puslapiui
+                // (WHERE provider_profile_id IN (…20 ID) – indeksas (provider_profile_id, status)). Ne withExists():
+                // tada subužklausa būtų pagrindinės užklausos SELECT'e, o jos laikas (now()) – COUNT cache rakte
+                'currentSubscriptions' => fn (Relation $query) => $query->select([
+                    'subscriptions.id', 'subscriptions.provider_profile_id', 'subscriptions.subscription_plan_id',
+                    'subscriptions.ends_at',
+                ]),
                 'categories' => function (Relation $query) use ($categoryIds): void {
                     $query->select(['categories.id', 'categories.name', 'categories.slug', 'categories.depth'])
                         ->where('categories.is_active', true)

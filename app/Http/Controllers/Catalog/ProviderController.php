@@ -63,6 +63,8 @@ class ProviderController extends Controller
             'portfolioItems' => fn (Relation $query) => $query->with(['category:id,name', 'city:id,name', 'media']),
             // Logotipas ir viršelio nuotrauka (medialibrary)
             'media' => fn (Relation $query) => $query->whereIn('collection_name', ['logo', 'cover']),
+            // Etapas 9c: ženkleliui „PRO" (PlanBenefits::hasBadge)
+            'currentSubscriptions:id,provider_profile_id,subscription_plan_id,ends_at',
         ]);
 
         $reviews = $providerProfile->reviews()

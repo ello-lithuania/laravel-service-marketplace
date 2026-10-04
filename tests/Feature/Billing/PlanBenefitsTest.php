@@ -90,6 +90,10 @@ test('kainų puslapio punktai skaitomi per tą patį PlanFeatures', function () 
         'features' => ['max_categories' => 30, 'badge' => true],
     ]);
 
+    config(['marketplace.free_max_categories' => 4]);
+
     $this->get(route('pricing'))->assertInertia(fn ($page) => $page
-        ->where('plans.0.features', ['60 kreditų kas mėn.', 'Iki 30 paslaugų kategorijų', 'Ženklelis „PRO" profilyje ir kataloge']));
+        ->where('plans.0.features', ['60 kreditų kas mėn.', 'Iki 30 paslaugų kategorijų', 'Ženklelis „PRO" profilyje ir kataloge'])
+        // Su kuo lyginti: riba be prenumeratos
+        ->where('freeMaxCategories', 4));
 });

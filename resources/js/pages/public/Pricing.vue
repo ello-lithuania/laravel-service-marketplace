@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { usePurchase } from '@/composables/usePurchase';
 import { formatCredits } from '@/lib/billing';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, plural } from '@/lib/format';
 import { register } from '@/routes';
 import { wizard } from '@/routes/provider';
 import type { CreditPackage, SeoMeta, SubscriptionPlan } from '@/types';
@@ -24,6 +24,8 @@ const props = defineProps<{
     packages: CreditPackage[];
     plans: SubscriptionPlan[];
     offerCost: { min: number; max: number };
+    // Etapas 9c: kategorijų riba be prenumeratos (config marketplace.free_max_categories)
+    freeMaxCategories: number;
     viewer: {
         role: 'client' | 'provider' | 'admin' | null;
         can_purchase: boolean;
@@ -224,6 +226,19 @@ const faq = [
             <p class="mt-1 text-muted-foreground">
                 Kreditai kas mėnesį ir papildomi privalumai. Galima atšaukti bet
                 kada.
+            </p>
+            <p
+                class="mt-1 text-sm text-muted-foreground"
+                data-test="free-max-categories"
+            >
+                Be prenumeratos galite pasirinkti iki
+                {{
+                    plural(freeMaxCategories, [
+                        'paslaugų kategorijos',
+                        'paslaugų kategorijų',
+                        'paslaugų kategorijų',
+                    ])
+                }}.
             </p>
 
             <div class="mt-6 grid gap-4 md:grid-cols-3">
