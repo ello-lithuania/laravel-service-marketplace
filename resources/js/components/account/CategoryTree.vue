@@ -11,6 +11,9 @@ import type { CategoryNode } from '@/types';
 const props = defineProps<{
     tree: CategoryNode[];
     max: number;
+    // Etapas 9c: jau išsaugotos kategorijos. Teikėjas, kurio jų daugiau nei leidžia planas, gali jas palikti
+    // ar pašalinti, bet ne pridėti naujų (ta pati taisyklė kaip SyncProviderCategories serveryje)
+    initial?: number[];
 }>();
 
 const selected = defineModel<number[]>({ required: true });
@@ -62,14 +65,45 @@ function state(node: CategoryNode): boolean | 'indeterminate' {
         : false;
 }
 
-function toggle(node: CategoryNode, value: boolean | 'indeterminate'): void {
+// Pasirinkimas pažymėjus mazgą: tėvas jau apima vaikus – atskirai jų laikyti nereikia
+function withNode(node: CategoryNode): Set<number> {
     const next = new Set(selected.value);
+    next.add(node.id);
+    descendantIds(node).forEach((id) => next.delete(id));
 
-    if (value === true) {
-        next.add(node.id);
-        // Tėvas jau apima vaikus – atskirai jų laikyti nereikia
-        descendantIds(node).forEach((id) => next.delete(id));
-    } else {
+    return next;
+}
+
+// --- Etapas 9c: kategorijų riba pagal planą ---
+const initialSet = computed(() => new Set(props.initial ?? []));
+
+// Ar galima pažymėti: rezultatas telpa į ribą arba jame tik jau išsaugotos kategorijos.
+// Pažymėjus visą grupę jos vaikai dingsta iš sąrašo, todėl grupė gali tilpti net pasiekus ribą.
+function canSelect(node: CategoryNode): boolean {
+    if (selectedSet.value.has(node.id)) {
+        return true;
+    }
+
+    const next = withNode(node);
+
+    return (
+        next.size <= props.max ||
+        [...next].every((id) => initialSet.value.has(id))
+    );
+}
+
+function isDisabled(node: CategoryNode): boolean {
+    return isCovered(node.id) || !canSelect(node);
+}
+
+function toggle(node: CategoryNode, value: boolean | 'indeterminate'): void {
+    if (value === true && !canSelect(node)) {
+        return;
+    }
+
+    const next = value === true ? withNode(node) : new Set(selected.value);
+
+    if (value !== true) {
         next.delete(node.id);
     }
 
@@ -184,6 +218,7 @@ function isExpanded(node: CategoryNode): boolean {
                     <Checkbox
                         :id="`category-${root.id}`"
                         :model-value="state(root)"
+                        :disabled="isDisabled(root)"
                         @update:model-value="toggle(root, $event)"
                     />
                     <label
@@ -222,7 +257,7 @@ function isExpanded(node: CategoryNode): boolean {
                             <Checkbox
                                 :id="`category-${group.id}`"
                                 :model-value="state(group)"
-                                :disabled="isCovered(group.id)"
+                                :disabled="isDisabled(group)"
                                 @update:model-value="toggle(group, $event)"
                             />
                             <label
@@ -248,7 +283,7 @@ function isExpanded(node: CategoryNode): boolean {
                                 <Checkbox
                                     :id="`category-${leaf.id}`"
                                     :model-value="state(leaf)"
-                                    :disabled="isCovered(leaf.id)"
+                                    :disabled="isDisabled(leaf)"
                                     @update:model-value="toggle(leaf, $event)"
                                 />
                                 <label
