@@ -35,7 +35,11 @@ test('Filament panelei leidžiamas Alpine.js (unsafe-eval), bet ne svetimi domen
 
     expect($csp)->toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval'")
         ->not->toContain('nonce-')
-        ->not->toContain('ui-avatars.com');
+        ->not->toContain('ui-avatars.com')
+        // Etapas 10a: FilePond (nuotraukų įkėlimas) peržiūrą daro worker'yje iš blob:
+        ->toContain("worker-src 'self' blob:");
+
+    expect((string) $this->get('/')->headers->get('Content-Security-Policy'))->toContain("worker-src 'self'")->not->toContain('worker-src \'self\' blob:');
 });
 
 test('produkcijoje – HSTS ir upgrade-insecure-requests', function () {

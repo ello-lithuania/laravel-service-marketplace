@@ -104,6 +104,9 @@ class SecurityHeaders
             'base-uri' => ["'self'"],
             'form-action' => ["'self'", ...$extra['form-action']],
             'frame-ancestors' => ["'none'"],
+            // --- Etapas 10a --- Filament failų įkėlimas (FilePond) nuotraukos peržiūrą daro Web Worker'yje iš blob: adreso.
+            // Be worker-src naršyklė imtų script-src (be blob:) ir peržiūra liktų tuščia. Tik admin – viešai worker'ių nėra
+            'worker-src' => $isAdmin ? ["'self'", 'blob:'] : ["'self'"],
         ];
 
         // Dev'e (npm run dev) skriptai, stiliai ir HMR websocket'as ateina iš Vite serverio (pvz. http://localhost:5173)
