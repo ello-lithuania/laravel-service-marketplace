@@ -8,6 +8,8 @@ export type CategoryLink = {
 
 export type CategoryWithChildren = CategoryLink & {
     children: CategoryLink[];
+    /** Etapas 10: kategorijos puslapio 2 lygio grupės nuotrauka (jei įkelta) */
+    image_url?: string | null;
 };
 
 /** 1 lygio kategorija su keliais 2 lygio pavyzdžiais (pradžios puslapis). */
@@ -23,7 +25,36 @@ export type SitePhotoData = { url: string; alt: string | null } | null;
 /** 1 lygio kategorija su visu pomedžiu (visų paslaugų puslapis). */
 export type CategoryTreeRoot = CategoryLink & {
     icon: string | null;
+    /** Etapas 10 */
+    image_url: string | null;
     children: CategoryWithChildren[];
+};
+
+/** Etapas 10: platformos skaičiai pradžios puslapyje (SiteHighlights::stats, cache 1 val.). */
+export type SiteStats = {
+    providers: number;
+    reviews: number;
+    rating_avg: number | null;
+    completed_jobs: number;
+};
+
+/** Etapas 10: 5★ atsiliepimas pradžios puslapyje (SiteHighlights::testimonials). */
+export type Testimonial = {
+    id: number;
+    rating: number;
+    comment: string;
+    author_name: string;
+    published_at: string | null;
+    provider: { name: string; slug: string };
+    category: string | null;
+    city: string | null;
+};
+
+/** Etapas 10: bendri viešos dalies duomenys (HandleInertiaRequests „site", Inertia::once). */
+export type SiteLayoutData = {
+    categories: CategoryLink[];
+    cities: CityOption[];
+    auth_photo: SitePhotoData;
 };
 
 export type CityOption = {
