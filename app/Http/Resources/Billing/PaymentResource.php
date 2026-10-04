@@ -36,7 +36,33 @@ class PaymentResource extends JsonResource
             'can' => [
                 'pay' => $user?->can('pay', $payment) ?? false,
                 'download_invoice' => $user?->can('downloadInvoice', $payment) ?? false,
+                // Etapas 9b: tik grąžintiems tikrinam Policy (kitiems – be papildomos užklausos)
+                'download_credit_note' => $payment->isRefunded() && ($user?->can('downloadCreditNote', $payment) ?? false),
             ],
+            // --- Etapas 9b --- tik kai controller'is užkrovė ryšį (preventLazyLoading)
+            'refund' => $this->refundData($payment),
+        ];
+    }
+
+    /**
+     * Grąžinimo duomenys teikėjui. Kas grąžino (administratorius) – nerodom.
+     *
+     * @return array{credit_note_number: string, refunded_at: string|null, reason: string, credits_reversed: int, credits_shortfall: int}|null
+     */
+    private function refundData(Payment $payment): ?array
+    {
+        $refund = $payment->relationLoaded('refund') ? $payment->refund : null;
+
+        if ($refund === null) {
+            return null;
+        }
+
+        return [
+            'credit_note_number' => $refund->credit_note_number,
+            'refunded_at' => $refund->created_at?->toIso8601String(),
+            'reason' => $refund->reason,
+            'credits_reversed' => $refund->credits_reversed,
+            'credits_shortfall' => $refund->credits_shortfall,
         ];
     }
 }

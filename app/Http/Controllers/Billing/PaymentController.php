@@ -29,7 +29,8 @@ class PaymentController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $payments = $user->payments()->with('purchasable')->latest('id')->paginate(20);
+        // Etapas 9b: refund – kreditinės sąskaitos nuoroda be N+1
+        $payments = $user->payments()->with(['purchasable', 'refund'])->latest('id')->paginate(20);
 
         return Inertia::render('billing/Payments', [
             'payments' => PaymentResource::collection($payments),
@@ -44,7 +45,7 @@ class PaymentController extends Controller
     {
         Gate::authorize('view', $payment);
 
-        $payment->load('purchasable');
+        $payment->load(['purchasable', 'refund']);
 
         return Inertia::render('billing/PaymentShow', [
             'payment' => PaymentResource::make($payment)->resolve(),

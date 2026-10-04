@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Download } from '@lucide/vue';
+import { Download, FileMinus } from '@lucide/vue';
 import BillingStatusBadge from '@/components/billing/BillingStatusBadge.vue';
 import PaginationLinks from '@/components/marketplace/PaginationLinks.vue';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { formatPrice } from '@/lib/format';
 import { formatDateTime } from '@/lib/marketplace';
 import { pricing } from '@/routes';
 import { index as creditsIndex } from '@/routes/credits';
-import { index, invoice, show } from '@/routes/payments';
+import { creditNote, index, invoice, show } from '@/routes/payments';
 import type { Paginated, PaymentItem } from '@/types';
 
 // Teikėjo mokėjimų istorija su sąskaitomis faktūromis (PaymentController@index)
@@ -33,7 +33,7 @@ defineOptions({
         <header>
             <h1 class="text-2xl font-semibold tracking-tight">Mokėjimai</h1>
             <p class="text-sm text-muted-foreground">
-                Visi jūsų mokėjimai ir sąskaitos faktūros.
+                Visi jūsų mokėjimai, sąskaitos faktūros ir kreditinės sąskaitos.
             </p>
         </header>
 
@@ -113,6 +113,18 @@ defineOptions({
                                 <Link :href="show(payment.uuid)">Apmokėti</Link>
                             </Button>
                             <span v-else class="text-muted-foreground">–</span>
+                            <!-- Etapas 9b: grąžinto mokėjimo kreditinė sąskaita -->
+                            <a
+                                v-if="
+                                    payment.can.download_credit_note &&
+                                    payment.refund
+                                "
+                                :href="creditNote(payment.uuid).url"
+                                class="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:underline"
+                            >
+                                <FileMinus class="size-3.5" />
+                                {{ payment.refund.credit_note_number }}
+                            </a>
                         </td>
                     </tr>
                 </tbody>
