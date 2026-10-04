@@ -83,7 +83,7 @@ final class MediaGenerator
         $directory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'seed-media-'.$seed.'-'.getmypid();
         $queueConnection = config('media-library.queue_connection_name');
 
-        // Atskiras atsitiktinumo srautas: paveikslėliai nepriklauso nuo to, kiek atsitiktinių skaičių sunaudojo ankstesni žingsniai
+        // Sėkla iš naujo: planas nepriklauso nuo to, kiek atsitiktinių skaičių sunaudojo ankstesni žingsniai
         mt_srand($seed);
         $this->plan();
         $this->clearOrphanedFiles();
@@ -103,6 +103,10 @@ final class MediaGenerator
 
     // --- 1. Planas -----------------------------------------------------------------------------
 
+    /**
+     * Einama per aktyvius teikėjus „populiarumo" tvarka: pirmiems PROFILES – logotipas (40 % – ir viršelis),
+     * jų portfolio darbams – nuotraukos, kol surenkama PORTFOLIO_ITEMS darbų.
+     */
     private function plan(): void
     {
         $c = $this->ctx;
@@ -124,7 +128,7 @@ final class MediaGenerator
             }
 
             $p = $profileId - 1;
-            $root = $c->rootSlug[$c->leafRoot[$c->provLeaves[$p][0] ?? 0] ?? $c->rootIds[0]];
+            $root = $this->rootSlug($c->provLeaves[$p][0] ?? 0);
 
             if ($profiles < $profileTarget) {
                 $profiles++;
@@ -141,7 +145,7 @@ final class MediaGenerator
                 }
 
                 $portfolio++;
-                $itemRoot = $c->rootSlug[$c->leafRoot[$categoryId] ?? $c->rootIds[0]];
+                $itemRoot = $this->rootSlug($categoryId);
                 $variants = range(0, self::PORTFOLIO_VARIANTS - 1);
                 shuffle($variants);
 
@@ -176,6 +180,16 @@ final class MediaGenerator
         arsort($keys);
 
         return array_keys($keys);
+    }
+
+    /**
+     * 1 lygio kategorijos slug'as pagal 3 lygio kategoriją (nuo jo priklauso paletė).
+     */
+    private function rootSlug(int $leafId): string
+    {
+        $c = $this->ctx;
+
+        return $c->rootSlug[$c->leafRoot[$leafId] ?? $c->rootIds[0]];
     }
 
     private function planLogo(int $profileId, string $root, string $initials): void

@@ -101,7 +101,7 @@ final class ImagePainter
     // --- Fonas ------------------------------------------------------------------------------
 
     /**
-     * Mažame paveikslėlyje nupiešiamos spalvų dėmės, sulieiamos ir padidinamos – gaunamas minkštas „bokeh" fonas.
+     * Mažame paveikslėlyje nupiešiamos spalvų dėmės, suliejamos ir padidinamos – gaunamas minkštas „bokeh" fonas.
      * Piešti iškart dideliame būtų lėta: PHP ciklas per 700 000 taškų trunka sekundes, o GD funkcijos – milisekundes.
      *
      * @param  list<string>  $palette
