@@ -2,6 +2,7 @@
 
 // Kainos, kreditų paketai, prenumeratos, mokėjimai (Etapas 7)
 
+use App\Http\Controllers\Billing\CreditNoteController;
 use App\Http\Controllers\Billing\CreditsController;
 use App\Http\Controllers\Billing\FakeCheckoutController;
 use App\Http\Controllers\Billing\InvoiceController;
@@ -45,6 +46,8 @@ Route::middleware('auth')->whereUuid('payment')->group(function () {
     // Paysera cancelurl – pirkėjas atšaukė mokėjimą Paysera puslapyje
     Route::get('mokejimai/{payment}/atsaukti', [PaymentController::class, 'cancel'])->name('payments.cancel');
     Route::get('mokejimai/{payment}/saskaita', InvoiceController::class)->name('payments.invoice');
+    // --- Etapas 9b: grąžinto mokėjimo kreditinė sąskaita faktūra ---
+    Route::get('mokejimai/{payment}/kreditine-saskaita', CreditNoteController::class)->name('payments.credit-note');
 
     // Netikras mokėjimų tiekėjas (tik ne produkcijoje): „Paysera" puslapio imitacija
     Route::get('mokejimai/{payment}/testinis', [FakeCheckoutController::class, 'show'])->name('payments.fake.show');

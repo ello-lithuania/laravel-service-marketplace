@@ -63,10 +63,10 @@ class PaymentResource extends Resource
     }
 
     /**
-     * Mokėtojas (Payment::user apima ir „ištrintus") bei pirkinys užkraunami iš karto – be N+1.
+     * Mokėtojas (Payment::user apima ir „ištrintus"), pirkinys ir grąžinimas (Etapas 9b) užkraunami iš karto – be N+1.
      */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['user', 'purchasable']);
+        return parent::getEloquentQuery()->with(['user', 'purchasable', 'refund']);
     }
 }

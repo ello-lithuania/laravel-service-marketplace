@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Payments\Pages;
 
+use App\Filament\Resources\Payments\Actions\CreditNoteAction;
 use App\Filament\Resources\Payments\Actions\InvoiceAction;
 use App\Filament\Resources\Payments\PaymentResource;
 use Filament\Resources\Pages\ViewRecord;
@@ -12,6 +13,7 @@ class ViewPayment extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [InvoiceAction::make()];
+        // Etapas 9b: kreditinė sąskaita
+        return [InvoiceAction::make(), CreditNoteAction::make()];
     }
 }

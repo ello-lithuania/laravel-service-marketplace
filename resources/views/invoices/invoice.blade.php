@@ -2,6 +2,8 @@
     Sąskaita faktūra PDF'ui (dompdf, Etapas 7). Tai ne Inertia puslapis, todėl – paprastas Blade šablonas.
     Dompdf supranta tik dalį CSS (be flex/grid), todėl išdėstymas – lentelėmis.
     DejaVu Sans – Unicode šriftas su lietuviškomis raidėmis (platinamas kartu su dompdf).
+    Etapas 9: tas pats šablonas kreditinei sąskaitai ($credit_note ne null) – nuoroda į koreguojamą sąskaitą,
+    priežastis, sumos su minusu.
 --}}
 <!DOCTYPE html>
 <html lang="lt">
@@ -24,6 +26,8 @@
         .totals td { padding: 4px; }
         .totals .grand td { font-weight: bold; font-size: 13px; border-top: 1px solid #1f2937; }
         .in-words { margin-top: 12px; }
+        .reference { margin-top: 8px; }
+        .reason { margin-top: 12px; padding: 8px; background: #f3f4f6; }
         .footer { margin-top: 32px; font-size: 10px; }
     </style>
 </head>
@@ -31,6 +35,11 @@
     <h1>{{ $title }}</h1>
     <div>Serija ir Nr. <strong>{{ $number }}</strong></div>
     <div class="muted">Išrašymo data: {{ $date }}</div>
+    @if ($credit_note)
+        <div class="reference">
+            Koreguojama sąskaita faktūra: <strong>{{ $credit_note['invoice_number'] ?? '–' }}</strong>@if (! empty($credit_note['invoice_date'])), {{ $credit_note['invoice_date'] }}@endif
+        </div>
+    @endif
 
     <table class="parties">
         <tr>
@@ -78,13 +87,21 @@
             <tr><td>Suma be PVM</td><td class="right">{{ $net }}</td></tr>
             <tr><td>PVM {{ $vat_rate }} %</td><td class="right">{{ $vat }}</td></tr>
         @endif
-        <tr class="grand"><td>Iš viso mokėti</td><td class="right">{{ $gross }}</td></tr>
+        <tr class="grand"><td>{{ $credit_note ? 'Iš viso grąžinama' : 'Iš viso mokėti' }}</td><td class="right">{{ $gross }}</td></tr>
     </table>
 
     <div class="in-words">Suma žodžiais: <strong>{{ $amount_in_words }}</strong></div>
 
+    @if ($credit_note)
+        <div class="reason">Grąžinimo priežastis: {{ $credit_note['reason'] }}</div>
+    @endif
+
     <div class="footer muted">
-        Apmokėta: {{ $payment_method }}, {{ $date }}. Užsakymo Nr. {{ $payment_reference }}.<br>
+        @if ($credit_note)
+            Pinigai grąžinami tuo pačiu būdu, kuriuo buvo sumokėta ({{ $payment_method }}). Užsakymo Nr. {{ $payment_reference }}.<br>
+        @else
+            Apmokėta: {{ $payment_method }}, {{ $date }}. Užsakymo Nr. {{ $payment_reference }}.<br>
+        @endif
         @unless ($vat_payer)Pardavėjas nėra PVM mokėtojas.<br>@endunless
         Sąskaita išrašyta elektroniniu būdu ir galioja be parašo.
     </div>
