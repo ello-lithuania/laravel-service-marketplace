@@ -71,6 +71,13 @@ final class PhotoFetcher
                 } catch (PhotoSearchFailed|ConnectionException $e) {
                     $this->problems[] = "{$provider->label()} „{$query}\": ".self::short($e);
 
+                    // SSL sertifikatų klaida pati nepraeis (Windows PHP be cacert.pem) – šaltinio toliau nebandom
+                    if ($e instanceof ConnectionException && preg_match('/cURL error (60|77)/', $e->getMessage())) {
+                        $this->unavailable[$provider->label()] = "{$provider->label()}: nepavyksta patikrinti HTTPS sertifikato (cURL error 60)";
+
+                        break;
+                    }
+
                     continue;
                 }
 

@@ -312,6 +312,20 @@ test('portfolio rinkinys: N nuotraukų su credits.json, nuotraukos su žmonėmis
     Http::assertNothingSent();
 });
 
+test('Windows SSL klaida (cURL error 60) – patarimas, kaip pataisyti php.ini', function () {
+    config(['services.pexels.key' => 'pexels-test-key']);
+    Category::factory()->childOf($this->root)->create(['name' => 'Grindys', 'slug' => 'grindys']);
+    Http::fake(['*' => Http::failedConnection('cURL error 60: SSL certificate problem: unable to get local issuer certificate')]);
+
+    $this->artisan('photos:download', ['--only' => 'categories'])
+        ->expectsOutputToContain('cacert.pem')
+        // Klaida pati nepraeis – kitos vietos nebebandomos (po vieną paiešką kiekvienam šaltiniui)
+        ->expectsOutputToContain('praleista – šaltiniai nepasiekiami')
+        ->assertFailed();
+
+    Http::assertSentCount(2);
+});
+
 test('neteisingi parametrai – aiški klaida', function () {
     $this->artisan('photos:download', ['--only' => 'nuotraukos'])->assertFailed();
     $this->artisan('photos:download', ['--per-category' => 0])->assertFailed();
