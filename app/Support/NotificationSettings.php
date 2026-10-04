@@ -10,6 +10,9 @@ use App\Models\User;
  *
  * JSON: {"grupė": {"mail": bool, "database": bool}, …}. NULL ar trūkstamas raktas = true,
  * todėl naujam vartotojui nieko saugoti nereikia, o naujai grupei – migruoti senų įrašų.
+ *
+ * --- Etapas 9c --- Grupės nėra (ir išjungti negalima) paskyros žinioms: ComplaintResolved, DataExportReady,
+ * ProviderStatusChanged, ProviderVerified (trait'as App\Notifications\Concerns\IgnoresNotificationSettings).
  */
 final class NotificationSettings
 {
