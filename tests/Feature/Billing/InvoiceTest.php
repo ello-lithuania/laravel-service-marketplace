@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\InvoiceSeries;
 use App\Enums\PaymentStatus;
 use App\Enums\ProviderType;
 use App\Models\CreditPackage;
 use App\Models\Payment;
 use App\Models\ProviderProfile;
+use App\Models\Refund;
 use App\Models\User;
 use App\Services\Invoices\InvoiceNumberGenerator;
 use App\Services\Invoices\InvoicePdf;
@@ -109,7 +111,37 @@ test('rekvizitai užfiksuojami apmokėjimo metu – vėlesni profilio pakeitimai
         ->and(app(InvoicePdf::class)->data($payment)['title'])->toBe('Sąskaita faktūra');
 });
 
-// --- Etapas 9b: suma žodžiais ---
+// --- Etapas 9b: serijos ir suma žodžiais ---
+
+test('kreditinių sąskaitų serija turi savo numeraciją kiekvieniems metams, nepriklausomą nuo SF', function () {
+    Payment::factory()->create(['invoice_number' => 'SF-2026-000040', 'paid_at' => '2026-02-01 10:00']);
+    $generator = app(InvoiceNumberGenerator::class);
+
+    $numbers = DB::transaction(fn () => [
+        $generator->next(CarbonImmutable::parse('2026-03-10 12:00'), InvoiceSeries::CreditNote),
+        $generator->next(CarbonImmutable::parse('2026-03-10 12:00')),
+        $generator->next(CarbonImmutable::parse('2026-03-11 12:00'), InvoiceSeries::CreditNote),
+        $generator->next(CarbonImmutable::parse('2027-01-05 12:00'), InvoiceSeries::CreditNote),
+    ]);
+
+    expect($numbers)->toBe(['KS-2026-000001', 'SF-2026-000041', 'KS-2026-000002', 'KS-2027-000001'])
+        ->and(DB::table('invoice_sequences')->orderBy('series')->orderBy('year')->get(['series', 'year', 'last_number'])->map(fn ($row) => (array) $row)->all())
+        ->toBe([
+            ['series' => 'credit_note', 'year' => 2026, 'last_number' => 2],
+            ['series' => 'credit_note', 'year' => 2027, 'last_number' => 1],
+            ['series' => 'invoice', 'year' => 2026, 'last_number' => 41],
+        ]);
+});
+
+test('kreditinių sąskaitų skaitiklis pradedamas nuo didžiausio jau esančio KS numerio, prefiksas – iš config', function () {
+    Refund::factory()->create(['credit_note_number' => 'KS-2026-000050']);
+    config(['invoices.credit_note_prefix' => 'KS']);
+
+    $number = DB::transaction(fn () => app(InvoiceNumberGenerator::class)->next(CarbonImmutable::parse('2026-05-01 12:00'), InvoiceSeries::CreditNote));
+
+    expect($number)->toBe('KS-2026-000051')
+        ->and(app(InvoiceNumberGenerator::class)->format(2026, 7, InvoiceSeries::CreditNote))->toBe('KS-2026-000007');
+});
 
 test('sąskaitoje – suma žodžiais lietuviškai', function () {
     $payment = Billing::complete(Payment::factory()->fake()->pending()->forPackage($this->package)->for(Billing::provider())->create());
