@@ -16,6 +16,7 @@ import { computed } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import ReportDialog from '@/components/complaints/ReportDialog.vue';
 import CatalogPagination from '@/components/catalog/CatalogPagination.vue';
+import ProBadge from '@/components/catalog/ProBadge.vue';
 import RatingStars from '@/components/catalog/RatingStars.vue';
 import SeoHead from '@/components/catalog/SeoHead.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -130,6 +131,8 @@ const canReportProfile = computed(
                             <BadgeCheck aria-hidden="true" />
                             Patikrintas
                         </Badge>
+                        <!-- Etapas 9c: prenumeratos ženklelis -->
+                        <ProBadge v-if="provider.has_pro_badge" />
                     </div>
                     <p
                         v-if="provider.headline"

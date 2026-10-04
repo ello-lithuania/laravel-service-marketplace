@@ -44,18 +44,19 @@ class SubscriptionPlanResource extends JsonResource
      */
     public static function featureLines(SubscriptionPlan $plan): array
     {
-        $features = $plan->features ?? [];
+        // Etapas 9c: features JSON skaito PlanFeatures – tas pats objektas, kuris taiko privalumus (PlanBenefits)
+        $features = $plan->planFeatures();
         $lines = [__('billing.plan_features.credits', ['credits' => $plan->credits_per_period, 'period' => $plan->billing_period->perLabel()])];
 
-        if (isset($features['max_categories']) && is_numeric($features['max_categories'])) {
-            $lines[] = __('billing.plan_features.max_categories', ['count' => (int) $features['max_categories']]);
+        if ($features->maxCategories !== null) {
+            $lines[] = __('billing.plan_features.max_categories', ['count' => $features->maxCategories]);
         }
 
-        if (($features['badge'] ?? false) === true) {
+        if ($features->badge) {
             $lines[] = __('billing.plan_features.badge');
         }
 
-        if (($features['priority_support'] ?? false) === true) {
+        if ($features->prioritySupport) {
             $lines[] = __('billing.plan_features.priority_support');
         }
 

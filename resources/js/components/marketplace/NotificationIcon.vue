@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+    BadgeCheck,
     Bell,
     CalendarClock,
     CircleCheck,
@@ -15,6 +16,7 @@ import {
     Receipt,
     Star,
     Undo2,
+    UserCog,
 } from '@lucide/vue';
 import { computed } from 'vue';
 
@@ -57,6 +59,11 @@ const icon = computed(() => {
             return ClipboardCheck;
         case 'ComplaintResolved':
             return ShieldCheck;
+        // --- Etapas 9c: administratorius pakeitė profilio būseną ---
+        case 'ProviderStatusChanged':
+            return UserCog;
+        case 'ProviderVerified':
+            return BadgeCheck;
         default:
             return props.type.startsWith('ServiceRequest')
                 ? ClipboardList

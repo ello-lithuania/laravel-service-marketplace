@@ -517,6 +517,9 @@ Lentelėje 60 eilučių, ir visa ji laikoma cache.
 | `pending` → `active`                         | sistema (`ActivateCompletedProfile`), po kiekvieno vedlio žingsnio | kai užpildyti privalomi žingsniai: duomenys + ≥ 1 kategorija + zona (`serves_whole_country` arba ≥ 1 savivaldybė). Kainos – neprivalomos |
 | `active` → `hidden` / `suspended` (ir atgal) | administratorius (Filament)                                        | vedlys šių būsenų niekada nekeičia; `active` profilis likti be kategorijų ar zonų negali (validacija `min:1`)                            |
 
+**Etapas 9c:** apie kiekvieną administratoriaus pakeistą būseną (ir „Patikrintas") teikėjas gauna pranešimą –
+`ProviderStatusChanged` / `ProviderVerified` (žr. I → `notifications`).
+
 _Kodėl be administratoriaus patvirtinimo:_ teikėjas gali pradėti gauti užklausas iš karto (greitesnė pradžia,
 mažiau rankinio darbo). Piktnaudžiavimą stabdo skundai ir `suspended`. Prireikus išankstinio moderavimo, užtektų
 `ActivateCompletedProfile` vietoj `active` palikti `pending` ir pridėti Filament veiksmą „Patvirtinti".
@@ -824,6 +827,25 @@ Indeksų nereikia: lentelėje kelios eilutės.
 | sort_order         | `usmallint` = 0     |                                           |
 |                    | `timestamps`        |                                           |
 
+**`features` privalumai (Etapas 9c).** JSON skaito vienas objektas `App\Services\Subscriptions\PlanFeatures`
+(netikėti tipai ir trūkstami raktai → saugios numatytosios reikšmės), o taiko `PlanBenefits`:
+
+| Raktas             | Ką duoda                                                                    | Kur taikoma                                       |
+| ------------------ | --------------------------------------------------------------------------- | ------------------------------------------------- |
+| `max_categories`   | kiek `category_provider_profile` eilučių galima turėti (visa grupė = viena) | vedlys, `SyncProviderCategories`                  |
+| `badge`            | ženklelis „PRO" kataloge ir viešame profilyje                               | `ProviderCardResource`, `ProviderProfileResource` |
+| `priority_support` | tik rodoma kainų puslapyje (pagalbos sistemos dar nėra)                     | `SubscriptionPlanResource`                        |
+
+- Nauda galioja tik **dabar galiojančiai** prenumeratai: `Subscription::current()` = `active`/`cancelled`,
+  `starts_at <= now < ends_at` (tas pats kaip `isCurrent()`; `past_due` – ne). Suplanuotas naujas planas pradeda
+  galioti tik prasidėjęs.
+- **Be prenumeratos** – `config('marketplace.free_max_categories')` (`FREE_MAX_CATEGORIES`, numatyta 5). Planas niekada
+  neduoda mažiau nei nemokama riba.
+- **Pasibaigus prenumeratai nieko netrinam**: ženklelis skaičiuojamas (ne saugomas), o viršijančias ribą kategorijas
+  teikėjas pasilieka – jas gali palikti ar pašalinti, bet naujų pridėti negali, kol iš viso jų daugiau nei riba.
+- JSON reikšmės SQL'e neskaitomos (MySQL `->>`/`JSON_EXTRACT` ir SQLite `json_extract` skiriasi): planų – keli, todėl
+  jie perskaitomi PHP'e viena užklausa per HTTP užklausą (`PlanBenefits`, `#[Scoped]`).
+
 #### `subscriptions`
 
 | Stulpelis             | Tipas                               | Pastaba                                                   |
@@ -839,7 +861,8 @@ Indeksų nereikia: lentelėje kelios eilutės.
 | credits_granted_until | `timestamp?`                        | **Etapas 7**: iki kada kreditai jau suteikti (žr. žemiau) |
 |                       | `timestamps`                        |                                                           |
 
-**Indeksai:** `(provider_profile_id, status)` – „ar teikėjas turi aktyvią prenumeratą?" · `(status, ends_at)` –
+**Indeksai:** `(provider_profile_id, status)` – „ar teikėjas turi aktyvią prenumeratą?" (Etapas 9c: ženkleliui katalogo
+puslapyje – `provider_profile_id IN (…20 ID) AND status IN ('active','cancelled')`, `docs/PERFORMANCE.md` 3.5) · `(status, ends_at)` –
 kasdienis job'as pratęsia arba užbaigia prenumeratas · `subscription_plan_id` – automatiškai (FK).
 
 **Kaip veikia (Etapas 7).** Viena eilutė = viena prenumerata, kuri gali turėti daug apmokėtų laikotarpių.
@@ -1102,6 +1125,10 @@ Planuojami tipai: `NewMatchingRequest`, `NewOffer`, `OfferAccepted`, `OfferDecli
 `ReviewReplied`, `LowCredits`, `SubscriptionExpiring`, `PaymentSucceeded`, `ComplaintResolved`.
 Etape 6 sukurti: `NewMessage`, `NewReview`, `ReviewInvitation`, `ReviewReplied`, `CompletionRequested`,
 `CompletionReminder`, `ComplaintResolved` (pastarasis nustatymuose neišjungiamas – tai atsakymas į paties vartotojo veiksmą).
+Etape 9c: `ProviderStatusChanged` (administratorius paslėpė, užblokavo, aktyvavo profilį; atblokavus – atkurtas, su
+neprivaloma priežastimi) ir `ProviderVerified` – taip pat neišjungiami (žinia apie paties žmogaus paskyrą; trait'as
+`IgnoresNotificationSettings`). `data`: `provider_profile_id`, `status`, `reason`, `message`; nuoroda skaičiuojama pagal
+**dabartinę** profilio būseną (`NotificationTarget::providerAccountUrl`).
 **Indeksai:** `(notifiable_type, notifiable_id, read_at)`. **Etapas 8:** `morphs()` sukurtas
 `(notifiable_type, notifiable_id)` pakeistas šiuo, nes neperskaitytų skaičius (varpelis) skaičiuojamas **kiekviename**
 puslapyje, o aktyviausio teikėjo ~1 200 pranešimų reikėjo skaityti iš lentelės. Su `read_at` indekse `COUNT(*)`

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\City;
 use App\Models\ProviderProfile;
 use App\Services\Catalog\CatalogCache;
+use App\Services\Subscriptions\PlanBenefits;
 use Collator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -15,7 +16,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Viešas teikėjo profilis. Sąmoningai nesiunčiam: el. pašto, telefono, įmonės ir PVM kodų, kreditų balanso,
  * būsenos – tik tai, ką teikėjas skelbia viešai.
  *
- * Tikisi užkrautų ryšių city, serviceAreas, categories (ProviderController::show).
+ * Tikisi užkrautų ryšių city, serviceAreas, categories, currentSubscriptions (ProviderController::show).
  *
  * @mixin ProviderProfile
  *
@@ -47,6 +48,8 @@ class ProviderProfileResource extends JsonResource
             'serves_whole_country' => $provider->serves_whole_country,
             'service_areas' => $provider->serves_whole_country ? [] : $this->serviceAreas($provider),
             'is_verified' => $provider->isVerified(),
+            // Etapas 9c: ženklelis „PRO" (PlanBenefits)
+            'has_pro_badge' => app(PlanBenefits::class)->hasBadge($provider),
             'years_experience' => $provider->years_experience,
             'rating_avg' => (float) $provider->rating_avg,
             'reviews_count' => $provider->reviews_count,

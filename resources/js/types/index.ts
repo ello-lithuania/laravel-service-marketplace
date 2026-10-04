@@ -7,3 +7,5 @@ export * from './marketplace';
 export * from './navigation';
 export * from './ui';
 export * from './messages';
+// Etapas 9c: prenumeratų privalumai
+export * from './plan-benefits';

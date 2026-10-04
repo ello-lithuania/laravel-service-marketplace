@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\BillingPeriod;
+use App\Services\Subscriptions\PlanBenefits;
+use App\Services\Subscriptions\PlanFeatures;
 use Database\Factories\SubscriptionPlanFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -43,5 +45,22 @@ class SubscriptionPlan extends Model
     public function payments(): MorphMany
     {
         return $this->morphMany(Payment::class, 'purchasable');
+    }
+
+    // --- Etapas 9c: prenumeratų privalumai --------------------------------------------
+
+    /**
+     * features JSON kaip tipizuotas objektas (max_categories, badge, priority_support).
+     */
+    public function planFeatures(): PlanFeatures
+    {
+        return PlanFeatures::fromArray($this->features);
+    }
+
+    protected static function booted(): void
+    {
+        // PlanBenefits planus laiko atmintyje visą užklausą – pakeitus planą, sąrašą perskaito iš naujo
+        static::saved(fn () => app(PlanBenefits::class)->forget());
+        static::deleted(fn () => app(PlanBenefits::class)->forget());
     }
 }

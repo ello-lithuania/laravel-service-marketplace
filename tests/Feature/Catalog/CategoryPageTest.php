@@ -69,7 +69,7 @@ test('teikėjo kortelėje – tik vieši laukai', function () {
         ->has('providers.data.0', fn (Assert $card) => $card
             ->hasAll(['id', 'slug', 'display_name', 'headline', 'logo_url', 'city', 'serves_whole_country',
                 'is_verified', 'rating_avg', 'reviews_count', 'completed_jobs_count', 'years_experience',
-                'categories', 'price_from'])
+                'categories', 'price_from', 'has_pro_badge']) // has_pro_badge – Etapas 9c
             ->missing('company_code')
             ->missing('credits_balance')
             ->missing('user_id')));

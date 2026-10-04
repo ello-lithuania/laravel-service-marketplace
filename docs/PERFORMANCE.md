@@ -165,6 +165,35 @@ Po:    -> Index range scan using (status, expires_at) over (status='open' AND ex
 DB_SCHEMA 8 sk. #16 tai numatė („jei EXPLAIN parodys, kad to maža, pridėsim `(status, expires_at)`"). Lentelė auga
 kasmet, todėl skenavimas su laiku tik lėtėtų.
 
+### 3.5 Etapas 9c: ženklelis „PRO" katalogo sąraše
+
+Matuota tuo pačiu pilnu seed'u (MySQL 8.0, 2 816 prenumeratų, iš jų 1 417 galioja dabar, 712 – su ženkleliu).
+Kortelei reikia žinoti, ar teikėjas turi **dabar galiojančią** prenumeratą su `badge: true` planu. Pasirinkta – atskira
+eager loading užklausa puslapio teikėjams (`ProviderListQuery` → `with('currentSubscriptions')`), o „badge" planai
+randami PHP'e iš kelių eilučių `subscription_plans` (`PlanBenefits`):
+
+```
+-> Filter: (starts_at <= '…') and (ends_at > '…')  (actual time=0.03..0.07 rows=2)
+    -> Index range scan on subscriptions using subscriptions_provider_profile_id_status_index
+       over (provider_profile_id = 1121 AND status = 'active') OR (… 'cancelled') OR (38 more)          0,07 ms
+```
+
+`/meistrai` sąrašas (šiltas): **6 užklausos vietoj 4**, +0,6 ms (prenumeratos) ir +0,4 ms (planų sąrašas, tik kai bent
+vienas puslapio teikėjas turi galiojančią prenumeratą); visas sąrašas su resursais – ~12 ms. Užklausų skaičius nuo
+teikėjų skaičiaus nepriklauso (`tests/Feature/Catalog/ProBadgeTest.php`).
+
+**Alternatyva – `withExists()` pagrindinėje užklausoje** (`EXISTS (SELECT … FROM subscriptions …) AS has_badge`):
+
+| Rikiavimas                                   | Su `EXISTS` |   Be jo | Subužklausa vykdyta |
+| -------------------------------------------- | ----------: | ------: | ------------------: |
+| pagal reitingą (katalogo indeksas, 3.1)      |     0,19 ms | 0,15 ms |            20 kartų |
+| pagal atliktus darbus (filesort 18 333 eil.) |       54 ms |   42 ms |            20 kartų |
+
+MySQL 8.0 projekcijos subužklausą vykdo tik grąžinamoms 20 eilučių (`loops=20`), net po filesort, todėl našumu abu
+būdai panašūs (skirtumas antroje eilutėje – matavimo svyravimas). Lėmė kitkas: puslapiavimo COUNT cache raktas yra
+**visos užklausos SQL su parametrais** (3.2), o `EXISTS` sąlygoje – `now()`, kuris keičiasi kas sekundę. Su `withExists()`
+cache niekada nepataikytų (o `cache` lentelėje kauptųsi raktai). Eager loading pagrindinės užklausos nekeičia.
+
 ## 4. Užklausos, kurios jau buvo geros
 
 | Užklausa                                                     | Planas (santrauka)                                                                                     |  Laikas |
@@ -227,6 +256,8 @@ konkuruoja su pačia DB. Visi saugomi duomenys – skaičiai, masyvai ar XML tek
 - Nauji Filament resursai: sąrašams ryšiai užkraunami `getEloquentQuery()->with(...)`, peržiūrai –
   `getRecordRouteBindingEloquentQuery()->with(...)->withCount(...)`.
 - JSON-LD (`StructuredData::provider`) naudoja tik jau užkrautus ryšius (`relationLoaded`) – papildomų užklausų nėra.
+- Etapas 9c: ženklelis „PRO" – `currentSubscriptions` užkraunamas su sąrašu ir profiliu; be jo
+  `PlanBenefits::hasBadge()` sąraše mestų `LazyLoadingViolationException` (3.5).
 - BDAR eksportas skaito lenteles tiesiogiai (query builder), po vieną užklausą lentelei.
 
 ## 8. Kas liko ir kada grįžti

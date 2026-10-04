@@ -334,4 +334,19 @@ class ProviderProfile extends Model implements HasMedia
 
         $query->orderByDesc('provider_profiles.rating_avg');
     }
+
+    // -------------------------------------------------------------------------
+    // Etapas 9c: prenumeratų privalumai (logika – App\Services\Subscriptions\PlanBenefits)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Dabar galiojančios prenumeratos (paprastai 0 arba 1). Atskiras ryšys, kad katalogo sąraše jas būtų galima
+     * užkrauti viena užklausa visiems puslapio teikėjams: ->with('currentSubscriptions').
+     *
+     * @return HasMany<Subscription, $this>
+     */
+    public function currentSubscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class)->current();
+    }
 }

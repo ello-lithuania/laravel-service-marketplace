@@ -30,6 +30,9 @@ use Illuminate\Support\Str;
  *
  * Pasiūlymai ir užklausos atšaukiami PO blokavimo transakcijos, kiekvienas savo transakcijoje per esamas Actions:
  * jos laikosi užraktų tvarkos (užklausa → pasiūlymai → teikėjai), o mes nerakinam teikėjo eilutės anksčiau už užklausą.
+ *
+ * Etapas 9c: pranešimo (ProviderStatusChanged) čia nesiunčiam – priežastis vidinė, o prisijungimo puslapis praneša
+ * apie blokavimą. Atblokavus ir atkūrus profilį pranešimą siunčia UnbanUser.
  */
 final class BanUser
 {

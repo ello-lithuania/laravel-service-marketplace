@@ -112,6 +112,8 @@ final class UserModerationActions
             ->schema([
                 Toggle::make('restore_profile')
                     ->label('Atkurti teikėjo profilį (vėl rodomas kataloge)')
+                    // Etapas 9c: UnbanUser siunčia ProviderStatusChanged
+                    ->helperText('Teikėjas gaus pranešimą el. paštu ir svetainėje.')
                     ->default(true)
                     ->visible(fn (User $record): bool => $record->providerProfile?->status === ProviderStatus::Suspended),
             ])

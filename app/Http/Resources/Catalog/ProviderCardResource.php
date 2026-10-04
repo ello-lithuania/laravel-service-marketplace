@@ -4,6 +4,7 @@ namespace App\Http\Resources\Catalog;
 
 use App\Models\Category;
 use App\Models\ProviderProfile;
+use App\Services\Subscriptions\PlanBenefits;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,7 +12,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Teikėjo kortelė sąraše. API Resource nusako, kuriuos laukus siunčiam į Vue: tik viešus ir tik reikalingus
  * (jokio el. pašto, telefono, įmonės kodo ar kreditų balanso).
  *
- * Tikisi užkrautų ryšių city ir categories (ProviderListQuery) – kitaip preventLazyLoading išmes klaidą.
+ * Tikisi užkrautų ryšių city, categories ir currentSubscriptions (ProviderListQuery) – kitaip preventLazyLoading
+ * išmes klaidą.
  * Kaina „nuo" čia nerodoma: be konkrečios paslaugos skirtingų kategorijų kainos (už val., už m²) nepalyginamos.
  * Kategorijos puslapyje naudojamas CategoryProviderCardResource – su kaina.
  *
@@ -42,6 +44,8 @@ class ProviderCardResource extends JsonResource
             'city' => $provider->city->name,
             'serves_whole_country' => $provider->serves_whole_country,
             'is_verified' => $provider->isVerified(),
+            // Etapas 9c: ženklelis „PRO" – galiojanti prenumerata su badge planu
+            'has_pro_badge' => app(PlanBenefits::class)->hasBadge($provider),
             'rating_avg' => (float) $provider->rating_avg,
             'reviews_count' => $provider->reviews_count,
             'completed_jobs_count' => $provider->completed_jobs_count,

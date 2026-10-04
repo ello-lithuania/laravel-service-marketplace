@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { BadgeCheck, BriefcaseBusiness, MapPin, Star } from '@lucide/vue';
+import ProBadge from '@/components/catalog/ProBadge.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getInitials } from '@/composables/useInitials';
@@ -48,6 +49,8 @@ defineProps<{ provider: ProviderCard }>();
                         <BadgeCheck aria-hidden="true" />
                         Patikrintas
                     </Badge>
+                    <!-- Etapas 9c: prenumeratos ženklelis -->
+                    <ProBadge v-if="provider.has_pro_badge" />
                 </div>
 
                 <p
