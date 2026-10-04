@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, useForm, usePoll } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, Link, useForm, usePoll } from '@inertiajs/vue3';
 import { ArrowLeft, Lock, Paperclip, Send, X } from '@lucide/vue';
-import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import ReportDialog from '@/components/complaints/ReportDialog.vue';
 import InputError from '@/components/InputError.vue';
 import StatusBadge from '@/components/marketplace/StatusBadge.vue';
@@ -13,11 +13,11 @@ import { attachmentError, formatFileSize } from '@/lib/messages';
 import { index } from '@/routes/conversations';
 import { store } from '@/routes/messages';
 import { show as showRequest } from '@/routes/service-requests';
-import type { ChatMessage, ConversationDetail } from '@/types';
+import type { ChatMessage, ChatMessagePage, ConversationDetail } from '@/types';
 
 const props = defineProps<{
     conversation: ConversationDetail;
-    messages: ChatMessage[];
+    messages: ChatMessagePage;
     can: { send: boolean; reason: string | null };
 }>();
 
@@ -41,8 +41,20 @@ function canReport(message: ChatMessage): boolean {
 /*
  * Polling: kas 10 s Inertia paima tik žinutes (ir ar dar galima rašyti). Serveris tuo pačiu pažymi pokalbį
  * perskaitytu, todėl kita pusė mato, kad žinutė perskaityta, o meniu ženklelis sumažėja.
+ * Atsakyme – naujausių žinučių puslapis. Jis prijungiamas prie jau įkeltų (merge su matchOn('data.id')),
+ * todėl senesnės, slenkant aukštyn įkeltos žinutės nedingsta ir nesidubliuoja.
  */
-usePoll(10_000, { only: ['messages', 'can', 'inbox'] });
+const RELOAD_PROPS = ['messages', 'can', 'inbox'];
+
+usePoll(10_000, { only: RELOAD_PROPS });
+
+/*
+ * messages.data – puslapiai tokia tvarka, kokia jie atėjo: naujausių puslapis, senesni, o polling'o naujienos –
+ * gale. Todėl rodymui surikiuojam pagal id (id didėja kartu su laiku): seniausios viršuje, naujausios apačioje.
+ */
+const ordered = computed(() =>
+    [...props.messages.data].sort((a, b) => a.id - b.id),
+);
 
 const list = useTemplateRef<HTMLElement>('list');
 
@@ -54,18 +66,20 @@ function scrollToBottom(): void {
     });
 }
 
-onMounted(scrollToBottom);
-
-// Atėjus naujai žinutei – žemyn, bet tik jei vartotojas ir taip buvo apačioje (neskaito senų žinučių)
+/*
+ * Atėjus naujai žinutei – žemyn, bet tik jei vartotojas ir taip buvo apačioje (neskaito senų žinučių).
+ * Stebim naujausios žinutės id, o ne kiekį: įkėlus senesnes žinutes kiekis irgi padidėja, bet tada
+ * slinkti žemyn nereikia (pradinį nuslinkimą į apačią ir vietos išlaikymą atlieka InfiniteScroll).
+ */
 watch(
-    () => props.messages.length,
-    (length, previous) => {
+    () => ordered.value.at(-1)?.id ?? 0,
+    (newest, previous) => {
         const el = list.value;
         const nearBottom =
             !el || el.scrollHeight - el.scrollTop - el.clientHeight < 160;
-        const lastIsMine = props.messages[length - 1]?.is_mine ?? false;
+        const lastIsMine = ordered.value.at(-1)?.is_mine ?? false;
 
-        if (length > previous && (nearBottom || lastIsMine)) {
+        if (newest > previous && (nearBottom || lastIsMine)) {
             scrollToBottom();
         }
     },
@@ -128,8 +142,12 @@ function send(): void {
         return;
     }
 
-    // Su failais Inertia pati siunčia multipart/form-data (FormData)
+    // Su failais Inertia pati siunčia multipart/form-data (FormData).
+    // only + preserveState: po nukreipimo atgal į pokalbį perkraunamos tik žinutės (merge, kaip polling'e),
+    // todėl jau įkeltos senesnės žinutės lieka, o komponentas neperkuriamas.
     form.post(store(props.conversation.id).url, {
+        only: RELOAD_PROPS,
+        preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
             form.reset();
@@ -200,65 +218,104 @@ function onKeydown(event: KeyboardEvent): void {
             aria-live="polite"
         >
             <p
-                v-if="messages.length === 0"
+                v-if="ordered.length === 0"
                 class="m-auto text-center text-sm text-muted-foreground"
             >
                 Žinučių dar nėra – parašykite pirmą.
             </p>
 
-            <article
-                v-for="message in messages"
-                :key="message.id"
-                class="flex max-w-[85%] flex-col gap-1"
-                :class="message.is_mine ? 'items-end self-end' : 'items-start'"
-                :data-test="message.is_mine ? 'message-mine' : 'message-theirs'"
+            <!--
+                Begalinis slinkimas atvirkščiai (reverse), kaip pokalbių programose: atidarius rodoma apačia,
+                o priartėjus prie viršaus įkeliamas kitas (senesnis) puslapis. preserve-url – adresas nesikeičia.
+            -->
+            <InfiniteScroll
+                v-else
+                data="messages"
+                reverse
+                only-next
+                preserve-url
+                class="flex flex-col gap-3"
             >
-                <div
-                    class="rounded-2xl px-3.5 py-2 text-sm"
-                    :class="[
-                        message.is_hidden || message.is_system
-                            ? 'border border-dashed bg-background text-muted-foreground italic'
-                            : message.is_mine
-                              ? 'rounded-br-sm bg-primary text-primary-foreground'
-                              : 'rounded-bl-sm border bg-background',
-                    ]"
-                >
-                    <p v-if="message.is_hidden">
-                        Žinutė paslėpta administratoriaus.
-                    </p>
-                    <p
-                        v-else-if="message.body"
-                        class="break-words whitespace-pre-line"
+                <template #next="{ loading, fetch, hasMore }">
+                    <div
+                        class="flex min-h-8 items-center justify-center pb-2 text-xs text-muted-foreground"
                     >
-                        {{ message.body }}
-                    </p>
-                    <AttachmentList
-                        v-if="message.attachments.length"
-                        :files="message.attachments"
-                        :mine="message.is_mine"
-                        :class="{ 'mt-2': message.body }"
-                    />
-                </div>
-                <div
-                    class="flex items-center gap-1 px-1 text-xs text-muted-foreground"
+                        <span v-if="loading" class="flex items-center gap-2">
+                            <Spinner /> Įkeliamos senesnės žinutės…
+                        </span>
+                        <!-- Mygtukas – jei automatinis įkėlimas nesuveikė (pvz. naršant klaviatūra) -->
+                        <Button
+                            v-else-if="hasMore"
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            data-test="load-older"
+                            @click="fetch"
+                        >
+                            Rodyti senesnes žinutes
+                        </Button>
+                        <span v-else>Pokalbio pradžia</span>
+                    </div>
+                </template>
+
+                <article
+                    v-for="message in ordered"
+                    :key="message.id"
+                    class="flex max-w-[85%] flex-col gap-1"
+                    :class="
+                        message.is_mine ? 'items-end self-end' : 'items-start'
+                    "
+                    :data-test="
+                        message.is_mine ? 'message-mine' : 'message-theirs'
+                    "
                 >
-                    <span v-if="!message.is_mine"
-                        >{{ message.sender_name }} ·
-                    </span>
-                    <time
-                        v-if="message.created_at"
-                        :datetime="message.created_at"
-                        >{{ formatDateTime(message.created_at) }}</time
+                    <div
+                        class="rounded-2xl px-3.5 py-2 text-sm"
+                        :class="[
+                            message.is_hidden || message.is_system
+                                ? 'border border-dashed bg-background text-muted-foreground italic'
+                                : message.is_mine
+                                  ? 'rounded-br-sm bg-primary text-primary-foreground'
+                                  : 'rounded-bl-sm border bg-background',
+                        ]"
                     >
-                    <!-- Etapas 6: pranešti apie kito dalyvio žinutę -->
-                    <ReportDialog
-                        v-if="isParticipant && canReport(message)"
-                        type="message"
-                        :id="message.id"
-                        compact
-                    />
-                </div>
-            </article>
+                        <p v-if="message.is_hidden">
+                            Žinutė paslėpta administratoriaus.
+                        </p>
+                        <p
+                            v-else-if="message.body"
+                            class="break-words whitespace-pre-line"
+                        >
+                            {{ message.body }}
+                        </p>
+                        <AttachmentList
+                            v-if="message.attachments.length"
+                            :files="message.attachments"
+                            :mine="message.is_mine"
+                            :class="{ 'mt-2': message.body }"
+                        />
+                    </div>
+                    <div
+                        class="flex items-center gap-1 px-1 text-xs text-muted-foreground"
+                    >
+                        <span v-if="!message.is_mine"
+                            >{{ message.sender_name }} ·
+                        </span>
+                        <time
+                            v-if="message.created_at"
+                            :datetime="message.created_at"
+                            >{{ formatDateTime(message.created_at) }}</time
+                        >
+                        <!-- Etapas 6: pranešti apie kito dalyvio žinutę -->
+                        <ReportDialog
+                            v-if="isParticipant && canReport(message)"
+                            type="message"
+                            :id="message.id"
+                            compact
+                        />
+                    </div>
+                </article>
+            </InfiniteScroll>
         </section>
 
         <form

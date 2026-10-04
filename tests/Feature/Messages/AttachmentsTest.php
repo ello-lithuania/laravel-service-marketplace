@@ -51,10 +51,10 @@ test('žinutė su nuotrauka ir PDF – priedai privačiame diske, tekstas nepriv
 
     $this->actingAs($this->client)->get(route('conversations.show', $this->conversation))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('messages.0.attachments', 2)
-            ->where('messages.0.attachments.0.is_image', true)
-            ->where('messages.0.attachments.1.is_image', false)
-            ->where('messages.0.attachments.1.thumb_url', null));
+            ->has('messages.data.0.attachments', 2)
+            ->where('messages.data.0.attachments.0.is_image', true)
+            ->where('messages.data.0.attachments.1.is_image', false)
+            ->where('messages.data.0.attachments.1.thumb_url', null));
 });
 
 test('netinkami priedai atmetami', function (array $files, string $errorKey) {

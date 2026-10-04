@@ -70,6 +70,15 @@ export type ChatMessage = {
     attachments: PrivateFile[];
 };
 
+/**
+ * Žinučių puslapis (Inertia::scroll() + cursorPaginate): naujausios pirmos. Senesni puslapiai ir polling'o
+ * rezultatai prijungiami prie `data` (merge), todėl rodymo tvarką nustato komponentas.
+ */
+export type ChatMessagePage = {
+    data: ChatMessage[];
+    next_cursor: string | null;
+};
+
 // --- Atsiliepimai ---
 
 export type ReviewStatus = 'pending' | 'published' | 'hidden';

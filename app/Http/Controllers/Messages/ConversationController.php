@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,8 +28,8 @@ use Inertia\Response;
  */
 class ConversationController extends Controller
 {
-    /** Kiek naujausių žinučių rodyti pokalbyje (pokalbiai trumpi; ilgesniems – žr. docs/drafts/etapas-6.md). */
-    public const MESSAGES_LIMIT = 100;
+    /** Kiek žinučių įkeliama vienu kartu: atidarius – naujausios, slenkant aukštyn – po tiek pat senesnių. */
+    public const MESSAGES_PER_PAGE = 50;
 
     /**
      * Mano pokalbiai: per pivot conversation_user (indeksas user_id, conversation_id), naujausi viršuje.
@@ -61,6 +62,11 @@ class ConversationController extends Controller
     /**
      * Pokalbis. Atidarius (ir kiekvieno automatinio atnaujinimo metu) pažymimas perskaitytu.
      * Props – closure: dalinis perkrovimas su only: ['messages'] skaičiuoja tik žinutes.
+     *
+     * Žinutės – Inertia::scroll() (begalinis slinkimas, InfiniteScroll komponentas Show.vue): pirmas puslapis –
+     * naujausios žinutės, ?cursor=… – senesnės. Naršyklė puslapius sujungia (merge), o matchOn('data.id')
+     * neleidžia dubliuotis: polling'as kas 10 s vėl gauna naujausių puslapį, ir jau rodomos žinutės
+     * atnaujinamos vietoje (pvz. paslėpta), o naujos – pridedamos.
      */
     public function show(Request $request, Conversation $conversation, MarkConversationRead $markRead): Response
     {
@@ -79,7 +85,7 @@ class ConversationController extends Controller
 
         return Inertia::render('messages/Show', [
             'conversation' => fn (): array => ConversationResource::make($conversation)->resolve(),
-            'messages' => fn (): array => $this->messages($conversation),
+            'messages' => Inertia::scroll(fn (): CursorPaginator => $this->messages($conversation))->matchOn('data.id'),
             'can' => function () use ($user, $conversation): array {
                 $permission = Gate::forUser($user)->inspect('sendMessage', $conversation);
 
@@ -100,25 +106,29 @@ class ConversationController extends Controller
     }
 
     /**
-     * Naujausios žinutės chronologine tvarka. Paslėptos (soft delete) irgi grąžinamos – vietoj teksto
-     * rodom „Žinutė paslėpta", kad pokalbio eiga liktų suprantama.
+     * Vienas žinučių puslapis nuo naujausių (id mažėjančiai). Rodymo tvarką (seniausios viršuje) sudėlioja Show.vue.
+     * Paslėptos (soft delete) irgi grąžinamos – vietoj teksto rodom „Žinutė paslėpta", kad pokalbio eiga liktų suprantama.
      *
-     * @return list<array<string, mixed>>
+     * Cursor, o ne puslapio numeris (?page=2): kol skaitai senas žinutes, ateina naujų, ir „2 puslapis" pasislinktų –
+     * dalis žinučių pasikartotų. Cursor reiškia „žinutės, kurių id < X", todėl naujos žinutės jo nepaveikia,
+     * o užklausa naudoja indeksą (conversation_id, id) be OFFSET.
+     *
+     * @return CursorPaginator<int, array<mixed>>
      */
-    private function messages(Conversation $conversation): array
+    private function messages(Conversation $conversation): CursorPaginator
     {
-        $messages = $conversation->messages()
+        return $conversation->messages()
             ->withTrashed()
-            // Priedai (medialibrary) – viena užklausa visoms žinutėms
+            // Priedai (medialibrary) – viena užklausa visoms puslapio žinutėms
             ->with('media')
-            ->latest('id')
-            ->limit(self::MESSAGES_LIMIT)
-            ->get()
-            ->reverse()
-            // Siuntėjo vardui MessageResource naudoja jau užkrautą pokalbį – be papildomų užklausų
-            ->each(fn (Message $message) => $message->setRelation('conversation', $conversation));
+            ->orderByDesc('id')
+            ->cursorPaginate(self::MESSAGES_PER_PAGE)
+            ->through(function (Message $message) use ($conversation): array {
+                // Siuntėjo vardui MessageResource naudoja jau užkrautą pokalbį – be papildomų užklausų
+                $message->setRelation('conversation', $conversation);
 
-        return array_values($messages->map(fn (Message $message): array => MessageResource::make($message)->resolve())->all());
+                return MessageResource::make($message)->resolve();
+            });
     }
 
     private function user(Request $request): User
