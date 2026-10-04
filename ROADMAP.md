@@ -179,11 +179,11 @@ atrodytų kaip tikra.
 **Sąvokos:** failų generavimas seed'e, Inertia begalinis slinkimas (infinite scroll), kreditinė sąskaita,
 skaičiai žodžiais, prenumeratos privalumai (feature flags), administratoriaus veiksmų pranešimai.
 
-- [ ] Demo nuotraukos seed'e (`SEED_MEDIA=true`): sugeneruoti abstraktūs paveikslėliai logotipams, viršeliams ir portfolio (`docs/SEEDING.md` 7 sk.)
-- [ ] Ilgi pokalbiai: senesnių žinučių įkėlimas vietoj 100 žinučių ribos
-- [ ] Mokėjimo grąžinimas Filament'e: būsena `refunded`, kreditų atėmimas per ledger, kreditinė sąskaita (atskira numeracija, PDF)
-- [ ] Sąskaitoje faktūroje – suma žodžiais lietuviškai
-- [ ] Prenumeratų privalumai: kategorijų limitas (`max_categories`; be prenumeratos – riba iš `config`), ženklelis profilyje ir kortelėse
-- [ ] Pranešimas teikėjui, kai administratorius pakeičia profilio būseną (patikrintas, paslėptas, užblokuotas, aktyvuotas)
-- [ ] Testai (SQLite ir MySQL)
-- [ ] `docs/LEARNING.md`: Etapas 9 + santrauka vartotojui
+- [x] Demo nuotraukos seed'e (`SEED_MEDIA=true`): sugeneruoti abstraktūs paveikslėliai logotipams, viršeliams ir portfolio (`docs/SEEDING.md` 7 sk.)
+- [x] Ilgi pokalbiai: senesnių žinučių įkėlimas vietoj 100 žinučių ribos
+- [x] Mokėjimo grąžinimas Filament'e: būsena `refunded`, kreditų atėmimas per ledger, kreditinė sąskaita (atskira numeracija, PDF)
+- [x] Sąskaitoje faktūroje – suma žodžiais lietuviškai
+- [x] Prenumeratų privalumai: kategorijų limitas (`max_categories`; be prenumeratos – riba iš `config`), ženklelis profilyje ir kortelėse
+- [x] Pranešimas teikėjui, kai administratorius pakeičia profilio būseną (patikrintas, paslėptas, užblokuotas, aktyvuotas)
+- [x] Testai (SQLite ir MySQL)
+- [x] `docs/LEARNING.md`: Etapas 9 + santrauka vartotojui

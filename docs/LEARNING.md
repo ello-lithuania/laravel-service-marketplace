@@ -482,7 +482,7 @@ neįleistų nieko. → https://filamentphp.com/docs/5.x/users/overview
 ## Etapas 3 – Autentifikacija, rolės, teikėjo profilis
 
 > Etapas atliktas lygiagrečiai su Etapais 4 ir 5 (atskiri agentai, atskiros git šakos, sujungta į vieną).
-> Liko vėlesniems etapams: demo nuotraukos seed'e (`SEED_MEDIA`) ir nuotraukų peržiūra Filament'e.
+> Vėliau padaryta: demo nuotraukos seed'e (`SEED_MEDIA`, Etapas 9a), nuotraukų peržiūra Filament'e (Etapas 8).
 
 ### Ką darėm ir kodėl
 
@@ -1270,7 +1270,7 @@ Larastan pagal nutylėjimą žiūri tik į `casts()` metodo grąžinamą tipą (
 
 > Atlikta lygiagrečiai su Etapais 7 ir 8. Kartu padaryti du darbai iš Etapo 5: užklausos nuotraukos ir
 > `STATES.md` papildomos taisyklės (teikėjo prašymas pažymėti darbą atliktu, 60 d. priminimas).
-> Sąmoningai nepadaryta: Laravel Reverb (tik sprendimas), skundų įrodymų failai, ilgų pokalbių puslapiavimas.
+> Sąmoningai nepadaryta: Laravel Reverb (tik sprendimas), skundų įrodymų failai. Ilgų pokalbių puslapiavimas – Etapas 9a.
 
 ### Ką darėm ir kodėl
 
@@ -1578,8 +1578,8 @@ dirba UTC, o laiškas turi ateiti 9 val. Lietuvos laiku (ir vasarą, ir žiemą)
 ## Etapas 7 – Kreditai, prenumeratos, mokėjimai
 
 > Sąmoningai nepadaryta: automatinis kortelės nuskaitymas (Paysera mūsų sąrankoje to nedaro – pratęsimas =
-> priminimas su nuoroda apmokėti), pinigų grąžinimo veiksmas ir kreditinės sąskaitos, planų privalumų
-> įgyvendinimas (`max_categories`), Stripe tiekėjas (sąsaja paruošta).
+> priminimas su nuoroda apmokėti), Stripe tiekėjas (sąsaja paruošta). Pinigų grąžinimas, kreditinės sąskaitos ir
+> planų privalumai (`max_categories`, ženklelis) padaryti Etape 9.
 
 ### Ką darėm ir kodėl
 
@@ -2093,3 +2093,685 @@ iškviestas `Illuminate\Support\Carbon` yra kintamas.
   `Event::hasListeners()`.
 - **`selectRaw()` su sukonstruota eilute** – Larastan reikalauja `literal-string` (apsauga nuo SQL injekcijų);
   kintamas dalis perduoti parametrais (`?`).
+
+---
+
+## Etapas 9 – Užbaigimas: atidėti darbai
+
+> Visi `ROADMAP.md` etapai 0–8 buvo atlikti, todėl Etape 9 užbaigti darbai, kuriuos ankstesni etapai sąmoningai
+> atidėjo. Trys dalys daryti lygiagrečiai (atskiri agentai, atskiros git šakos, sujungta į vieną).
+
+### 9a – Demo paveikslėliai seed'e ir ilgi pokalbiai
+
+#### Ką darėm ir kodėl
+
+- **Demo paveikslėliai.** Iki šiol demo teikėjai neturėjo nei logotipų, nei darbų nuotraukų, todėl katalogas ir profiliai
+  atrodė tušti, o medialibrary miniatiūrų, URL ir diskų veikimo su dideliu kiekiu nematėm. Dabar
+  `SEED_MEDIA=true php artisan migrate:fresh --seed` sukuria ≈ 500 logotipų, ≈ 200 viršelių ir ≈ 1 000 portfolio darbų ×
+  1–3 nuotraukos (× `SEED_SCALE`, tik aktyviems teikėjams).
+    - **Jokių tikrų nuotraukų** (`docs/SEEDING.md` 6 sk.): paveikslėlius seed'o metu nupiešia `ImagePainter` su PHP GD –
+      sulieti spalvų ratai, permatomos figūros, „bangos" ir inicialai. Kiekviena paslaugų sritis turi savo paletę
+      (statyba – oranžinė, santechnika – mėlyna, sodas – žalia…), todėl darbų nuotraukos dera prie kategorijos.
+    - **Greitis:** piešiamas tik nedidelis bendras rinkinys (≤ 72 failai portfolio ir viršeliams, logotipai – pagal
+      inicialus), o prisegama su `preservingOriginal()` – tas pats failas kopijuojamas daug kartų.
+    - **Miniatiūros seed'o metu daromos iškart** (laikinai `media-library.queue_connection_name = sync`), net jei
+      `.env` – `QUEUE_CONNECTION=database`. Kitaip seed'as įdėtų ≈ 2 000 darbų į eilę, ir portfolio miniatiūros atsirastų
+      tik veikiant `queue:work`. Kaina – laikas: `SEED_SCALE=0.05` – 10–12 s vietoj ≈ 3 s, `SEED_SCALE=1` – ≈ 5 min.
+      Todėl pagal nutylėjimą `SEED_MEDIA=false`.
+    - **Atkartojamumas:** ta pati `SEED_FAKER_SEED` – baitas į baitą tie patys failai (patikrinta `md5sum`).
+    - **Populiaresni – dažniau su logotipu:** teikėjai renkami svertiniu atsitiktiniu būdu pagal atsiliepimų skaičių,
+      todėl katalogo pirmame puslapyje paveikslėlių matyti, o toliau – mažiau, kaip tikrovėje.
+    - Failai: `database/seeders/Demo/ImagePainter.php`, `database/seeders/Demo/MediaGenerator.php` (paskutinis
+      `DemoDataSeeder` žingsnis), `config/seeding.php` (`media`), `.env.example` (`SEED_MEDIA=false`).
+- **Ilgi pokalbiai.** Pokalbis rodė tik 100 naujausių žinučių (`MESSAGES_LIMIT`) – senesnių pamatyti nebuvo galima. Dabar:
+    - serveris žinutes atiduoda **puslapiais po 50 nuo naujausių** su `Inertia::scroll()` ir `cursorPaginate()`;
+    - `Show.vue` naudoja Inertia 3 komponentą **`<InfiniteScroll reverse>`**: atidarius rodoma pokalbio apačia, priartėjus
+      prie viršaus automatiškai įkeliamas senesnis puslapis (atsarginis mygtukas „Rodyti senesnes žinutes"), skaitoma
+      vieta neperšoka, URL nesikeičia; pasiekus pradžią rodoma „Pokalbio pradžia";
+    - **polling'as** (kas 10 s) ir **žinutės siuntimas** perkrauna tik `messages` – naujausių puslapis **prijungiamas**
+      (merge) prie jau įkeltų pagal `id`, todėl senesnės žinutės nedingsta ir nesidubliuoja;
+    - perskaitytumas (`last_read_message_id`) – kaip anksčiau: bet kuri pokalbio užklausa pažymi perskaitytu iki
+      naujausios žinutės, reikšmė tik didėja (senesnio puslapio įkėlimas jos nesumažina).
+    - Failai: `app/Http/Controllers/Messages/ConversationController.php`, `resources/js/pages/messages/Show.vue`,
+      `resources/js/types/messages.ts` (`ChatMessagePage`).
+
+**Kaip išbandyti:**
+
+```bash
+SEED_MEDIA=true php artisan migrate:fresh --seed   # 10–12 s su SEED_SCALE=0.05
+composer run dev
+```
+
+Paveikslėliai – `/meistrai` (rikiuoti „Daugiausia atsiliepimų") ir teikėjų profiliai. Ilgam pokalbiui demo duomenyse
+žinučių per mažai (2–5), todėl `php artisan tinker` vienam pokalbiui pridėk, pvz., 130 žinučių
+(`Message::factory()->count(130)->for($conversation)->create(['sender_id' => …])`) ir atidaryk `/zinutes/{id}`.
+
+#### Išmoktos sąvokos
+
+##### 1. PHP GD: paveikslėlių piešimas kodu
+
+GD – PHP plėtinys paveikslėliams kurti ir keisti (`php -m | grep gd`). WordPress jį (arba Imagick) naudoja miniatiūroms
+per `WP_Image_Editor`.
+
+```php
+$image = imagecreatetruecolor(960, 720);                        // tuščia „drobė"
+$color = imagecolorallocatealpha($image, 234, 88, 12, 60);      // RGB + permatomumas (0 – nepermatoma, 127 – visiškai)
+imagefilledellipse($image, 480, 360, 300, 300, $color);         // figūros: ellipse, polygon, line, rectangle
+imagefilter($image, IMG_FILTER_GAUSSIAN_BLUR);                  // filtrai: suliejimas, šviesumas…
+$big = imagescale($image, 1920, 1440, IMG_BILINEAR_FIXED);      // dydžio keitimas su interpoliacija
+imagettftext($image, 120, 0, $x, $y, $white, $fontPath, 'ŠŽ');  // tekstas TrueType šriftu (UTF-8)
+imagejpeg($image, $path, 82);                                   // įrašymas: imagejpeg / imagepng / imagewebp
+```
+
+- **Greičio triukas:** PHP ciklas per kiekvieną tašką (`imagesetpixel` 700 000 kartų) trunka sekundes. Todėl fonas
+  piešiamas 8 kartus mažesnis, suliejamas ir padidinamas `imagescale(..., IMG_BILINEAR_FIXED)` – sklandus perėjimas per
+  kelias milisekundes. Visas paveikslėlis – ≈ 20–25 ms.
+- **Šriftas su lietuviškomis raidėmis.** GD įtaisyti šriftai (`imagestring`) turi tik lotyniškas raides, todėl
+  inicialams – `imagettftext()` su DejaVu Sans (jį jau atsiveža `dompdf`, naudojamas sąskaitų PDF). Centravimui
+  `imagettfbbox()` grąžina teksto stačiakampį.
+- **Atkartojamumas:** GD pats atsitiktinumo neturi – visos koordinatės ir spalvos iš `mt_rand()`, kuris „užsėjamas"
+  `mt_srand($seed)`. Ta pati sėkla – tas pats failas.
+  → https://www.php.net/manual/en/book.image.php · https://www.php.net/manual/en/function.imagettftext.php
+
+##### 2. Medialibrary: failų prisegimas kodu ir miniatiūrų eilė
+
+```php
+$profile->addMedia($path)            // vietinis failas (įkeltam per formą – addMediaFromRequest('logo'))
+    ->preservingOriginal()           // nekelti (move), o kopijuoti – originalas lieka kitiems įrašams
+    ->setOrder(1)                    // order_column (kolekcijos tvarka)
+    ->withAttributes(['uuid' => $uuid])
+    ->toMediaCollection('logo');     // kolekcija iš registerMediaCollections()
+```
+
+- Be `preservingOriginal()` medialibrary šaltinį **perkelia** – antrą kartą to paties failo prisegti nebeišeitų.
+- **Miniatiūros (conversions)** daromos iškart, jei konversija `->nonQueued()`, kitaip – eilės darbu
+  `PerformConversionsJob` per `media-library.queue_connection_name` (numatyta – `QUEUE_CONNECTION`). Kol jis neįvykdytas,
+  `$media->hasGeneratedConversion('thumb')` grąžina `false` (todėl `PortfolioItem::imageUrls()` tada rodo originalą).
+- `config([...])` vykdymo metu pakeičia nustatymą tik šiam procesui – seed'as laikinai įjungia `sync` ir `finally` bloke
+  grąžina seną reikšmę.
+- **Modelių įvykiai:** medialibrary `uuid` ir `order_column` priskiria `creating` įvykyje (observer'is). `DatabaseSeeder`
+  turi `WithoutModelEvents`, todėl seed'e šiuos laukus nurodom patys – kitaip `uuid` liktų `NULL`.
+- **Morph map:** `media.model_type` saugo trumpą vardą (`provider_profile`, `portfolio_item`), nes
+  `AppServiceProvider` kviečia `Relation::enforceMorphMap()` – tai patikrinta ir integracijos teste.
+  → https://spatie.be/docs/laravel-medialibrary/v11/basic-usage/associating-files ·
+  https://spatie.be/docs/laravel-medialibrary/v11/converting-images/defining-conversions ·
+  https://laravel.com/docs/13.x/eloquent-relationships#custom-polymorphic-types
+
+##### 3. Svertinis atsitiktinis rikiavimas (Efraimidis–Spirakis)
+
+Reikėjo „atsitiktinai, bet populiaresni dažniau", be pasikartojimų. Kiekvienam teikėjui – raktas `ln(u) / svoris`
+(`u` – atsitiktinis skaičius 0–1), tada rikiuojama mažėjančiai ir imama tiek pirmųjų, kiek reikia. Kuo didesnis svoris,
+tuo raktas arčiau nulio, t. y. aukščiau. Vienas praėjimas ir vienas `arsort()` – greičiau nei kartoti „ištrauk ir
+išmesk". Svoris `(1 + atsiliepimai)²`: su tiesiniu svoriu tarp 900 teikėjų top 4 retai gaudavo logotipą.
+
+##### 4. Cursor puslapiavimas (`cursorPaginate`)
+
+```php
+$conversation->messages()->orderByDesc('id')->cursorPaginate(50);
+// SQL: ... WHERE conversation_id = ? [AND id < ?] ORDER BY id DESC LIMIT 51
+```
+
+- **Puslapio numeris** (`paginate()`, `?page=2`) – `OFFSET 50`. Jei kol skaitai atėjo 3 naujos žinutės, „2 puslapis"
+  pasislenka per 3 ir dalis žinučių pasikartoja. **Cursor** (`?cursor=eyJ…`) – užkoduotas „paskutinio matyto įrašo"
+  raktas, todėl kitas puslapis visada prasideda tiksliai ten, kur baigėsi ankstesnis, o naujos žinutės jo nepaveikia.
+- Be `OFFSET` – greita ir tolimiems puslapiams (indeksas `conversation_id` InnoDB'e savyje turi ir `id`).
+- Apribojimai: rikiuoti reikia pagal unikalų stulpelį (čia `id`), nėra „iš viso puslapių" ir šuolio į N-tą puslapį – chat'ui
+  to ir nereikia. `->through(fn ($m) => …)` pakeičia kiekvieną puslapio elementą (čia – į `MessageResource` masyvą).
+- WordPress analogas – `WP_Query` su `'paged'` (offset); cursor primena „Senesni įrašai" pagal datą.
+  → https://laravel.com/docs/13.x/pagination#cursor-pagination
+
+##### 5. Inertia 3: `Inertia::scroll()` ir `<InfiniteScroll>`
+
+```php
+'messages' => Inertia::scroll(fn () => $this->messages($conversation))->matchOn('data.id'),
+```
+
+```vue
+<InfiniteScroll
+    data="messages"
+    reverse
+    only-next
+    preserve-url
+    class="flex flex-col gap-3"
+>
+    <template #next="{ loading, fetch, hasMore }">…</template>
+    <article v-for="message in ordered" :key="message.id">…</article>
+</InfiniteScroll>
+```
+
+- `Inertia::scroll()` – puslapiuotas prop'as: atsakyme be duomenų yra `scrollProps` (kito / ankstesnio puslapio raktas),
+  o daliniame perkrovime duomenys **sujungiami** (`mergeProps: ['messages.data']`), ne pakeičiami.
+- `<InfiniteScroll>` pats seka, kada viršutinis / apatinis „trigeris" pasirodo ekrane (IntersectionObserver), ir siunčia
+  dalinį perkrovimą `only: ['messages']` su `?cursor=…` bei antrašte, į kurią pusę jungti.
+- `reverse` – chat'o režimas: kitas (senesnis) puslapis įkeliamas **viršuje**, atidarius nuslenkama į apačią, įkėlus
+  senesnes žinutes išlaikoma skaitoma vieta. `preserve-url` – adreso juostoje `?cursor=…` nerodomas.
+- **Rodymo tvarka – mūsų darbas:** `data` masyve puslapiai sudėti ta tvarka, kuria atėjo (naujausi, senesni, polling'o
+  naujienos gale), todėl `computed` surikiuoja pagal `id`.
+- **`matchOn('data.id')`** – sujungiant, įrašai su tuo pačiu `id` pakeičiami vietoje, o ne pridedami antrą kartą.
+  Būtent tai leidžia polling'ui (`usePoll(10_000, { only: ['messages', …] })`) kas 10 s parsisiųsti naujausių puslapį:
+  jau rodomos žinutės atsinaujina (pvz. paslėpta), naujos pridedamos, senesnės lieka.
+- **Siuntimas su `only`:** `form.post(url, { only: [...], preserveState: true })` – po nukreipimo (redirect) atgal į pokalbį
+  Inertia daro dalinį perkrovimą (antraštės išlieka ir po redirect), todėl jau įkeltos senesnės žinutės nedingsta.
+  → https://inertiajs.com/infinite-scroll · https://inertiajs.com/merging-props · https://inertiajs.com/polling ·
+  https://inertiajs.com/partial-reloads
+
+##### 6. Testuose – tikras Inertia dalinis perkrovimas
+
+`assertInertia()` mato tik `props`. `scrollProps`, `mergeProps`, `matchPropsOn` patikrinti galima siunčiant tas pačias
+antraštes kaip naršyklė ir skaitant JSON:
+
+```php
+$this->get(route('conversations.show', $conversation).'?cursor='.$cursor, [
+    'X-Inertia' => 'true',
+    'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(Request::create('/')),
+    'X-Inertia-Partial-Component' => 'messages/Show',
+    'X-Inertia-Partial-Data' => 'messages',
+])->json('scrollProps.messages.nextPage');
+```
+
+Be teisingos `X-Inertia-Version` serveris grąžina 409 (naujas frontend'o leidimas). N+1 patikra be papildomų įrankių:
+`DB::enableQueryLog()` → užklausų skaičius su 2 ir su 50 žinučių turi sutapti.
+→ https://laravel.com/docs/13.x/database#listening-for-query-events · https://inertiajs.com/testing
+
+#### Naudingos komandos
+
+| Komanda                                                            | Ką daro                                                           |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `SEED_MEDIA=true php artisan migrate:fresh --seed`                 | demo duomenys su paveikslėliais (10–12 s su `SEED_SCALE=0.05`)    |
+| `php -m \| grep -i gd` · `php -r 'print_r(gd_info());'`            | ar įdiegtas GD ir ką jis moka (JPEG, PNG, WebP, FreeType)         |
+| `php artisan media-library:regenerate`                             | iš naujo sugeneruoja miniatiūras (pvz. pakeitus konversijų dydį)  |
+| `php artisan media-library:clean --dry-run`                        | parodo nebenaudojamas miniatiūras ir katalogus be `media` eilutės |
+| `du -sh storage/app/public`                                        | kiek vietos užima viešo disko failai                              |
+| `php artisan queue:work`                                           | įvykdo eilėje laukiančias miniatiūras (įkeliant per UI)           |
+| `php artisan test tests/Feature/Messages/LongConversationTest.php` | ilgų pokalbių testai                                              |
+
+#### Dažnos klaidos
+
+- **`addMedia()` be `preservingOriginal()`** – šaltinio failas perkeliamas, antras prisegimas meta „file does not exist".
+- **Seed'as su `WithoutModelEvents` ir paketai, kurie remiasi modelių įvykiais** – medialibrary `uuid` liko `NULL`.
+  Jei paketas ką nors priskiria `creating` metu, seed'e nurodyk pats.
+- **`config()` pakeitimas be `finally`** – jei prisegimas nepavyktų, likęs procesas (ir testai) dirbtų su `sync` eile.
+- **Puslapio numeris vietoj cursor besikeičiančiam sąrašui** – dubliuojasi arba pradingsta įrašai.
+- **Merge be `matchOn`** – polling'as kas 10 s prijungtų tą patį naujausių puslapį dar kartą: žinutės dubliuotųsi.
+- **Rodymo tvarka pagal masyvo tvarką** – po kelių sujungimų (senesni puslapiai + polling) naujos žinutės atsidurtų
+  viduryje. Rikiuok pagal `id` (arba datą) `computed` savybėje.
+- **`watch` žinučių kiekiui** „slinkti į apačią, kai atėjo nauja" suveikia ir įkėlus senesnes žinutes. Stebėk naujausios
+  žinutės `id`.
+- **`findMany()` ant to paties builder'io kelis kartus** – `whereKey()` sąlygos kaupiasi; kiekvienai daliai kurk naują
+  užklausą (`Model::query()`).
+- **Seni seed'o failai diske** – `migrate:fresh` išvalo DB, bet ne `storage/app/public`. `MediaGenerator` našlaičius
+  išvalo pats (tik skaitmeninius `{id}/` katalogus ir tik kai `media` lentelė tuščia). Alternatyva –
+  `php artisan media-library:clean`, bet ji ištrina **visus** disko katalogus, kurių nenurodo `media` eilutės, net ir ne
+  medialibrary sukurtus – todėl seed'e jos nekviečiam.
+- **Pamiršta `npm run build`** po Vue pakeitimų – `php artisan serve` rodo seną kodą (`Cannot read properties of
+undefined`), nors testai praeina.
+
+### 9b – Mokėjimo grąžinimas, kreditinė sąskaita, suma žodžiais
+
+#### Ką darėm ir kodėl
+
+- **Schema pirma** (`docs/DB_SCHEMA.md`): nauja lentelė `refunds` (grąžinimas + kreditinė sąskaita, `UNIQUE(payment_id)`),
+  `invoice_sequences` gavo `series` stulpelį ir sudėtinį pirminį raktą `(series, year)`, `PaymentStatus` perėjimų
+  lentelė, `CreditTransactionType::payment_refund`, naujas enum'as `InvoiceSeries`. Dvi naujos migracijos, senos nekeistos.
+- **Grąžinimo eiga**: Filament → Mokėjimai → apmokėtas mokėjimas → „Grąžinti pinigus" → priežastis + privaloma varnelė
+  „pinigus grąžinsiu tiekėjo savitarnoje" → `RefundPayment`:
+  vienoje DB transakcijoje užrakina mokėjimą, patikrina būseną, užrakina teikėją ir prenumeratą, atima kreditus
+  (`CreditLedger::debit`), sutrumpina prenumeratą, išduoda `KS` numerį, sukuria `refunds` eilutę → po COMMIT –
+  `PaymentRefunded` (mail + database, nustatymų grupė `billing`).
+- **Peržiūra prieš patvirtinant**: patvirtinimo lange administratorius mato pasekmes – „bus atimta 12 kred., 18 atimti
+  nepavyks", „prenumerata bus baigta iškart". Tą patį skaičiavimą (`RefundCalculator`) vėliau pakartoja `RefundPayment`
+  su užrakintomis eilutėmis.
+- **Kreditinė sąskaita**: tas pats dompdf šablonas (`resources/views/invoices/invoice.blade.php`) su `$credit_note`
+  bloku – „Kreditinė (PVM) sąskaita faktūra", „Koreguojama sąskaita faktūra: SF-…", priežastis, sumos su minusu,
+  „Iš viso grąžinama". Rekvizitai – grąžinimo metu nukopijuotas `billing_details` snapshot'as.
+  Maršrutas `GET /mokejimai/{payment}/kreditine-saskaita`, teisės – `PaymentPolicy::downloadCreditNote`.
+- **Grąžinto mokėjimo sąskaita faktūra lieka** atsisiunčiama (`Payment::hasInvoice()` – ir `refunded` būsenai):
+  sąskaitos neištrinsi, ją „atšaukia" kreditinė sąskaita.
+- **Suma žodžiais**: `AmountInWords::eur(2420)` → „dvidešimt keturi eurai 20 ct", sąskaitoje – su didžiąja raide.
+- **Teikėjo pusė**: „Mokėjimai" – po sąskaitos numeriu kreditinės sąskaitos nuoroda; mokėjimo puslapis – atskira
+  būsena „Mokėjimas grąžintas" (anksčiau grąžintas mokėjimas rodė „Pinigai nenuskaičiuoti"), data, priežastis,
+  kiek kreditų atimta. Varpelio ikona `PaymentRefunded` pranešimui.
+
+#### Verslo taisyklės (DB_SCHEMA → `refunds`)
+
+- **Pinigai grąžinami visi.** Dalinių grąžinimų nėra (lentelė jiems paruošta).
+- **Kreditai – ne daugiau nei balansas.** Kreditų paketas: atimama tiek, kiek suteikė šis mokėjimas (ledger eilučių su
+  `source = payment` suma). Jei teikėjas dalį jau išleido – atimama, kiek yra, o skirtumas įrašomas į
+  `refunds.credits_shortfall` ir parodomas administratoriui ir teikėjui. Balansas niekada netampa neigiamas.
+- **Prenumerata – „vienas mokėjimas = vienas laikotarpis".** Grąžinus mokėjimą, prenumerata sutrumpinama paskutiniu
+  apmokėtu laikotarpiu: jei jis jau prasidėjo (ką tik nupirktas planas) – prenumerata baigiama iškart ir atimami to
+  laikotarpio kreditai; jei dar neprasidėjo (iš anksto apmokėtas pratęsimas) – `ends_at` grąžinamas atgal, prenumerata
+  `cancelled` ir nebepratęsiama. Suplanuotas (plano keitimo) planas tiesiog niekada neprasideda.
+- **Kodėl nekviečiam Paysera grąžinimo API:** grąžinimų – vienetai per mėnesį, savitarnoje tai minutės darbas; API
+  reikalautų atskiros prieigos, naujos parašų logikos, klaidų apdorojimo (nepakankamas likutis, pakartojimai).
+  Sistema fiksuoja buhalterinę pusę, o pinigų pervedimą primena varnelė patvirtinimo lange.
+
+#### Kaip išbandyti lokaliai
+
+1. `php artisan migrate`, `npm run build`, `composer run dev`.
+2. Prisijunkite `admin1@example.test` / `password` → `/admin/mokejimai` → atidarykite apmokėtą mokėjimą →
+   „Grąžinti pinigus". Lange matysite, kiek kreditų bus atimta; įrašykite priežastį, pažymėkite varnelę.
+3. Peržiūroje atsiras „Grąžinimas" sekcija ir „Kreditinė sąskaita PDF" mygtukas; sąraše po SF numeriu – KS numeris.
+4. Prisijunkite to teikėjo vardu → „Mokėjimai": grąžintas mokėjimas, abi sąskaitos PDF; varpelyje – pranešimas.
+   Laiškas – `storage/logs/laravel.log` (`MAIL_MAILER=log`), jei veikia eilės darbuotojas (`composer run dev`).
+
+#### Svarbiausi sprendimai ir alternatyvos
+
+| Klausimas                         | Pasirinkta                                            | Alternatyva ir kodėl ne                                                                                     |
+| --------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Kur saugoti kreditinę sąskaitą    | atskira `refunds` lentelė                             | stulpeliai `payments` lentelėje – tušti beveik visose eilutėse, dalinių grąžinimų nebūtų kur dėti           |
+| Kreditinių sąskaitų numeracija    | `series` stulpelis `invoice_sequences` lentelėje      | atskira skaitiklių lentelė – ta pati logika dukart                                                          |
+| Kas, jei kreditai jau išleisti    | atimti, kiek yra, skirtumą įrašyti ir parodyti        | neleisti grąžinti (grąžinimas gali būti privalomas), neigiamas balansas (sulaužytų ledger'į), dalinė suma   |
+| Prenumeratos mokėjimas            | sutrumpinti paskutiniu apmokėtu laikotarpiu           | `CancelSubscription` – paliktų galioti laikotarpį, už kurį pinigai jau grąžinti                             |
+| Laikotarpio pradžia               | eiti nuo `starts_at` su `BillingPeriod::addTo()`      | `ends_at − 1 mėn.` – sausio 31 + 1 mėn. = vasario 28, bet vasario 28 − 1 mėn. = sausio 28 (ribos nesutampa) |
+| Peržiūra ir vykdymas              | vienas `RefundCalculator` abiem                       | skaičiuoti modale atskirai – du kodo variantai, kurie anksčiau ar vėliau išsiskirtų                         |
+| Kreditinės sąskaitos PDF šablonas | tas pats šablonas su `$credit_note` bloku             | atskiras šablonas – rekvizitų, lentelės ir stiliaus kopija                                                  |
+| Tekstai                           | naujas `lang/lt/refunds.php`                          | `billing.php` – lygiagrečiai jį keičia kitas Etapo 9 darbas, būtų sujungimo konfliktų                       |
+| Suma žodžiais                     | eurai žodžiais, centai skaitmenimis (`… eurai 20 ct`) | ir centai žodžiais („… ir dvidešimt centų") – ilgiau, o apskaitos programose dažniau naudojamas „ct"        |
+
+#### Išmoktos sąvokos
+
+##### 1. Kreditinė sąskaita faktūra
+
+Išrašytos sąskaitos faktūros keisti ar trinti negalima. Jei pinigai grąžinami, išrašomas naujas dokumentas –
+**kreditinė sąskaita faktūra** (PVM mokėtojui – kreditinė PVM sąskaita faktūra): savo serija ir numeriu, nuoroda į
+koreguojamą sąskaitą, priežastimi ir **neigiamomis** sumomis. Sąskaita + kreditinė sąskaita kartu duoda 0.
+Todėl mūsų PDF naudoja tą patį PVM skaičiavimą (`InvoicePdf::amounts()`) – suma be PVM ir PVM sutampa iki cento.
+WordPress analogas – WooCommerce „Refund" užsakyme, o PDF įskiepiai iš jo daro „Credit note".
+
+##### 2. Sudėtinis pirminis raktas ir migracija, kuri jį keičia
+
+```php
+Schema::table('invoice_sequences', function (Blueprint $table) {
+    $table->string('series', 20)->default('invoice');   // esamoms eilutėms – „invoice"
+});
+Schema::table('invoice_sequences', function (Blueprint $table) {
+    $table->dropPrimary();
+    $table->unsignedSmallInteger('year')->change();      // SQLite: nebe „rowid"
+    $table->primary(['series', 'year']);
+});
+```
+
+MySQL tai daro `ALTER TABLE … DROP PRIMARY KEY, ADD PRIMARY KEY`. SQLite pirminio rakto keisti nemoka, todėl Laravel
+(nuo 11 versijos) **perkuria lentelę**: sukuria laikiną, perkopijuoja duomenis, seną ištrina, naują pervadina.
+Spąstai: SQLite vienintelį `INTEGER PRIMARY KEY` stulpelį laiko `rowid` (automatiškai didėjančiu), Laravel perkurdamas
+tą požymį išsaugo ir sudėtinį raktą **tyliai praleidžia**. `->change()` aprašo stulpelį iš naujo, be autoincrement.
+Patikrinta abiem kryptimis (`migrate:rollback` ir `migrate`) su duomenimis – SQLite ir MySQL.
+→ https://laravel.com/docs/13.x/migrations#modifying-columns · https://laravel.com/docs/13.x/migrations#dropping-indexes
+
+##### 3. Idempotencija ir pesimistinis užraktas – dar kartą
+
+`RefundPayment` saugo nuo dvigubo grąžinimo trimis sluoksniais, kaip Etapo 7 callback'as:
+
+```php
+DB::transaction(function () use ($payment) {
+    $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
+    if (! $locked->status->canTransitionTo(PaymentStatus::Refunded)) {   // tikrinam UŽRAKINUS, ne prieš
+        throw InvalidStateTransitionException::for($locked->status, PaymentStatus::Refunded, 'Mokėjimo');
+    }
+    // … kreditai, prenumerata, KS numeris, refunds eilutė
+});
+```
+
+1. užrakinta eilutė – du administratoriai vienu metu vykdo po vieną; 2. būsena tikrinama užrakinus (pasenęs modelis
+   iš atidaryto puslapio nieko nereiškia); 3. `UNIQUE(refunds.payment_id)`. Užraktų tvarka ta pati kaip `CompletePayment`:
+   mokėjimas → teikėjas → prenumerata → numerių skaitiklis (kitaip MySQL'e – deadlock).
+   → https://laravel.com/docs/13.x/queries#pessimistic-locking · https://laravel.com/docs/13.x/database#database-transactions
+
+##### 4. „Sprendimas" atskirai nuo „vykdymo" (DTO)
+
+`RefundCalculator` nieko nerašo į DB – tik apskaičiuoja ir grąžina `RefundCalculation` (readonly DTO: kiek kreditų,
+nauja prenumeratos būsena ir pabaiga). Jį naudoja ir Filament langas (peržiūra), ir `RefundPayment` (vykdymas).
+Tokią „gryną" klasę paprasta testuoti, o dviem vietoms nereikia dviejų kodo variantų.
+`final readonly class` (PHP 8.2+) – visos savybės nekeičiamos po sukūrimo.
+→ https://www.php.net/manual/en/language.oop5.properties.php#language.oop5.properties.readonly-properties
+
+##### 5. Būsenų mašina mokėjimui
+
+`PaymentStatus::allowedTransitions()` – kaip `SubscriptionStatus` ir `OfferStatus`: `paid → refunded`, `refunded` –
+galutinė. Action prieš keisdama būseną klausia `canTransitionTo()`. Lentelė – `DB_SCHEMA.md` → payments.
+
+##### 6. Ledger'is: atimti, bet ne žemiau nulio
+
+Klaidos ar grąžinimai ledger'yje taisomi **nauja priešinga eilute** (`-12`, `type = payment_refund`,
+`source = payment`), sena nekeičiama. `CreditLedger::debit()` meta `InsufficientCreditsException`, jei balansas taptų
+neigiamas, todėl prieš tai apskaičiuojam `min(suteikta, balansas)`, o likutį įrašom kaip `credits_shortfall`.
+`CreditTransactionObserver` dėl šios eilutės `LowCredits` nebesiunčia – teikėjas jau gauna `PaymentRefunded`.
+
+##### 7. Filament veiksmas su forma, peržiūra ir patvirtinimu
+
+```php
+Action::make('refund')
+    ->visible(fn (Payment $record) => $record->isPaid())
+    ->authorize('refund')                                   // PaymentPolicy::refund
+    ->requiresConfirmation()
+    ->modalDescription(fn (Payment $record) => self::preview($record))   // skaičiuojama atidarant langą
+    ->schema([
+        Textarea::make('reason')->required()->maxLength(500),
+        Checkbox::make('money_returned')->accepted(),       // „pinigus grąžinsiu savitarnoje"
+    ])
+    ->action(fn (Payment $record, array $data) => …);
+```
+
+`visible()` slepia mygtuką, `authorize()` dar ir neleidžia jo įvykdyti (Filament patikrina abu ir vykdydamas).
+Livewire kiekvienai užklausai įrašą perskaito iš DB, todėl jei kitas administratorius ką tik grąžino tą patį
+mokėjimą, veiksmas tiesiog nebeįvykdomas. Infolist sekcija `->visible(fn ($record) => $record->refund !== null)`.
+→ https://filamentphp.com/docs/5.x/actions/modals · https://filamentphp.com/docs/5.x/actions/overview
+
+##### 8. Filament testai be pest-plugin-livewire
+
+```php
+Livewire::test(ViewPayment::class, ['record' => $payment->getRouteKey()])
+    ->mountAction('refund')
+    ->assertMountedActionModalSee('bus atimta tik 12, 18 atimti nepavyks');   // peržiūros tekstas
+
+Livewire::test(ViewPayment::class, ['record' => $payment->getRouteKey()])
+    ->callAction('refund', ['reason' => '', 'money_returned' => false])
+    ->assertHasActionErrors(['reason' => 'required', 'money_returned' => 'accepted']);
+
+Livewire::test(ListPayments::class)
+    ->callAction(TestAction::make('refund')->table($payment), [...]);        // lentelės eilutės veiksmas
+```
+
+Lygiagretumo imitacija: `mountAction()` → „kitas administratorius" grąžina tiesiogiai per Action →
+`setActionData()->callMountedAction()` → grąžinimas vis tiek vienas.
+→ https://filamentphp.com/docs/5.x/testing/testing-actions
+
+##### 9. Skaičiai žodžiais ir Pest dataset'ai
+
+Lietuvių kalboje daiktavardžio forma priklauso nuo paskutinių skaitmenų: 1, 21, 101 → „euras"; 2–9 → „eurai";
+0, 10–20, 30, 111 → „eurų". 11–19 visada su kilmininku („vienuolika tūkstančių"), o „šimtas", „tūkstantis",
+„milijonas" – be „vienas". Skaičius skaidomas į triženkles grupes iš dešinės; kiekvienai grupei – žodžiai ir laipsnio
+forma. Testas su ~90 atvejų parašytas dataset'ais – vienas testas, daug eilučių su pavadinimais.
+→ https://pestphp.com/docs/datasets
+
+##### 10. API Resource ir neužkrauti ryšiai
+
+`PaymentResource` grąžinimą įdeda tik tada, kai controller'is jį užkrovė: `$payment->relationLoaded('refund')`.
+Taip „Kreditų" puslapis (kur grąžinimas nereikalingas) nedaro papildomos užklausos, o `preventLazyLoading` nesuveikia.
+Laravel turi tam ir pagalbinį `$this->whenLoaded('refund')`. Sąraše – `->with(['purchasable', 'refund'])` (be N+1).
+`can.download_credit_note` Policy klausiama tik grąžintiems mokėjimams.
+→ https://laravel.com/docs/13.x/eloquent-resources#conditional-relationships
+
+##### 11. PDF tikrinimas be naršyklės
+
+Testai tikrina `creditNoteData()` (masyvą) ir `view(...)->render()` (HTML tekstą), o HTTP testas – antraštes ir
+`%PDF` pradžią. Kaip PDF atrodo iš tikrųjų – `pdftotext -layout failas.pdf -` (tekstas) ir
+`pdftoppm -png -r 80 failas.pdf puslapis` (paveikslėlis) iš `poppler-utils`.
+
+#### Naudingos komandos
+
+| Komanda                                                          | Ką daro                                                |
+| ---------------------------------------------------------------- | ------------------------------------------------------ |
+| `php artisan migrate:rollback --step=2` ir `php artisan migrate` | patikrina, ar naujos migracijos veikia abiem kryptimis |
+| `php artisan test tests/Feature/Billing`                         | visi mokėjimų, sąskaitų ir grąžinimų testai            |
+| `php artisan test tests/Unit/AmountInWordsTest.php`              | sumos žodžiais atvejai                                 |
+| `php artisan tinker` → `App\Support\AmountInWords::eur(12345)`   | greitai pažiūrėti, kaip užrašoma suma                  |
+| `php artisan queue:work --stop-when-empty`                       | apdoroja eilėje laukiančius pranešimus ir sustoja      |
+| `pdftotext -layout ks.pdf -` / `pdftoppm -png ks.pdf ks`         | PDF tekstas / paveikslėlis peržiūrai                   |
+| `DB_CONNECTION=mysql DB_DATABASE=… DB_URL= php artisan test`     | testai prieš MySQL (CLAUDE.md 11 sk.)                  |
+
+#### Dažnos klaidos
+
+- **Būsena tikrinama prieš užraktą** – du lygiagretūs paspaudimai abu mato „apmokėta" ir grąžina dukart. Tikrinti
+  tik užrakinus eilutę.
+- **Grąžinimas be ledger'io** (`credits_balance -= 30`) – cache nebesutampa su `SUM(amount)`, o balansas gali tapti
+  neigiamas. Tik per `CreditLedger`.
+- **`ucfirst('šimtas')`** – PHP `ucfirst` dirba su baitais, todėl lietuviškos raidės nepakeičia (ar sugadina).
+  Naudok `Str::ucfirst()` (daugiabaitis).
+- **SQLite ir `INTEGER PRIMARY KEY`** – pirminio rakto keitimas be `->change()` tyliai nepritaikomas (žr. 2 sąvoką).
+  Visada pažiūrėk sukurtą schemą (`sqlite_master`) ir patikrink su MySQL.
+- **Grąžinto mokėjimo sąskaita dingsta** – `hasInvoice()` tikrino tik `paid`. Sąskaita faktūra po grąžinimo lieka.
+- **„Pinigai nenuskaičiuoti" grąžintam mokėjimui** – sena „nepavyko" šaka apėmė ir `refunded`. Grąžinimas – atskira būsena.
+- **Prenumeratos laikotarpis „atimant mėnesį"** – `ends_at->subMonth()` ne visada sutampa su laikotarpio riba. Eiti nuo
+  `starts_at` tuo pačiu `addTo()`.
+- **Seed'ų duomenys kitokie nei tikri** – seed'uose prenumeratos kreditai suteikti ir už būsimus laikotarpius, todėl
+  „neprasidėjusio laikotarpio kreditų nėra" netiesa. Taisyklė turi remtis duomenimis (`credits_granted_until`), o ne prielaida.
+- **`DB::transactionLevel()` apsaugos testas** – su `RefreshDatabase` kiekvienas testas jau vyksta transakcijoje,
+  todėl „be transakcijos" išimties testu patikrinti neįmanoma.
+- **`assertActionHidden()` po `mountAction()`** – kol veiksmas atidarytas, Filament vardą ieško kaip vidinio veiksmo
+  (`ActionNotResolvableException`). Tikrinti naujame `Livewire::test()`.
+- **Markdown lentelė ir formatuotojas** – pailginus vieną lentelės eilutę, `vp fmt` perlygiuoja visą lentelę, o
+  lygiagrečiai dirbant tai garantuotas konfliktas. Papildymus rašėm pastaba po lentele.
+
+### 9c – Prenumeratų privalumai ir administratoriaus veiksmų pranešimai
+
+#### Ką darėm ir kodėl
+
+- **Viena vieta „ką duoda prenumerata"** – `App\Services\Subscriptions\PlanBenefits`. Ji žino dabar galiojančią
+  prenumeratą (`ProviderProfile::currentSubscriptions()` → scope `Subscription::current()`), skaito plano `features` per
+  `PlanFeatures` ir atsako į du klausimus: kiek kategorijų galima turėti (`maxCategories()`) ir ar rodyti ženklelį
+  (`hasBadge()`). Vedlys, katalogas, profilis ir kainų puslapis klausia jos – taisyklė niekur nedubliuojama.
+- **Kategorijų riba vedlyje.** Be prenumeratos – `config('marketplace.free_max_categories')` (5), su planu –
+  `max_categories` (10 / 30 / 100). Skaičiuojamos pivot eilutės, todėl visa grupė („Apdailos darbai") – viena.
+  Serveryje tikrina `SyncProviderCategories` (lietuviška klaida), Vue medis neleidžia pažymėti daugiau ir rodo
+  „Pasirinkta: X iš Y", plano pavadinimą ir nuorodą į `/kainos`.
+- **Seni teikėjai virš ribos** (seed'e – iki 10 kategorijų, o nemokama riba 5) kategorijų nepraranda: jas galima palikti
+  ar pašalinti, bet naujos pridėti negalima, kol iš viso daugiau nei riba. Vedlyje tai paaiškina geltonas perspėjimas.
+- **Ženklelis „PRO"** – teikėjams, kurių galiojančios prenumeratos plane `badge: true` (Profesionalas, Verslas).
+  Kortelėse ir profilyje – `has_pro_badge`; sąraše prenumeratos užkraunamos viena užklausa visam puslapiui.
+  Rikiavimas nesikeičia (tai būtų atskiras produkto sprendimas – „mokamos TOP pozicijos").
+- **Pranešimai teikėjui** apie administratoriaus veiksmus: `ProviderStatusChanged` (paslėptas, užblokuotas, aktyvus,
+  atkurtas) su neprivaloma priežastimi ir `ProviderVerified`. Juos siunčia Actions (`ChangeProviderStatus`,
+  `SetProviderVerification`, `UnbanUser`), todėl veikia nepriklausomai nuo to, iš kur veiksmas paleistas.
+  Filament „Paslėpti" ir „Užblokuoti profilį" turi lauką „Priežastis teikėjui".
+
+#### Kaip išbandyti lokaliai
+
+1. `php artisan migrate:fresh --seed` (seed'e ~15 % teikėjų turi prenumeratą, pusė jų galioja dabar; vidutiniškai
+   5–6 kategorijos teikėjui, todėl daug kas viršija nemokamą 5 ribą).
+2. Teikėjas virš ribos: `tinker` →
+   `App\Models\ProviderProfile::active()->has('categories', '>', 5)->whereDoesntHave('subscriptions', fn ($q) => $q->current())->first()->user->email`,
+   prisijunkite (`password`) ir atidarykite „Teikėjo profilis" → „Kategorijos": geltonas perspėjimas, „Pasirinkta: 10 iš 5",
+   nepažymėtos kategorijos neaktyvios, bet pašalinti galima.
+3. Ženklelis: `App\Models\Subscription::current()->whereIn('subscription_plan_id', [2, 3])->first()->providerProfile->slug`
+   → `/meistrai/{slug}` ir paieška pagal pavadinimą.
+4. Pranešimas: `/admin/teikejai` → teikėjas → „Paslėpti" su priežastimi → prisijungus tuo teikėju varpelyje (ikona
+   `UserCog`) ir Mailpit / `storage/logs/laravel.log` (laiškas). Pranešimai siunčiami eilėje – turi veikti eilės darbuotojas (`composer run dev`).
+
+#### Produkto taisyklės (savininkas gali keisti)
+
+| Taisyklė                                             | Dabar                                     | Kur keisti                                                |
+| ---------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------- |
+| Kategorijų be prenumeratos                           | 5                                         | `.env` → `FREE_MAX_CATEGORIES` (`config/marketplace.php`) |
+| Kategorijų su planu                                  | Startas 10, Profesionalas 30, Verslas 100 | `subscription_plans.features.max_categories`              |
+| Kas gauna ženklelį                                   | planai su `badge: true`                   | `subscription_plans.features.badge`                       |
+| Kas skaičiuojama kaip viena kategorija               | viena pivot eilutė (visa grupė – viena)   | `SyncProviderCategories`                                  |
+| Ką daryti su perteklium pasibaigus planui            | nieko netrinti; naujų pridėti negalima    | `SyncProviderCategories::ensureWithinLimit()`             |
+| `past_due` (nesumokėtas pratęsimas)                  | privalumų neduoda                         | `Subscription::current()` / `isCurrent()`                 |
+| Ar galima išjungti būsenos pranešimus                | ne (paskyros žinia)                       | `IgnoresNotificationSettings`                             |
+| Pranešimas užblokavus paskyrą / nuėmus „Patikrintas" | nesiunčiamas                              | `BanUser`, `SetProviderVerification`                      |
+
+#### Svarbiausi sprendimai ir alternatyvos
+
+| Klausimas                       | Pasirinkta                                                   | Alternatyva ir kodėl ne                                                                                                                                                                |
+| ------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kur tikrinti kategorijų ribą    | Action (`SyncProviderCategories`) + `ValidationException`    | Form Request `max:N` – nepalaikytų „senų virš ribos" ir skaičiuotų atsiųstus ID, o ne eilutes po normalizavimo; savas `Rule` objektas – galima, bet tada normalizavimą tektų dubliuoti |
+| Kaip sužinoti ženklelį sąraše   | eager loading `currentSubscriptions` (+1 užklausa puslapiui) | `withExists()` pagrindinėje užklausoje – subužklausa su `now()` keistų katalogo COUNT cache raktą kas sekundę (našumu panašu: MySQL ją vykdo tik 20 eilučių)                           |
+| Kaip rasti „badge" planus       | planai perskaitomi PHP'e (`PlanBenefits`, viena užklausa)    | JSON SQL'e: MySQL `features->>'$.badge'`, SQLite `json_extract()` – skirtinga sintaksė; JOIN su planais kiekvienam sąrašui                                                             |
+| Ar laikyti planus Cache         | ne, tik atmintyje vienai užklausai (`#[Scoped]`)             | `Cache::rememberForever` – seed'ai vyksta be model events, todėl cache liktų pasenęs; nauda – ~0,1 ms                                                                                  |
+| Ar saugoti ženklelį stulpelyje  | ne – skaičiuojamas iš galiojančios prenumeratos              | `provider_profiles.has_badge` – reikėtų job'o, kuris jį nuimtų pasibaigus prenumeratai (ir jis vėluotų)                                                                                |
+| Būsenos pranešimai nustatymuose | neišjungiami (kaip `ComplaintResolved`)                      | nauja grupė „Paskyra" – žmogus galėtų nesužinoti, kad jo profilis paslėptas, ir galvoti, kad platforma neveikia                                                                        |
+| Kas siunčia pranešimą           | Action, po transakcijos                                      | Filament veiksmo closure – praleistų `UnbanUser` ir būsimus kitus kelius; observer'is ant `status` – nežinotų priežasties                                                              |
+| Priežasties saugojimas          | tik pranešime (`notifications.data.reason`)                  | stulpelis `provider_profiles.status_reason` – kol kas niekur kitur nerodomas, migracija nereikalinga                                                                                   |
+
+#### Išmoktos sąvokos
+
+##### 1. Produkto taisyklės – `config`, o ne konstanta kode
+
+Skaičius, kurį gali norėti pakeisti savininkas (o ne programuotojas), laikom `config/marketplace.php`, reikšmę imam iš
+`.env`:
+
+```php
+// config/marketplace.php
+'free_max_categories' => (int) env('FREE_MAX_CATEGORIES', 5),
+
+// kode – visada config(), ne env(): po `php artisan config:cache` env() už config failų grąžina null
+$limit = max(1, (int) config('marketplace.free_max_categories'));
+```
+
+Testuose reikšmę galima pakeisti vienam testui: `config(['marketplace.free_max_categories' => 2]);`.
+WordPress analogas – `define('…')` `wp-config.php` faile arba `get_option()` nustatymų puslapyje.
+→ https://laravel.com/docs/13.x/configuration#accessing-configuration-values
+
+##### 2. JSON stulpelis → tipizuotas objektas (value object)
+
+`features` modelyje turi `'array'` cast'ą, bet masyvas gali būti `NULL`, be rakto ar su `"30"` vietoj `30`.
+`PlanFeatures::fromArray()` vienoje vietoje nusprendžia, ką tai reiškia, o kitur rašom `$features->badge`:
+
+```php
+final readonly class PlanFeatures
+{
+    public function __construct(public ?int $maxCategories = null, public bool $badge = false, public bool $prioritySupport = false) {}
+
+    public static function fromArray(?array $features): self { /* is_numeric, === true … */ }
+}
+
+$plan->planFeatures()->maxCategories; // 30 arba null
+```
+
+`readonly` – sukurto objekto pakeisti negalima (PHP 8.2), todėl jį saugu perduoti bet kur.
+→ https://laravel.com/docs/13.x/eloquent-mutators#array-and-json-casting
+
+##### 3. Scope + ryšys su sąlyga: „dabar galiojanti prenumerata"
+
+```php
+// Subscription – SQL atitikmuo isCurrent()
+#[Scope]
+protected function current(Builder $query): void
+{
+    $query->whereIn('subscriptions.status', [SubscriptionStatus::Active, SubscriptionStatus::Cancelled])
+        ->where('subscriptions.starts_at', '<=', now())
+        ->where('subscriptions.ends_at', '>', now());
+}
+
+// ProviderProfile – ryšys, kurį galima užkrauti iš anksto
+public function currentSubscriptions(): HasMany
+{
+    return $this->hasMany(Subscription::class)->current();
+}
+```
+
+Ta pati taisyklė parašyta du kartus (PHP `isCurrent()` ir SQL `current()`), todėl testas tikrina, kad jos sutampa
+visiems atvejams (aktyvi, atšaukta, suplanuota, `past_due`, pasibaigusi). WordPress analogas – `WP_Query` argumentai,
+įvilkti į funkciją.
+→ https://laravel.com/docs/13.x/eloquent#local-scopes · https://laravel.com/docs/13.x/eloquent-relationships#constraining-eager-loads
+
+##### 4. Eager loading, `withExists()` ar subužklausa?
+
+Trys būdai sužinoti „ar teikėjas turi PRO" sąraše:
+
+| Būdas                                                           | SQL                                                    | Kada tinka                                                              |
+| --------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `->with('currentSubscriptions')` (pasirinkta)                   | antra užklausa `WHERE provider_profile_id IN (…20 ID)` | kai reikia kelių laukų ar logikos PHP'e; nedidina pagrindinės užklausos |
+| `->withExists(['subscriptions as pro' => fn ($q) => …])`        | `EXISTS (SELECT …)` pagrindinės užklausos `SELECT`'e   | kai reikia tik taip/ne ir pagrindinė užklausa paprasta                  |
+| `->addSelect(['x' => Subscription::select(…)->whereColumn(…)])` | koreliuota subužklausa `SELECT`'e                      | kai reikia vienos reikšmės (pvz. paskutinio mokėjimo datos)             |
+
+Mūsų atveju lėmė katalogo COUNT cache: jo raktas – visos užklausos SQL su parametrais, o `withExists()` sąlygoje būtų
+`now()`, kuris keičiasi kas sekundę, todėl cache niekada nepasikartotų. Našumu abu būdai panašūs – patikrinta
+`EXPLAIN ANALYZE` su pilnu seed'u: MySQL 8.0 projekcijos subužklausą vykdo tik grąžinamoms 20 eilučių (`loops=20`), net
+rikiuojant be indekso (filesort), o eager loading užklausa trunka 0,07 ms (`docs/PERFORMANCE.md` 3.5). Pamoka: prieš
+atmetant variantą „dėl našumo", verta pasimatuoti – spėjimas („subužklausa bus vykdoma 18 000 kartų") nepasitvirtino.
+→ https://laravel.com/docs/13.x/eloquent-relationships#eager-loading ·
+https://laravel.com/docs/13.x/eloquent-relationships#other-aggregate-functions · https://laravel.com/docs/13.x/eloquent#subquery-selects
+
+##### 5. `#[Scoped]` – vienas objektas per užklausą
+
+`PlanBenefits` planus perskaito vieną kartą ir laiko savyje. `#[Scoped]` atributas reiškia: konteineris grąžina tą patį
+objektą visos HTTP užklausos (ar eilės darbo) metu, o kitai užklausai – naują. Taip „cache" negali pasenti ilgiau nei
+vieną užklausą. Pakeitus planą (`SubscriptionPlan::booted()` → `saved`), sąrašas pamirštamas iš karto.
+WordPress analogas – `static $cache` funkcijoje arba `wp_cache_set()` su nepastovia grupe.
+→ https://laravel.com/docs/13.x/container#binding-scoped
+
+##### 6. Validacija su dinamine riba
+
+Riba priklauso nuo prisijungusio teikėjo plano **ir** nuo dabartinio pasirinkimo, todėl ją tikrina Action ir meta tą
+pačią klaidą, kokią mestų Form Request:
+
+```php
+throw ValidationException::withMessages([
+    'category_ids' => __('plan_benefits.categories.over_limit', ['limit' => $limit, 'noun' => $noun, 'count' => $count]),
+]);
+```
+
+Inertia ją gauna kaip `form.errors.category_ids` – Vue kodas nesiskiria nuo įprastos validacijos. Form Request'e liko tik
+struktūra (`array`, `min:1`, `exists`) ir techninė apsauga nuo milžiniškų masyvų (`max:300`). Alternatyva – savas
+taisyklės objektas (`php artisan make:rule WithinCategoryLimit`), kuris gautų ribą per konstruktorių.
+→ https://laravel.com/docs/13.x/validation#manually-creating-validators · https://laravel.com/docs/13.x/validation#custom-validation-rules
+
+##### 7. Daugiskaita lietuviškai – `trans_choice`
+
+Lietuvių kalba turi tris formas (1, 21… | 2–9, 22–29… | 10–20, 30…). Laravel jas žino:
+
+```php
+// lang/lt/plan_benefits.php: 'noun_genitive' => 'kategorijos|kategorijų|kategorijų'
+trans_choice('plan_benefits.categories.noun_genitive', 21); // „kategorijos" → „iki 21 kategorijos"
+```
+
+Vue pusėje tą patį daro `plural()` iš `@/lib/format` (`Intl.PluralRules('lt')`).
+→ https://laravel.com/docs/13.x/localization#pluralization
+
+##### 8. Pranešimai po administratoriaus veiksmų
+
+- Siunčia **Action, po transakcijos** – jei pakeitimas atšaukiamas (klaida), laiškas neišeina.
+- **Neišjungiami** pranešimai: trait'as `IgnoresNotificationSettings` perrašo `BaseNotification::via()` – varpelis
+  visada, laiškas tik patvirtintu el. paštu. Trait'o metodas gali ir įgyvendinti abstraktų tėvinės klasės metodą
+  (`settingsGroup()`), ir perrašyti paveldėtą (`via()`).
+- **Nuoroda** skaičiuojama pagal **dabartinę** profilio būseną (`NotificationTarget::providerAccountUrl()`): aktyvus –
+  viešas profilis, nebaigtas – vedlys, paslėptas ar užblokuotas – „Mano paskyra". Senas pranešimas veda teisingai, net
+  jei būsena vėliau pasikeitė.
+- Testuose `Notification::fake()` + `assertSentTo($user, ProviderStatusChanged::class, fn ($n, $channels) => …)` –
+  callback'as gauna ir kanalus (`['mail', 'database']`).
+- WordPress analogas – `wp_mail()` + `add_user_meta()` „admin notice" vartotojui.
+  → https://laravel.com/docs/13.x/notifications · https://laravel.com/docs/13.x/mocking#notification-fake
+
+##### 9. Filament veiksmas su forma ir jo testas
+
+```php
+Action::make('hide')
+    ->requiresConfirmation()
+    ->schema([Textarea::make('reason')->label('Priežastis teikėjui (neprivaloma)')->maxLength(500)])
+    ->action(fn (ProviderProfile $record, array $data) => app(ChangeProviderStatus::class)->handle($record, ProviderStatus::Hidden, $data['reason'] ?? null));
+
+// testas (pest-plugin-livewire neįdiegtas – Livewire::test)
+Livewire::test(ListProviderProfiles::class)
+    ->callAction(TestAction::make('hide')->table($profile), ['reason' => 'Dvigubas profilis']);
+```
+
+→ https://filamentphp.com/docs/5.x/actions/modals · https://filamentphp.com/docs/5.x/testing/testing-actions
+
+#### Naudingos komandos
+
+```bash
+php artisan config:show marketplace                 # dabartinė nemokama riba
+php artisan config:clear                            # pakeitus .env (jei config buvo cache'intas)
+php artisan tinker
+>>> $p = App\Models\ProviderProfile::first();
+>>> app(App\Services\Subscriptions\PlanBenefits::class)->maxCategories($p);
+>>> app(App\Services\Subscriptions\PlanBenefits::class)->hasBadge($p);
+>>> App\Models\Subscription::query()->current()->count();   # kiek prenumeratų galioja dabar
+php artisan test --filter='CategoryLimit|PlanBenefits|ProBadge|ProviderStatusNotification'
+# tie patys testai su MySQL
+DB_CONNECTION=mysql DB_DATABASE=laravel_test DB_USERNAME=… DB_PASSWORD=… DB_URL= php artisan test
+```
+
+#### Dažnos klaidos
+
+- **Ryšys, užkrautas su keliais stulpeliais, ir pranešimai.** Filament sąraše savininkas užkraunamas
+  `user:id,first_name,last_name,email,banned_at` – be `email_verified_at`. Tokiam objektui `hasVerifiedEmail()` grąžina
+  `false`, ir laiškas „tyliai" nebeišsiunčiamas (liko tik varpelis). Todėl Actions gavėją užkrauna iš naujo:
+  `User::query()->find($profile->user_id)`. Testas tai pagavo per `$channels === ['mail', 'database']`.
+- **`now()` užklausoje, kuri yra cache rakto dalis.** Raktas `sha1($query->toRawSql())` su laiku keičiasi kas sekundę –
+  cache niekada nepataikytų, o lentelėje kauptųsi raktai. Laikas – tik atskiroje (eager loading) užklausoje.
+- **Pamirštas eager loading sąraše.** `PlanBenefits::hasBadge()` skaito `$profile->currentSubscriptions`; jei sąraše jis
+  neužkrautas, `preventLazyLoading` meta `LazyLoadingViolationException` (ir gerai – tai N+1). Vienam profiliui
+  Laravel jį užkrauna pats.
+- **Testuose tas pats prisijungęs objektas per kelias užklausas.** `actingAs($user)` palieka tą patį `User` objektą, o jo
+  `providerProfile` ir `currentSubscriptions` ryšiai užkraunami tik kartą. Tikroje užklausoje taip nebūna, todėl testas
+  po prenumeratos pakeitimo prisijungia nauju objektu (`$profile->user()->firstOrFail()`). Panašiai `#[Scoped]` objektai
+  teste išlieka tarp užklausų – `app()->forgetScopedInstances()` imituoja naują užklausą.
+- **Dvi tos pačios taisyklės versijos.** `isCurrent()` (PHP) ir `current()` (SQL) turi sutapti – kitaip vedlys ir
+  katalogas „matytų" skirtingas prenumeratas. Saugo testas, lyginantis abu rezultatus.
+- **Klientas tikrina, serveris – sprendžia.** Vue medis neleidžia pažymėti per daug, bet tai tik patogumas: tą pačią
+  taisyklę (`next.size <= max || viskas iš išsaugotų`) tikrina `SyncProviderCategories`.
