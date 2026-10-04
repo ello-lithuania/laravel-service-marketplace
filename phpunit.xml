@@ -30,6 +30,7 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SEED_DEMO" value="false"/>
         <env name="SEED_SCALE" value="0.01"/>
+        <env name="SEED_STOCK_PHOTOS" value="false"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

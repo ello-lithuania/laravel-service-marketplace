@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Categories\Tables;
 use App\Models\Category;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -20,6 +21,13 @@ class CategoriesTable
             ->modifyQueryUsing(fn (Builder $query) => $query->with('parent')->withCount('children'))
             ->defaultSort('depth')
             ->columns([
+                // --- Etapas 10a --- miniatiūra; media užkraunamos iš karto (stulpelis pats prideda with('media'))
+                SpatieMediaLibraryImageColumn::make('image')
+                    ->label('Nuotrauka')
+                    ->collection('image')
+                    ->conversion('card')
+                    ->imageHeight(40)
+                    ->toggleable(),
                 TextColumn::make('name')
                     ->label('Pavadinimas')
                     ->searchable()

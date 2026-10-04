@@ -47,6 +47,16 @@ return [
             'report' => false,
         ],
 
+        // --- Etapas 10a ---
+        // Atsisiųstų nuotraukų biblioteka (php artisan photos:download): ne public – failai pasiekiami tik
+        // per medialibrary kopijas. Git'e ignoruojama (storage/app/.gitignore)
+        'stock-photos' => [
+            'driver' => 'local',
+            'root' => storage_path('app/stock-photos'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Categories\Schemas;
 
+use App\Filament\Support\StockPhotoFields;
 use App\Models\Category;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -77,6 +78,14 @@ class CategoryForm
                             ->label('Aktyvi')
                             ->helperText('Neaktyvi kategorija nerodoma svetainėje. Kategorijų netrinam – jas išjungiam.')
                             ->default(true),
+                    ]),
+                // --- Etapas 10a: kategorijos nuotrauka (medialibrary kolekcija „image") ---
+                Section::make('Nuotrauka')
+                    ->columnSpanFull()
+                    ->description('Rodoma kategorijų kortelėse (800×600) ir kategorijos puslapio viršuje (1600×700) – apkerpama automatiškai.')
+                    ->schema([
+                        StockPhotoFields::upload('image'),
+                        StockPhotoFields::credit('image'),
                     ]),
                 Section::make('SEO')
                     ->columnSpanFull()

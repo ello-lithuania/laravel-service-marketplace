@@ -41,4 +41,21 @@ class SitePhoto extends Model implements HasMedia
                 $this->addMediaConversion('card')->nonQueued()->fit(Fit::Crop, 800, 600);
             });
     }
+
+    // --- Etapas 10a ---
+
+    /**
+     * Vietos eilutė (sukuriama, jei jos dar nėra): admin panelė ir photos:download rodo visas SitePhotoKey vietas.
+     * Alternatyvusis tekstas įrašomas tik tuščias – administratoriaus pakeisto neperrašom.
+     */
+    public static function forKey(SitePhotoKey $key, ?string $alt = null): self
+    {
+        $photo = self::query()->firstOrCreate(['key' => $key->value], ['alt' => $alt]);
+
+        if ($photo->alt === null && $alt !== null) {
+            $photo->update(['alt' => $alt]);
+        }
+
+        return $photo;
+    }
 }

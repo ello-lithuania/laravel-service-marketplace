@@ -21,6 +21,11 @@ return [
     // Ar prisegti demo paveikslėlius (logotipai, viršeliai, portfolio). Išjungta: lėčiau ir užima vietos diske
     'media' => (bool) env('SEED_MEDIA', false),
 
+    // --- Etapas 10a ---
+    // Ar naudoti atsisiųstas nuotraukas (storage/app/stock-photos, php artisan photos:download): kategorijų ir
+    // svetainės nuotraukos prisegamos visada, demo portfolio ir viršeliai – kai SEED_MEDIA=true. Testuose – false
+    'stock_photos' => (bool) env('SEED_STOCK_PHOTOS', true),
+
     // Kokia dalis atliktų užklausų gauna patvirtintą atsiliepimą
     'verified_review_ratio' => (float) env('SEED_VERIFIED_REVIEW_RATIO', 0.9),
 

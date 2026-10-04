@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
             CreditPackageSeeder::class,
             SubscriptionPlanSeeder::class,
             AdminSeeder::class,
+            // --- Etapas 10a --- atsisiųstos nuotraukos (php artisan photos:download), jei jos yra
+            StockPhotoSeeder::class,
         ]);
 
         // Dideli testiniai duomenys (SEED_DEMO=false – tik žinyniniai)
