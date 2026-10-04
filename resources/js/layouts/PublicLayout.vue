@@ -29,6 +29,7 @@ import {
 import { index as providersIndex } from '@/routes/providers';
 
 // Viešos svetainės išdėstymas: lipni antraštė, turinys (slot) ir poraštė.
+// Etapas 11 (variantas A): antraštė mėlyna (bg-brand) – pradžios puslapyje ji susilieja su tokios pat spalvos viršumi.
 // Poraštės sritys ir miestai – bendras prop'as „site" (HandleInertiaRequests, Inertia::once).
 const page = usePage();
 const mobileMenuOpen = ref(false);
@@ -71,7 +72,6 @@ const navLinks = [
         anchor: true,
         wide: true,
     },
-    { label: 'Teikėjams', href: '/#teikejams', anchor: true, wide: true },
     { label: 'Kainos', href: pricing.url(), anchor: false, wide: false },
 ];
 
@@ -95,22 +95,20 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
             >Pereiti prie turinio</a
         >
 
-        <header
-            class="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/75"
-        >
+        <header class="sticky top-0 z-40 bg-brand text-brand-foreground">
             <div
-                class="page-container flex h-16 items-center gap-4 lg:h-[4.5rem]"
+                class="page-container flex h-[4.5rem] items-center gap-4 lg:h-[5.25rem]"
             >
                 <Link
                     :href="home()"
-                    class="shrink-0 rounded-lg focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none"
+                    class="shrink-0 rounded-xl focus-visible:ring-[3px] focus-visible:ring-white/50 focus-visible:outline-none"
                     :aria-label="`${page.props.name} – pradžia`"
                 >
-                    <BrandLogo />
+                    <BrandLogo tone="light" />
                 </Link>
 
                 <nav
-                    class="ml-4 hidden items-center gap-1 text-[0.9375rem] lg:flex"
+                    class="ml-6 hidden items-center gap-1 text-base lg:flex"
                     aria-label="Pagrindinis meniu"
                 >
                     <component
@@ -119,7 +117,7 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
                         :key="link.href"
                         :href="link.href"
                         :aria-current="isActive(link.href) ? 'page' : undefined"
-                        class="rounded-full px-3 py-1.5 font-medium whitespace-nowrap text-foreground/75 transition-colors hover:bg-accent hover:text-foreground aria-[current=page]:bg-secondary aria-[current=page]:text-secondary-foreground"
+                        class="rounded-lg px-3 py-2 font-medium whitespace-nowrap text-brand-muted transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-[3px] focus-visible:ring-white/50 focus-visible:outline-none aria-[current=page]:bg-white/15 aria-[current=page]:text-white"
                         :class="
                             link.wide ? 'hidden xl:inline-flex' : 'inline-flex'
                         "
@@ -132,13 +130,14 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
                     <!-- Paieška: labai plačiame ekrane – laukas, kitur – mygtukas, atveriantis juostą po antrašte -->
                     <HeaderSearch
                         v-if="showHeaderSearch"
+                        tone="brand"
                         class="hidden w-64 2xl:block"
                     />
                     <Button
                         v-if="showHeaderSearch"
                         variant="ghost"
-                        size="icon"
-                        class="hidden lg:inline-flex 2xl:hidden"
+                        size="icon-lg"
+                        class="hidden rounded-xl text-white hover:bg-white/10 hover:text-white lg:inline-flex 2xl:hidden"
                         :aria-expanded="searchOpen"
                         aria-controls="header-search-panel"
                         :aria-label="
@@ -155,7 +154,7 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
                     <template v-if="user">
                         <Button
                             variant="ghost"
-                            class="hidden lg:inline-flex"
+                            class="hidden h-11 rounded-xl px-4 text-[0.9375rem] font-semibold text-white hover:bg-white/10 hover:text-white lg:inline-flex"
                             as-child
                         >
                             <Link :href="dashboard()">Mano paskyra</Link>
@@ -164,23 +163,29 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
                     <template v-else>
                         <Button
                             variant="ghost"
-                            class="hidden lg:inline-flex"
+                            class="hidden h-11 rounded-xl px-4 text-[0.9375rem] font-semibold text-white hover:bg-white/10 hover:text-white lg:inline-flex"
                             as-child
                         >
                             <Link :href="login()">Prisijungti</Link>
                         </Button>
+                        <!-- Teikėjų registracija – antras pagal svarbą veiksmas, todėl tik rėmelis -->
                         <Button
-                            variant="outline"
-                            class="hidden xl:inline-flex"
+                            variant="ghost"
+                            class="hidden h-11 rounded-xl border-2 border-white/35 px-4 text-[0.9375rem] font-semibold text-white hover:border-white/60 hover:bg-white/10 hover:text-white xl:inline-flex"
                             as-child
                         >
-                            <Link :href="register()">Registruotis</Link>
+                            <Link
+                                :href="
+                                    register({ query: { role: 'provider' } })
+                                "
+                                >Tapti meistru</Link
+                            >
                         </Button>
                     </template>
 
                     <Button
                         variant="cta"
-                        class="hidden sm:inline-flex"
+                        class="hidden h-11 rounded-xl px-5 text-[0.9375rem] sm:inline-flex"
                         as-child
                     >
                         <a :href="createRequestUrl">Sukurti užklausą</a>
@@ -191,8 +196,8 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
                         <SheetTrigger as-child>
                             <Button
                                 variant="ghost"
-                                size="icon"
-                                class="lg:hidden"
+                                size="icon-lg"
+                                class="rounded-xl text-white hover:bg-white/10 hover:text-white lg:hidden"
                                 aria-label="Atidaryti meniu"
                             >
                                 <Menu class="size-5" />
@@ -305,15 +310,16 @@ const showHeaderSearch = computed(() => page.component !== 'public/Home');
             <div
                 v-if="searchOpen"
                 id="header-search-panel"
-                class="hidden border-t border-border/70 lg:block 2xl:hidden"
+                class="hidden border-t border-white/10 lg:block 2xl:hidden"
             >
                 <div class="page-container flex items-center gap-4 py-3">
                     <HeaderSearch
                         autofocus
+                        tone="brand"
                         input-id="header-search-panel-input"
                         class="w-full max-w-xl"
                     />
-                    <span class="text-sm text-muted-foreground"
+                    <span class="text-sm text-brand-muted"
                         >Pvz. santechnikas, plytelių klijavimas,
                         kraustymas</span
                     >

@@ -5,10 +5,11 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { cn } from '@/lib/utils';
 
 // Logotipas: ženklas + pavadinimas iš config('app.name') (galutinis vardas dar nepasirinktas).
-// Pirmas žodis paryškintas, kiti – plonesni: tipografinis „wordmark", kuris tinka bet kokiam pavadinimui.
+// Etapas 11 (variantas A): geltonas ženklas su tamsiu stogu ir varnele, pavadinimas – vienas storas „wordmark".
+// Geltona gerai matosi ir mėlynoje antraštėje, ir tamsioje poraštėje, ir baltame fone.
 const props = withDefaults(
     defineProps<{
-        /** light – ant tamsaus fono (poraštė, nuotrauka) */
+        /** light – ant tamsaus ar mėlyno fono (antraštė, poraštė, nuotrauka) */
         tone?: 'default' | 'light';
         size?: 'md' | 'lg';
         class?: string;
@@ -17,54 +18,26 @@ const props = withDefaults(
 );
 
 const name = computed(() => String(usePage().props.name ?? ''));
-
-const parts = computed(() => {
-    const [first, ...rest] = name.value.trim().split(/\s+/u);
-
-    return { first: first ?? '', rest: rest.join(' ') };
-});
 </script>
 
 <template>
     <span :class="cn('inline-flex items-center gap-2.5', props.class)">
         <span
-            class="relative flex shrink-0 items-center justify-center rounded-[0.7rem] shadow-soft"
-            :class="[
-                size === 'lg' ? 'size-11' : 'size-9',
-                tone === 'light'
-                    ? 'bg-white text-brand-deep'
-                    : 'bg-primary text-primary-foreground',
-            ]"
+            class="flex shrink-0 items-center justify-center rounded-xl bg-cta text-cta-foreground"
+            :class="size === 'lg' ? 'size-11' : 'size-10'"
         >
-            <AppLogoIcon :class="size === 'lg' ? 'size-7' : 'size-6'" />
-            <!-- Oranžinis taškas – „naujas pasiūlymas": prekės ženklo akcentas -->
-            <span
-                class="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-cta ring-2"
-                :class="
-                    tone === 'light' ? 'ring-brand-deep' : 'ring-background'
-                "
+            <AppLogoIcon
+                :class="size === 'lg' ? 'size-6' : 'size-[1.375rem]'"
             />
         </span>
         <span
-            class="font-display leading-none tracking-tight"
+            class="font-display leading-none font-extrabold tracking-[-0.02em]"
             :class="[
-                size === 'lg' ? 'text-xl' : 'text-[1.0625rem]',
+                size === 'lg' ? 'text-[1.375rem]' : 'text-xl',
                 tone === 'light' ? 'text-white' : 'text-foreground',
             ]"
         >
-            <span class="font-bold">{{ parts.first }}</span>
-            <template v-if="parts.rest">
-                {{ ' '
-                }}<span
-                    class="font-normal"
-                    :class="
-                        tone === 'light'
-                            ? 'text-brand-deep-muted'
-                            : 'text-muted-foreground'
-                    "
-                    >{{ parts.rest }}</span
-                >
-            </template>
+            {{ name }}
         </span>
     </span>
 </template>
