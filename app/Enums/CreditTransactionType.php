@@ -20,6 +20,8 @@ enum CreditTransactionType: string implements HasColor, HasLabel
     case Bonus = 'bonus';
     case AdminAdjustment = 'admin_adjustment';
     case Expiry = 'expiry';
+    // --- Etapas 9b: kreditai atimti grąžinus mokėjimą (RefundPayment) ---
+    case PaymentRefund = 'payment_refund';
 
     /**
      * Lietuviškas pavadinimas UI.
@@ -34,6 +36,7 @@ enum CreditTransactionType: string implements HasColor, HasLabel
             self::Bonus => 'Dovana',
             self::AdminAdjustment => 'Koregavimas',
             self::Expiry => 'Pasibaigė',
+            self::PaymentRefund => 'Mokėjimo grąžinimas',
         };
     }
 
@@ -47,6 +50,7 @@ enum CreditTransactionType: string implements HasColor, HasLabel
             self::Bonus, self::Refund => 'info',
             self::AdminAdjustment => 'warning',
             self::Offer, self::Expiry => 'gray',
+            self::PaymentRefund => 'danger',
         };
     }
 }

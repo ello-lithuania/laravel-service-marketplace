@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use App\Enums\OfferStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\ServiceRequestStatus;
 use App\Enums\SubscriptionStatus;
 use Illuminate\Http\JsonResponse;
@@ -19,8 +20,8 @@ use RuntimeException;
 class InvalidStateTransitionException extends RuntimeException
 {
     public static function for(
-        ServiceRequestStatus|OfferStatus|SubscriptionStatus $from,
-        ServiceRequestStatus|OfferStatus|SubscriptionStatus $to,
+        ServiceRequestStatus|OfferStatus|SubscriptionStatus|PaymentStatus $from,
+        ServiceRequestStatus|OfferStatus|SubscriptionStatus|PaymentStatus $to,
         string $subject = 'Užklausos',
     ): self {
         return new self("{$subject} būsenos „{$from->label()}\" negalima pakeisti į „{$to->label()}\". Atnaujinkite puslapį.");
