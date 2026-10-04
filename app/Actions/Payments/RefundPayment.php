@@ -89,7 +89,9 @@ class RefundPayment
             $refund->refundedBy()->associate($admin);
             $refund->save();
 
+            // Kviečiančiojo modelis (pvz. Filament puslapio įrašas) iškart mato naują būseną ir grąžinimą
             $payment->setRawAttributes($locked->getAttributes(), true);
+            $payment->setRelation('refund', $refund);
             $refund->setRelation('payment', $locked);
 
             return $refund;

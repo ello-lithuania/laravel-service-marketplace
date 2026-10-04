@@ -6,6 +6,7 @@ use App\Enums\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Filament\Resources\Payments\Actions\CreditNoteAction;
 use App\Filament\Resources\Payments\Actions\InvoiceAction;
+use App\Filament\Resources\Payments\Actions\RefundPaymentAction;
 use App\Models\Payment;
 use App\Support\Money;
 use Filament\Actions\ViewAction;
@@ -93,6 +94,7 @@ class PaymentsTable
                 InvoiceAction::make(),
                 // --- Etapas 9b ---
                 CreditNoteAction::make(),
+                RefundPaymentAction::make(),
             ]);
     }
 }
