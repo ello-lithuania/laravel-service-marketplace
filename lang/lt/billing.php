@@ -20,7 +20,7 @@ return [
     'plan_features' => [
         'credits' => ':credits kreditų kas :period',
         'max_categories' => 'Iki :count paslaugų kategorijų',
-        'badge' => 'Ženklelis profilyje',
+        'badge' => 'Ženklelis „PRO" profilyje ir kataloge', // Etapas 9c
         'priority_support' => 'Prioritetinė pagalba',
     ],
 

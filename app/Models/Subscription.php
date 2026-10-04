@@ -92,4 +92,23 @@ class Subscription extends Model
     {
         return $this->status === SubscriptionStatus::Active && $this->starts_at->isFuture();
     }
+
+    // --- Etapas 9c: prenumeratų privalumai --------------------------------------------
+
+    /**
+     * Prenumeratos, kurios DABAR suteikia plano naudą (kategorijų riba, ženklelis) – SQL atitikmuo isCurrent().
+     * Abi taisyklės turi sutapti (tikrina tests/Feature/Billing/PlanBenefitsTest.php).
+     * past_due nepatenka: jos ends_at jau praėjęs, o nauda grįžta tik apmokėjus pratęsimą.
+     *
+     * @param  Builder<Subscription>  $query
+     */
+    #[Scope]
+    protected function current(Builder $query): void
+    {
+        $now = now();
+
+        $query->whereIn('subscriptions.status', [SubscriptionStatus::Active, SubscriptionStatus::Cancelled])
+            ->where('subscriptions.starts_at', '<=', $now)
+            ->where('subscriptions.ends_at', '>', $now);
+    }
 }
