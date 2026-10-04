@@ -197,9 +197,9 @@ skaičiai žodžiais, prenumeratos privalumai (feature flags), administratoriaus
 autorių nurodymas, medialibrary kitiems modeliams, Artisan komandos su HTTP klientu.
 
 - [x] Pagrindas: kategorijos nuotrauka (`Category` → `image`), svetainės nuotraukos (`site_photos`, `SitePhotoKey`), cache
-- [ ] Komanda nuotraukoms atsisiųsti (Pexels su raktu, Openverse be rakto) + autorių puslapis
-- [ ] Demo portfolio – tikros nuotraukos (jei atsisiųstos), kitaip – sugeneruoti paveikslėliai
-- [ ] Filament: kategorijos nuotrauka, svetainės nuotraukų puslapis
-- [ ] Naujas viešos dalies dizainas: spalvos, tipografija, pradžios puslapis, kategorijos, teikėjai, profilis, poraštė
-- [ ] Paskyros ir prisijungimo puslapių stilius pagal naują dizainą
-- [ ] Testai, `docs/LEARNING.md`: Etapas 10
+- [x] Komanda nuotraukoms atsisiųsti (Pexels su raktu, Openverse be rakto) + autorių puslapis
+- [x] Demo portfolio – tikros nuotraukos (jei atsisiųstos), kitaip – sugeneruoti paveikslėliai
+- [x] Filament: kategorijos nuotrauka, svetainės nuotraukų puslapis
+- [x] Naujas viešos dalies dizainas: spalvos, tipografija, pradžios puslapis, kategorijos, teikėjai, profilis, poraštė
+- [x] Paskyros ir prisijungimo puslapių stilius pagal naują dizainą
+- [x] Testai, `docs/LEARNING.md`: Etapas 10
