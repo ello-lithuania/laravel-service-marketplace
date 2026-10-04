@@ -356,15 +356,15 @@ o portfolio – eilėje (įkeliant 10 nuotraukų puslapis nelaukia). Seed'o metu
 - po seed'o viskas paruošta: nereikia eilės darbuotojo, ir `migrate:fresh --seed` rezultatas visada tas pats;
 - eilė neužkemšama: su `database` seed'as įdėtų ≈ 2 000 darbų (`jobs`), ir tikri pranešimai lauktų už jų;
 - kaina – laikas: miniatiūros yra didžioji `media` žingsnio dalis (spatie/image su GD: `thumb` ≈ 18 ms, `large` ≈ 23 ms).
-  Paliekant eilei `SEED_SCALE=0.05` `media` žingsnis truktų ≈ 2 s vietoj ≈ 7 s, bet portfolio miniatiūros atsirastų tik
+  Paliekant eilei `SEED_SCALE=0.05` `media` žingsnis truktų ≈ 2 s vietoj 7–9 s, bet portfolio miniatiūros atsirastų tik
   tada, kai jas padarys `queue:work` (iki tol `imageUrls()` rodo originalą).
 
 **Išmatuota** (SQLite, Claude cloud konteineris, 4 branduoliai; dirbo ir kiti procesai, todėl laikai apytiksliai):
 
-| `SEED_SCALE` | `media` eilučių | Failų diske (su miniatiūromis) | `media` žingsnis |   Visas `migrate:fresh --seed` |
-| -----------: | --------------: | -----------------------------: | ---------------: | -----------------------------: |
-|         0.05 |             140 |                    ≈ 380, 9 MB |            7–8 s | ≈ 10 s (be `SEED_MEDIA` ≈ 3 s) |
-|            1 |           2 642 |                ≈ 7 200, 168 MB |        ≈ 4,3 min |                        ≈ 5 min |
+| `SEED_SCALE` | `media` eilučių | Failų diske (su miniatiūromis) | `media` žingsnis |    Visas `migrate:fresh --seed` |
+| -----------: | --------------: | -----------------------------: | ---------------: | ------------------------------: |
+|         0.05 |             140 |                    ≈ 380, 9 MB |            7–9 s | 10–12 s (be `SEED_MEDIA` ≈ 3 s) |
+|            1 |           2 642 |                ≈ 7 200, 168 MB |        ≈ 4,3 min |                         ≈ 5 min |
 
 Todėl pagal nutylėjimą `SEED_MEDIA=false`: kasdieniam darbui paveikslėlių nereikia, o pilnam našumo seed'ui jie tik
 pailgintų laiką ir užimtų vietos.

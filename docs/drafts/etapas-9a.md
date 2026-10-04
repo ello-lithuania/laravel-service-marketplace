@@ -23,7 +23,7 @@
       inicialus), o prisegama su `preservingOriginal()` – tas pats failas kopijuojamas daug kartų.
     - **Miniatiūros seed'o metu daromos iškart** (laikinai `media-library.queue_connection_name = sync`), net jei
       `.env` – `QUEUE_CONNECTION=database`. Kitaip seed'as įdėtų ≈ 2 000 darbų į eilę, ir portfolio miniatiūros atsirastų
-      tik veikiant `queue:work`. Kaina – laikas: `SEED_SCALE=0.05` – ≈ 10 s vietoj ≈ 3 s, `SEED_SCALE=1` – ≈ 5 min.
+      tik veikiant `queue:work`. Kaina – laikas: `SEED_SCALE=0.05` – 10–12 s vietoj ≈ 3 s, `SEED_SCALE=1` – ≈ 5 min.
       Todėl pagal nutylėjimą `SEED_MEDIA=false`.
     - **Atkartojamumas:** ta pati `SEED_FAKER_SEED` – baitas į baitą tie patys failai (patikrinta `md5sum`).
     - **Populiaresni – dažniau su logotipu:** teikėjai renkami svertiniu atsitiktiniu būdu pagal atsiliepimų skaičių,
@@ -45,7 +45,7 @@
 **Kaip išbandyti:**
 
 ```bash
-SEED_MEDIA=true php artisan migrate:fresh --seed   # ≈ 10 s su SEED_SCALE=0.05
+SEED_MEDIA=true php artisan migrate:fresh --seed   # 10–12 s su SEED_SCALE=0.05
 composer run dev
 ```
 
@@ -184,7 +184,7 @@ Be teisingos `X-Inertia-Version` serveris grąžina 409 (naujas frontend'o leidi
 
 | Komanda                                                            | Ką daro                                                           |
 | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `SEED_MEDIA=true php artisan migrate:fresh --seed`                 | demo duomenys su paveikslėliais (≈ 10 s su `SEED_SCALE=0.05`)     |
+| `SEED_MEDIA=true php artisan migrate:fresh --seed`                 | demo duomenys su paveikslėliais (10–12 s su `SEED_SCALE=0.05`)    |
 | `php -m \| grep -i gd` · `php -r 'print_r(gd_info());'`            | ar įdiegtas GD ir ką jis moka (JPEG, PNG, WebP, FreeType)         |
 | `php artisan media-library:regenerate`                             | iš naujo sugeneruoja miniatiūras (pvz. pakeitus konversijų dydį)  |
 | `php artisan media-library:clean --dry-run`                        | parodo nebenaudojamas miniatiūras ir katalogus be `media` eilutės |
