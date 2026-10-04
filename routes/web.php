@@ -18,3 +18,4 @@ require __DIR__.'/requests.php';
 require __DIR__.'/messages.php';
 require __DIR__.'/billing.php';
 require __DIR__.'/seo.php';
+require __DIR__.'/site.php';

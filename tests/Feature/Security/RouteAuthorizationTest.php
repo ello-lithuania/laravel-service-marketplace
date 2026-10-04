@@ -43,6 +43,8 @@ function publicRoutes(): array
         'pricing' => 'kainų puslapis (kreditų paketai ir planai)',
         'billing.callback*' => 'mokėjimų tiekėjo callback\'as (tikrinamas parašas)',
         'payments.callback*' => 'mokėjimų tiekėjo callback\'as (tikrinamas parašas)',
+        // --- Etapas 10a ---
+        'photo-credits' => 'nuotraukų autoriai ir licencijos (CC BY reikalauja nurodyti autorių)',
     ];
 }
 
