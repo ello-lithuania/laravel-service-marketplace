@@ -104,7 +104,7 @@ const sections = computed(() =>
             >
                 {{ section.description }}
             </p>
-            <ul class="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <ul class="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <li v-for="item in section.items" :key="item.id">
                     <PhotoCreditCard :item="item" />
                 </li>

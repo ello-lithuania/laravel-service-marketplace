@@ -65,7 +65,8 @@ test('Pexels: kategorijos nuotrauka atsisiunčiama, įrašoma į biblioteką ir 
 
     expect($media)->not->toBeNull()
         ->and($media?->getCustomProperty('stock_id'))->toBe('pexels:101')
-        ->and($media?->getCustomProperty('credit'))->toBe([
+        // toEqual, ne toBe: MySQL JSON stulpelis raktų tvarką keičia (rikiuoja), SQLite – ne
+        ->and($media?->getCustomProperty('credit'))->toEqual([
             'author' => 'Fotografas 101',
             'author_url' => 'https://www.pexels.com/@fotografas-101',
             'source' => 'Pexels',
@@ -104,7 +105,7 @@ test('Openverse be rakto: CC BY nuotrauka su autoriumi, licencija ir User-Agent'
     $media = $this->root->fresh()?->getFirstMedia('image');
 
     expect($media?->getCustomProperty('stock_id'))->toBe('openverse:ov-1')
-        ->and($media?->getCustomProperty('credit'))->toBe([
+        ->and($media?->getCustomProperty('credit'))->toEqual([
             'author' => 'Autorius Flickr',
             'author_url' => 'https://www.flickr.com/photos/autorius',
             'source' => 'Flickr',

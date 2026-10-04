@@ -62,10 +62,11 @@ class StockPhotoSeeder extends Seeder
             }
         }
 
-        foreach ($sitePhotos as $key => $photo) {
-            $siteKey = SitePhotoKey::tryFrom($key);
+        // Enum tvarka (ne bibliotekos abėcėlės): taip kuriamos ir site_photos eilutės
+        foreach (SitePhotoKey::cases() as $siteKey) {
+            $photo = $sitePhotos[$siteKey->value] ?? null;
 
-            if ($siteKey === null) {
+            if ($photo === null) {
                 continue;
             }
 

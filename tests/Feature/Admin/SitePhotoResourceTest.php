@@ -43,6 +43,19 @@ test('„Svetainės nuotraukos": po eilutę kiekvienai SitePhotoKey vietai, suku
     expect(SitePhoto::query()->count())->toBe(count(SitePhotoKey::cases()));
 });
 
+test('vietos rodomos SitePhotoKey tvarka, nors eilutės sukurtos kita tvarka', function () {
+    foreach (array_reverse(SitePhotoKey::cases()) as $key) {
+        SitePhoto::forKey($key);
+    }
+
+    $ordered = array_map(
+        fn (SitePhotoKey $key) => SitePhoto::query()->where('key', $key)->firstOrFail(),
+        SitePhotoKey::cases(),
+    );
+
+    Livewire::test(ManageSitePhotos::class)->assertCanSeeTableRecords($ordered, inOrder: true);
+});
+
 test('svetainės nuotrauką galima įkelti modaliniame lange – ji iškart pasiekia pradžios puslapį', function () {
     Livewire::test(ManageSitePhotos::class);
     $hero = SitePhoto::query()->where('key', SitePhotoKey::Hero)->firstOrFail();

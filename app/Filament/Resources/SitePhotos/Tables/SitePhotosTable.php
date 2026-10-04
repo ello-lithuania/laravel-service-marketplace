@@ -2,20 +2,21 @@
 
 namespace App\Filament\Resources\SitePhotos\Tables;
 
+use App\Enums\SitePhotoKey;
 use App\Models\SitePhoto;
 use App\Services\Photos\PhotoCredit;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class SitePhotosTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            // Eilutės sukurtos SitePhotoKey tvarka, todėl id tvarka = enum tvarka
-            ->defaultSort('id')
+            ->defaultSort(fn (Builder $query): Builder => self::inEnumOrder($query))
             ->paginated(false)
             ->columns([
                 // Stulpelis pats užkrauna media (with('media')) – be N+1
@@ -41,5 +42,26 @@ class SitePhotosTable
                 EditAction::make()
                     ->modalHeading(fn (SitePhoto $record): string => 'Svetainės nuotrauka: '.$record->key->label()),
             ]);
+    }
+
+    /**
+     * Tvarka – kaip SitePhotoKey enum'e, ne pagal id: eilutės kuriamos tada, kai jų prireikia, bet kuria tvarka.
+     * CASE veikia ir SQLite, ir MySQL. „key" MySQL'e – rezervuotas žodis, todėl kabutės `key`: jas supranta abi DB
+     * (SQLite – dėl suderinamumo su MySQL). Tekstas – tik literalai (Larastan: orderByRaw priima literal-string).
+     *
+     * @param  Builder<SitePhoto>  $query
+     * @return Builder<SitePhoto>
+     */
+    private static function inEnumOrder(Builder $query): Builder
+    {
+        $sql = 'CASE `key`';
+        $bindings = [];
+
+        foreach (SitePhotoKey::cases() as $index => $key) {
+            $sql .= ' WHEN ? THEN ?';
+            array_push($bindings, $key->value, $index);
+        }
+
+        return $query->orderByRaw($sql.' END', $bindings);
     }
 }
