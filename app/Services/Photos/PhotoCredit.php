@@ -3,6 +3,7 @@
 namespace App\Services\Photos;
 
 use Illuminate\Support\Str;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Nuotraukos autorius ir licencija – media custom_properties.credit (docs/DB_SCHEMA.md → media).
@@ -66,6 +67,16 @@ final readonly class PhotoCredit
             licenseUrl: $string('license_url'),
             title: $string('title'),
         );
+    }
+
+    /**
+     * Iš media įrašo (custom_properties.credit). null – savo nuotrauka (be autoriaus) arba media nėra.
+     */
+    public static function fromMedia(?Media $media): ?self
+    {
+        $raw = $media?->getCustomProperty('credit');
+
+        return is_array($raw) ? self::fromArray($raw) : null;
     }
 
     /**

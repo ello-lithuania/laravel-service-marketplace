@@ -117,8 +117,7 @@ final class PhotoCredits
      */
     private function item(Media $media, ?string $label): ?array
     {
-        $raw = $media->getCustomProperty('credit');
-        $credit = is_array($raw) ? PhotoCredit::fromArray($raw) : null;
+        $credit = PhotoCredit::fromMedia($media);
 
         if ($credit === null) {
             return null;
