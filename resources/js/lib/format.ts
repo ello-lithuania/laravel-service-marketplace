@@ -57,10 +57,24 @@ export function plural(
     count: number,
     [one, few, many]: [string, string, string],
 ): string {
-    const form = pluralRules.select(count);
-    const word = form === 'one' ? one : form === 'few' ? few : many;
+    return `${count} ${pluralWord(count, [one, few, many])}`;
+}
 
-    return `${count} ${word}`;
+/** Tik žodžio forma be skaičiaus: pluralWord(21, ['teikėjas', 'teikėjai', 'teikėjų']) → „teikėjas". */
+export function pluralWord(
+    count: number,
+    [one, few, many]: [string, string, string],
+): string {
+    const form = pluralRules.select(count);
+
+    return form === 'one' ? one : form === 'few' ? few : many;
+}
+
+const integerFormat = new Intl.NumberFormat('lt-LT');
+
+/** 4859 → „4 859" (tūkstančiai atskiriami tarpu, kaip įprasta lietuviškai). */
+export function formatNumber(value: number): string {
+    return integerFormat.format(value);
 }
 
 /** ISO data (UTC) → „2026 m. spalio 3 d." Lietuvos laiku. */
