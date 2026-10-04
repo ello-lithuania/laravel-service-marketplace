@@ -83,15 +83,17 @@ class RefundCalculator
             return $this->credits($credits, $balance, SubscriptionStatus::Expired, $newEndsAt, $newEndsAt);
         }
 
+        // Laikotarpis dar neprasidėjo. Įprastai jo kreditai dar nesuteikti, bet seed'ų prenumeratoms jie suteikti
+        // iš anksto (credits_granted_until = ends_at) – tada atimam ir credits_granted_until grąžinam iki naujos pabaigos
         if (! $periodStart->isAfter($startsAt)) {
             // Suplanuota (dar neprasidėjusi) prenumerata su vieninteliu laikotarpiu – ji niekada neprasidės
-            return $this->credits($credits, $balance, SubscriptionStatus::Expired, $startsAt, $grantedUntil);
+            return $this->credits($credits, $balance, SubscriptionStatus::Expired, $startsAt, $creditsGranted ? $startsAt : $grantedUntil);
         }
 
         // Iš anksto apmokėtas pratęsimas: ankstesni laikotarpiai lieka, tik nebepratęsiama
         $status = $subscription->status === SubscriptionStatus::Active ? SubscriptionStatus::Cancelled : $subscription->status;
 
-        return $this->credits($credits, $balance, $status, $periodStart, $grantedUntil);
+        return $this->credits($credits, $balance, $status, $periodStart, $creditsGranted ? $periodStart : $grantedUntil);
     }
 
     /**

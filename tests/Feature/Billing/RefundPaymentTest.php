@@ -263,6 +263,27 @@ test('iš anksto apmokėtas pratęsimas: grąžinamas tik jis – prenumerata ga
         ->and(ledgerSum($this->provider->id))->toBe(0);
 });
 
+test('seed\'ų prenumerata (kreditai suteikti iš anksto ir už būsimą laikotarpį): atimami, credits_granted_until grąžinamas', function () {
+    // Du apmokėti laikotarpiai: [02-25; 03-25) ir [03-25; 04-25); seed'uose kreditai suteikti iki ends_at
+    $subscription = Subscription::factory()->for($this->provider)->create([
+        'subscription_plan_id' => $this->plan->id,
+        'starts_at' => '2026-02-25 12:00',
+        'ends_at' => '2026-04-25 12:00',
+        'credits_granted_until' => '2026-04-25 12:00',
+    ]);
+    app(CreditLedger::class)->credit($this->provider, 120, CreditTransactionType::Subscription, $subscription);
+    $renewal = Payment::factory()->fake()->forPlan($this->plan, $subscription)->for($this->user)->create(['invoice_number' => 'SF-2026-000900']);
+
+    $refund = refund($this, $renewal);
+    $subscription->refresh();
+
+    expect($subscription->status)->toBe(SubscriptionStatus::Cancelled)
+        ->and($subscription->ends_at->toDateTimeString())->toBe('2026-03-25 12:00:00')
+        ->and($subscription->credits_granted_until->toDateTimeString())->toBe('2026-03-25 12:00:00')
+        ->and($refund->credits_reversed)->toBe(60)
+        ->and($this->provider->refresh()->credits_balance)->toBe(60);
+});
+
 test('suplanuotas naujas planas (plano keitimas): niekada neprasidės, dabartinė prenumerata nepaliečiama', function () {
     $current = Subscription::factory()->for($this->provider)->create(['starts_at' => now()->subDays(10), 'ends_at' => now()->addDays(20)]);
     $other = SubscriptionPlan::factory()->create(['name' => 'Startas', 'credits_per_period' => 20]);

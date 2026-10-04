@@ -1043,6 +1043,10 @@ vienu (paskutiniu apmokėtu) laikotarpiu nuo galo. Laikotarpių ribos skaičiuoj
 | dar neprasidėjo (iš anksto apmokėtas pratęsimas)                 | `ends_at` grąžinamas atgal; `active` → `cancelled` (nebepratęsiama) | dar nesuteikti – nieko neatimama                            |
 | suplanuota prenumerata (plano keitimas), vienintelis laikotarpis | niekada neprasidės: `expired`, `ends_at = starts_at`                | dar nesuteikti                                              |
 
+Seed'ų prenumeratoms kreditai suteikti iš anksto ir už būsimus laikotarpius (`credits_granted_until = ends_at`) – tada
+ir neprasidėjusio laikotarpio kreditai atimami, o `credits_granted_until` grąžinamas iki naujos pabaigos. Taisyklė
+viena: kreditai atimami, jei `credits_granted_until` > atimamo laikotarpio pradžia.
+
 Visais atvejais `auto_renew = false`, o laukiantys pratęsimo mokėjimai atšaukiami (`CancelPendingRenewalPayments`).
 Kodėl ne tiesiog `CancelSubscription`: atšaukta prenumerata galioja iki apmokėto laikotarpio pabaigos, bet grąžinus
 pinigus tas laikotarpis nebėra apmokėtas.
