@@ -7,6 +7,7 @@ use Database\Seeders\Demo\ComplaintGenerator;
 use Database\Seeders\Demo\ConversationGenerator;
 use Database\Seeders\Demo\CounterSync;
 use Database\Seeders\Demo\DemoContext;
+use Database\Seeders\Demo\MediaGenerator;
 use Database\Seeders\Demo\MonetizationGenerator;
 use Database\Seeders\Demo\NotificationGenerator;
 use Database\Seeders\Demo\OfferGenerator;
@@ -89,6 +90,11 @@ class DemoDataSeeder extends Seeder
         });
 
         $this->step('Skaitliukai', $started, fn () => CounterSync::run());
+
+        // Paskutinis žingsnis: renkantis, kam duoti paveikslėlių, reikia jau suskaičiuotų atsiliepimų (CounterSync)
+        if (config('seeding.media')) {
+            $this->step('Paveikslėliai (SEED_MEDIA)', $started, fn () => (new MediaGenerator($ctx))->run());
+        }
 
         $this->command->info(sprintf('Baigta per %.1f s, atminties pikas %d MB', microtime(true) - $started, memory_get_peak_usage(true) / 1_048_576));
     }
