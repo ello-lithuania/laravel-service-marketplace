@@ -5,9 +5,11 @@ namespace Database\Seeders\Demo;
 use App\Enums\ProviderStatus;
 use App\Models\PortfolioItem;
 use App\Models\ProviderProfile;
+use App\Services\Photos\LibraryPhoto;
+use App\Services\Photos\StockPhotoLibrary;
+use Database\Seeders\Support\OrphanedMediaFiles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -20,6 +22,11 @@ use Illuminate\Support\Str;
  * 2. Piešimas: tik reikalingi paveikslėliai, kiekvienas su savo sėkla (turinys nepriklauso nuo SEED_SCALE).
  *    Portfolio ir viršeliai – nedidelis bendras rinkinys (≤ 72 failai), logotipai – pagal inicialus.
  * 3. Prisegimas: addMedia()->preservingOriginal() – tas pats failas kopijuojamas daug kartų, o ne piešiamas iš naujo.
+ *
+ * Etapas 10: jei sričiai yra atsisiųstas portfolio rinkinys (php artisan photos:download →
+ * storage/app/stock-photos/portfolio/{sritis}), jos darbams ir viršeliams imamos tikros nuotraukos (su autoriumi
+ * custom_properties.credit), o kitoms sritims – kaip anksčiau sugeneruoti paveikslėliai. Logotipai – visada
+ * sugeneruoti (tikras logotipas būtų svetimas prekės ženklas).
  */
 final class MediaGenerator
 {
@@ -61,11 +68,26 @@ final class MediaGenerator
     ];
 
     /**
-     * Ką piešti: failo raktas => [tipas, 1 lygio slug, logotipo inicialai, logotipo forma].
+     * Ką piešti: failo raktas => [tipas, 1 lygio slug, logotipo inicialai, logotipo forma arba rinkinio nuotraukos nr.].
+     * „pool" – nepiešiama, imama atsisiųsta nuotrauka iš portfolio rinkinio.
      *
-     * @var array<string, array{0: 'portfolio'|'cover'|'logo', 1: string, 2: string, 3: int}>
+     * @var array<string, array{0: 'portfolio'|'cover'|'logo'|'pool', 1: string, 2: string, 3: int}>
      */
     private array $images = [];
+
+    /**
+     * Etapas 10: atsisiųsti portfolio rinkiniai (1 lygio slug => nuotraukos, rikiuotos pagal vardą).
+     *
+     * @var array<string, list<LibraryPhoto>>
+     */
+    private array $pools = [];
+
+    /**
+     * Rinkinio nuotraukų custom_properties (credit, stock_id): failo raktas => savybės.
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    private array $properties = [];
 
     /**
      * Ką prisegti (morph map vardas => modelio id => prisegimai).
@@ -83,6 +105,9 @@ final class MediaGenerator
         $directory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'seed-media-'.$seed.'-'.getmypid();
         $queueConnection = config('media-library.queue_connection_name');
 
+        // Etapas 10: tikros nuotraukos, jei atsisiųstos (SEED_STOCK_PHOTOS=false – visada sugeneruotos)
+        $this->pools = config('seeding.stock_photos') ? app(StockPhotoLibrary::class)->pools() : [];
+
         // Sėkla iš naujo: planas nepriklauso nuo to, kiek atsitiktinių skaičių sunaudojo ankstesni žingsniai
         mt_srand($seed);
         $this->plan();
@@ -99,6 +124,10 @@ final class MediaGenerator
         }
 
         $this->ctx->log(sprintf('  %-28s %10s  %5.1f s', 'media', number_format($total, 0, ',', ' '), microtime(true) - $started));
+
+        if ($this->pools !== []) {
+            $this->ctx->log(sprintf('  (tikros nuotraukos iš portfolio rinkinio: %d sr., kitoms – sugeneruoti paveikslėliai)', count($this->pools)));
+        }
     }
 
     // --- 1. Planas -----------------------------------------------------------------------------
@@ -135,7 +164,9 @@ final class MediaGenerator
                 $this->planLogo($profileId, $root, $this->initials($c->provDisplayName[$p] ?? ''));
 
                 if ($c->chance(self::COVER_SHARE)) {
-                    $this->add('provider_profile', $profileId, 'cover', $this->image('cover', $root));
+                    $pool = $this->pools[$root] ?? [];
+                    $cover = $pool === [] ? $this->image('cover', $root) : $this->poolImage($root, $c->between(0, count($pool) - 1));
+                    $this->add('provider_profile', $profileId, 'cover', $cover);
                 }
             }
 
@@ -146,11 +177,14 @@ final class MediaGenerator
 
                 $portfolio++;
                 $itemRoot = $this->rootSlug($categoryId);
-                $variants = range(0, self::PORTFOLIO_VARIANTS - 1);
+                // Su rinkiniu – visos jo nuotraukos (tikros nuotraukos kartojasi labiau matomai nei abstrakčios)
+                $pool = $this->pools[$itemRoot] ?? [];
+                $variants = range(0, ($pool === [] ? self::PORTFOLIO_VARIANTS : count($pool)) - 1);
                 shuffle($variants);
 
                 foreach (array_slice($variants, 0, $c->between(1, 3)) as $variant) {
-                    $this->add('portfolio_item', $itemId, 'images', $this->image('portfolio', $itemRoot, $variant));
+                    $image = $pool === [] ? $this->image('portfolio', $itemRoot, $variant) : $this->poolImage($itemRoot, $variant);
+                    $this->add('portfolio_item', $itemId, 'images', $image);
                 }
             }
         }
@@ -210,6 +244,17 @@ final class MediaGenerator
         return $key;
     }
 
+    /**
+     * Etapas 10: nuotrauka iš atsisiųsto rinkinio – nepiešiama, tik prisegama su autoriaus duomenimis.
+     */
+    private function poolImage(string $root, int $index): string
+    {
+        $key = 'pool-'.$root.'-'.$index;
+        $this->images[$key] ??= ['pool', $root, '', $index];
+
+        return $key;
+    }
+
     private function add(string $morph, int $id, string $collection, string $image): void
     {
         $list = $this->attachments[$morph][$id] ?? [];
@@ -259,6 +304,14 @@ final class MediaGenerator
         $paths = [];
 
         foreach ($this->images as $key => [$type, $root, $initials, $shape]) {
+            if ($type === 'pool') {
+                $photo = $this->pools[$root][$shape];
+                $paths[$key] = $photo->path;
+                $this->properties[$key] = $photo->customProperties();
+
+                continue;
+            }
+
             // Kiekvienas paveikslėlis – su savo sėkla: jo turinys priklauso tik nuo SEED_FAKER_SEED ir rakto
             mt_srand(crc32($seed.':'.$key));
             $palette = $this->palette($root);
@@ -306,10 +359,12 @@ final class MediaGenerator
                     foreach ($find($ids) as $model) {
                         foreach ($planned[$model->getKey()] as $attachment) {
                             $model->addMedia($paths[$attachment['image']])
-                                // Originalas lieka laikiname kataloge – tą patį failą prisegsim ir kitiems įrašams
+                                // Originalas lieka laikiname kataloge (ar rinkinyje) – tą patį failą prisegsim ir kitiems
                                 ->preservingOriginal()
                                 ->setOrder($attachment['order'])
                                 ->withAttributes(['uuid' => $attachment['uuid']])
+                                // Rinkinio nuotraukai – autorius ir licencija (puslapis „Nuotraukų autoriai")
+                                ->withCustomProperties($this->properties[$attachment['image']] ?? [])
                                 ->toMediaCollection($attachment['collection']);
                             $total++;
                         }
@@ -322,21 +377,11 @@ final class MediaGenerator
     }
 
     /**
-     * Po migrate:fresh media lentelė tuščia, bet ankstesnio seed'o failai ({media id}/…) liko diske.
-     * Jų nebenurodo jokia eilutė, todėl ištrinam – kitaip kiekvienas seed'as pridėtų dar kelis šimtus MB.
+     * Ankstesnio seed'o failai diske (docs/SEEDING.md 7 sk.). DemoDataSeeder veikia tik tuščioje DB, todėl media
+     * lentelėje gali būti tik ką tik StockPhotoSeeder prisegtos kategorijų nuotraukos – jų failai paliekami.
      */
     private function clearOrphanedFiles(): void
     {
-        if (DB::table('media')->exists()) {
-            return;
-        }
-
-        $disk = Storage::disk((string) config('media-library.disk_name'));
-
-        foreach ($disk->directories() as $directory) {
-            if (ctype_digit($directory)) {
-                $disk->deleteDirectory($directory);
-            }
-        }
+        OrphanedMediaFiles::clear();
     }
 }

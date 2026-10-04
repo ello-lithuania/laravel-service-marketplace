@@ -20,9 +20,10 @@ return [
         'portfolio' => [800, 600],
     ],
 
-    // Didesni originalai bibliotekoje sumažinami (greitesnės miniatiūros, mažiau vietos diske)
+    // Didesni originalai bibliotekoje sumažinami: greitesnės miniatiūros (ir seed'as), mažiau vietos diske.
+    // Kategorijoms užtenka 1600 – tokio pločio plačioji juosta (wide 1600×700)
     'max_dimension' => [
-        'categories' => 2000,
+        'categories' => 1600,
         'site' => 2000,
         'portfolio' => 1600,
     ],

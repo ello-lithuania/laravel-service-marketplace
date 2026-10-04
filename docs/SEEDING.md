@@ -2,6 +2,8 @@
 
 > **Etapas 2 · būsena: įgyvendinta.** Kodas – `database/seeders/DemoDataSeeder.php` ir `database/seeders/Demo/`.
 > Kiekiai ir laikai lentelėse – išmatuoti (2026-10-03). **Etapas 9:** demo paveikslėliai (`SEED_MEDIA=true`, 7 sk.).
+> **Etapas 10:** atsisiųstos nemokamos nuotraukos (`php artisan photos:download`) kategorijoms, svetainei ir demo
+> portfolio (6–7 sk.).
 
 **Sąvokos:**
 
@@ -262,10 +264,25 @@ Kategorijų pavadinimai rašomi vardininku, todėl tinka pavadinimams („Plytel
 | Įmonių pavadinimai          | Faker `company()`, kurie paremti dažnomis pavardėmis. Taisyklė ta pati.                                                                                                                   |
 | Adresai                     | Faker `streetAddress()` (netikros gatvės) + mūsų savivaldybė                                                                                                                              |
 | Svetainės                   | `https://{slug}.example.test`                                                                                                                                                             |
-| Nuotraukos                  | tik abstraktūs paveikslėliai, kuriuos seed'o metu nupiešia `ImagePainter` (PHP GD): spalvos, figūros, inicialai. Be žmonių, iš interneto nieko nesiunčiam.                                |
+| Nuotraukos                  | logotipai – abstraktūs `ImagePainter` paveikslėliai; demo portfolio ir viršeliai – nemokamos licencijos nuotraukos, jei atsisiųstos (žr. žemiau). Seed'as iš interneto nieko nesiunčia.   |
 | Slaptažodžiai               | visiems `password` (**tik dev!**)                                                                                                                                                         |
 | Apskritys, savivaldybės     | tikri **vieši administraciniai** duomenys. Tai ne asmens duomenys, ir be jų svetainė neveiktų.                                                                                            |
 | Kategorijos, kainos, planai | sugalvoti mūsų                                                                                                                                                                            |
+
+**Nuotraukos (Etapas 10).** Abstraktūs paveikslėliai atrodė kaip šablonas, todėl demo portfolio darbams ir viršeliams
+leidžiamos **nemokamos licencijos nuotraukos** (Pexels License, CC0, Public Domain Mark, CC BY, CC BY-SA). Taisyklės:
+
+- nuotraukas atsisiunčia **komanda**, ne seed'as: `php artisan photos:download` → `storage/app/stock-photos`
+  (Git'e ignoruojama, žr. `docs/drafts/etapas-10a.md`). Seed'as jas tik prisega iš bibliotekos;
+- **autorius ir licencija saugomi** kiekvienam media įrašui (`custom_properties.credit`, `docs/DB_SCHEMA.md` → media) ir
+  rodomi puslapyje „Nuotraukų autoriai" (`/nuotrauku-autoriai`) – CC BY ir CC BY-SA to reikalauja;
+- portfolio nuotraukos ieškomos **daiktų ir atlikto darbo frazėmis** („renovated bathroom tiles", „landscaped garden"), o
+  rezultatai, kurių aprašyme minimi žmonės („man", „woman", „people"…), praleidžiami. Tai euristika – aprašymas ne
+  visada pasako, kas nuotraukoje, todėl atsisiuntus verta peržiūrėti `storage/app/stock-photos/portfolio` ir netinkamą
+  failą ištrinti (kitas paleidimas atsisiųs kitą). Iš Openverse žmonių vengiama visur: CC licencija neapima nuotraukoje
+  esančio žmogaus sutikimo;
+- **logotipai lieka sugeneruoti** (tikras logotipas – svetimas prekės ženklas), **žmonių nuotraukų avatarams – niekada**;
+- bibliotekos nėra arba `SEED_STOCK_PHOTOS=false` – viskas kaip iki Etapo 10 (tik `ImagePainter`).
 
 ---
 
@@ -343,8 +360,9 @@ SEED_MEDIA=true php artisan migrate:fresh --seed
   `crc32(sėkla:raktas)`, todėl jo turinys nepriklauso nuo `SEED_SCALE` ir kiek atsitiktinių skaičių sunaudojo kiti
   žingsniai. Patikrinta: du paleidimai iš eilės duoda baitas į baitą tuos pačius failus (`md5sum`).
 - **Seniai sukurti failai.** Po `migrate:fresh` `media` lentelė tuščia, o ankstesnio seed'o `{id}/` katalogai liko
-  diske. Jų nebenurodo jokia eilutė, todėl `MediaGenerator` juos ištrina (tik skaitmeninius katalogus media diske ir tik
-  kai `media` lentelė tuščia).
+  diske. Jų nebenurodo jokia eilutė, todėl jie ištrinami (`Support/OrphanedMediaFiles`, tik skaitmeniniai katalogai media
+  diske). **Etapas 10:** `StockPhotoSeeder` prisega kategorijų nuotraukas anksčiau už `MediaGenerator`, todėl pirmas
+  valo jis (kai `media` lentelė dar tuščia), o `MediaGenerator` trina tik katalogus, kurių id nėra `media` lentelėje.
 - **Modelių įvykiai išjungti** (`WithoutModelEvents`), o medialibrary `uuid` ir `order_column` priskiria `creating`
   įvykyje. Todėl `MediaGenerator` juos nurodo pats (`withAttributes(['uuid' => …])`, `setOrder()`), UUID – deterministinis.
 
@@ -369,6 +387,43 @@ o portfolio – eilėje (įkeliant 10 nuotraukų puslapis nelaukia). Seed'o metu
 Todėl pagal nutylėjimą `SEED_MEDIA=false`: kasdieniam darbui paveikslėlių nereikia, o pilnam našumo seed'ui jie tik
 pailgintų laiką ir užimtų vietos.
 
+### Atsisiųstos nuotraukos (Etapas 10)
+
+Jei `php artisan photos:download` jau paleista (biblioteka `storage/app/stock-photos`, 6 sk.), seed'as nuotraukas
+prisega **be interneto**:
+
+| Kas                                  | Kada                            | Kur                                                      |
+| ------------------------------------ | ------------------------------- | -------------------------------------------------------- |
+| 1 lygio kategorijos (12)             | visada                          | `StockPhotoSeeder` (žinyniniai duomenys)                 |
+| svetainės vietos (`SitePhotoKey`, 4) | visada                          | `StockPhotoSeeder`, `site_photos` eilutė su alt tekstu   |
+| 2 lygio kategorijos (49)             | tik `SEED_MEDIA=true`           | `StockPhotoSeeder`                                       |
+| demo portfolio darbai ir viršeliai   | `SEED_MEDIA=true`, jei rinkinys | `MediaGenerator`: srities rinkinys vietoj `ImagePainter` |
+
+- **Kodėl 2 lygio – tik su `SEED_MEDIA`:** kiekviena kategorijos nuotrauka – dvi miniatiūros iškart (`card` + `wide`,
+  ≈ 0,15 s iš 1600 px originalo). 16 nuotraukų – ≈ 2,5 s, visos 65 – ≈ 10 s. Kasdieniam `migrate:fresh --seed` +2,5 s
+  priimtina, +10 s – jau ne. Be `SEED_MEDIA` 2 lygio nuotraukas iš bibliotekos prisega `php artisan photos:download`
+  (be interneto, tik trūkstamas).
+- **Portfolio rinkinys:** srities darbams parenkama 1–3 nuotraukos iš visų tos srities rinkinio nuotraukų (ne tik 5
+  variantų – tikros nuotraukos kartojasi labiau matomai), viršeliui – viena atsitiktinė. Prisegama kaip ir anksčiau
+  (`preservingOriginal()`), tik su `withCustomProperties(['credit' => …, 'stock_id' => …])`. Sritis be rinkinio – kaip
+  anksčiau, sugeneruoti paveikslėliai.
+- **Atkartojamumas:** rinkiniai skaitomi rikiuoti (sritis, failo vardas), atsitiktinumas – tas pats `SEED_FAKER_SEED`
+  srautas, todėl ta pati biblioteka + ta pati sėkla = tos pačios nuotraukos tiems patiems darbams. Be bibliotekos
+  atsitiktinių skaičių seka nepasikeitė – planas toks pat kaip Etape 9. `StockPhotoSeeder` UUID – v5 iš vardo
+  (`stock-photo:category:{slug}`), todėl irgi kiekvieną kartą tas pats.
+- **Testuose** (`phpunit.xml`) `SEED_STOCK_PHOTOS=false`: kūrėjo kompiuteryje atsisiųsta biblioteka į testus nepatenka.
+  Testai, kuriems jos reikia, naudoja `Storage::fake('stock-photos')`.
+
+**Išmatuota** (SQLite, `SEED_SCALE=0.05`, Claude cloud konteineris; biblioteka – 161 nuotrauka: 61 kategorija,
+4 svetainės, 12 sričių × 8 portfolio):
+
+| Nustatymai                        | `StockPhotoSeeder` | `media` žingsnis | Visas seed'as |
+| --------------------------------- | -----------------: | ---------------: | ------------: |
+| be bibliotekos                    |                  – |                – |         ≈ 3 s |
+| su biblioteka                     |              2,5 s |                – |       ≈ 5,5 s |
+| `SEED_MEDIA=true`, be bibliotekos |                  – |            8,7 s |        ≈ 12 s |
+| `SEED_MEDIA=true`, su biblioteka  |               10 s |           12,8 s |        ≈ 27 s |
+
 ---
 
 ## 8. Patikrinimai po seed'inimo
@@ -390,6 +445,10 @@ Pest testas `tests/Feature/Seeding/SeedIntegrityTest.php`, paleidžiamas su `SEE
 - [x] `SEED_MEDIA=true` (`tests/Feature/Seeding/SeedMediaTest.php`, netikras diskas): kiekiai, trumpi morph map vardai,
       tik aktyvūs teikėjai, UUID ir eilės numeriai, originalai ir miniatiūros diske, eilėje nieko nelieka; be
       `SEED_MEDIA` – jokių failų; ta pati sėkla – tas pats paveikslėlis.
+- [x] Etapas 10 (`tests/Feature/Seeding/StockPhotoSeedTest.php`): kategorijų ir svetainės nuotraukos iš bibliotekos
+      (UUID, eilės numeris, miniatiūros, cache išvalytas), 2 lygio – tik su `SEED_MEDIA`; srities rinkinys – tikros
+      nuotraukos su autoriumi, sritis be rinkinio – sugeneruoti paveikslėliai, logotipai – visada sugeneruoti; seni
+      failai ištrinami, nauji – ne; `SEED_STOCK_PHOTOS=false` – biblioteka ignoruojama.
 
 ---
 
@@ -402,9 +461,11 @@ Pest testas `tests/Feature/Seeding/SeedIntegrityTest.php`, paleidžiamas su `SEE
 | `SEED_FAKER_SEED`            | `2026`   | atsitiktinumo „sėkla" atkartojamumui                       |
 | `SEED_DEMO`                  | `true`   | ar kurti demo duomenis (`false` – tik žinyniniai)          |
 | `SEED_MEDIA`                 | `false`  | ar sukurti demo paveikslėlius (Etapas 9, 7 sk.)            |
+| `SEED_STOCK_PHOTOS`          | `true`   | ar prisegti atsisiųstas nuotraukas (Etapas 10, 6–7 sk.)    |
 | `SEED_VERIFIED_REVIEW_RATIO` | `0.9`    | kokia dalis atliktų užklausų gauna patvirtintą atsiliepimą |
 
-Kintamieji skaitomi per `config/seeding.php`. Testuose (`phpunit.xml`) – `SEED_DEMO=false`, `SEED_SCALE=0.01`. Kode niekada nekviečiam `env()` tiesiogiai už config failų ribų,
+Kintamieji skaitomi per `config/seeding.php`. Testuose (`phpunit.xml`) – `SEED_DEMO=false`, `SEED_SCALE=0.01`,
+`SEED_STOCK_PHOTOS=false`. Kode niekada nekviečiam `env()` tiesiogiai už config failų ribų,
 nes po `php artisan config:cache` `env()` grąžina `null`.
 
 ```bash
@@ -412,6 +473,7 @@ php artisan migrate:fresh --seed                     # pilnas seed'as (MySQL)
 SEED_SCALE=0.05 php artisan migrate:fresh --seed     # mažas ir greitas (SQLite dev)
 SEED_DEMO=false php artisan migrate:fresh --seed     # tik žinyniniai duomenys
 SEED_MEDIA=true php artisan migrate:fresh --seed     # su demo paveikslėliais (lėčiau, 7 sk.)
+php artisan photos:download                          # Etapas 10: nuotraukos į storage/app/stock-photos (reikia interneto)
 php artisan db:seed --class=CategorySeeder           # vienas seeder'is (kai priklausomybės jau yra)
 php artisan db:show --counts                         # visos lentelės su eilučių skaičiumi
 php artisan db:table service_requests                # lentelės stulpeliai, indeksai, FK
