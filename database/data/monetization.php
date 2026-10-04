@@ -31,7 +31,7 @@ return [
         [
             'name' => 'Verslas',
             'slug' => 'verslas',
-            'description' => 'Įmonėms: 140 kreditų, neribotos kategorijos, prioritetinė pagalba.',
+            'description' => 'Įmonėms: 140 kreditų, iki 100 kategorijų, prioritetinė pagalba.', // Etapas 9c: riba taikoma
             'price_cents' => 7900,
             'credits_per_period' => 140,
             'features' => ['max_categories' => 100, 'badge' => true, 'priority_support' => true],
