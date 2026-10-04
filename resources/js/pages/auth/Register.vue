@@ -167,6 +167,7 @@ const roles = [
 
             <Button
                 type="submit"
+                size="lg"
                 class="mt-2 w-full"
                 tabindex="5"
                 :disabled="processing"

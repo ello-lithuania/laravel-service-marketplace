@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import AuthLayout from '@/layouts/auth/AuthSimpleLayout.vue';
+// Etapas 10: padalintas išdėstymas su nuotrauka (AuthSplitLayout), ne paprastas centruotas
+import AuthLayout from '@/layouts/auth/AuthSplitLayout.vue';
 
 const { title = '', description = '' } = defineProps<{
     title?: string;
