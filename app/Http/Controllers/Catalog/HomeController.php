@@ -38,10 +38,13 @@ class HomeController extends Controller
     ): Response {
         $tree = $catalog->categories();
         $geography = $catalog->geography();
+        // Etapas 11: teikėjų skaičius srities kortelėje (cache 1 val.)
+        $providerCounts = $highlights->categoryProviderCounts();
 
         return Inertia::render('public/Home', [
             'categories' => array_map(fn (CachedCategory $root): array => [
                 ...$root->toCard(),
+                'providers_count' => $providerCounts[$root->id] ?? 0,
                 'children' => array_map(
                     fn (CachedCategory $child): array => $child->toLink(),
                     array_slice($tree->children($root->id), 0, self::CATEGORY_PREVIEW),

@@ -7,9 +7,11 @@ use App\Models\Review;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Pradžios puslapio „gyvi" duomenys (Etapas 10): platformos skaičiai ir naujausi 5★ atsiliepimai.
+ * Etapas 11: ir teikėjų skaičius kiekvienoje 1 lygio srityje.
  *
  * Jie keičiasi lėtai, o tikslumas iki minutės nesvarbus, todėl cache – 1 val. (Cache::remember su TTL), ne
  * rememberForever su observer'iu: kitaip kiekvienas naujas atsiliepimas ar užbaigtas darbas valytų cache.
@@ -22,6 +24,8 @@ final class SiteHighlights
     public const STATS_KEY = 'site:stats:v1';
 
     public const TESTIMONIALS_KEY = 'site:testimonials:v1';
+
+    public const CATEGORY_PROVIDERS_KEY = 'site:category-providers:v1';
 
     private const TTL_SECONDS = 3600;
 
@@ -46,10 +50,21 @@ final class SiteHighlights
         return Cache::remember(self::TESTIMONIALS_KEY, self::TTL_SECONDS, self::loadTestimonials(...));
     }
 
+    /**
+     * Etapas 11: kiek aktyvių teikėjų dirba kiekvienoje 1 lygio srityje (pradžios puslapio kategorijų kortelės).
+     *
+     * @return array<int, int> 1 lygio kategorijos id => teikėjų skaičius
+     */
+    public function categoryProviderCounts(): array
+    {
+        return Cache::remember(self::CATEGORY_PROVIDERS_KEY, self::TTL_SECONDS, self::loadCategoryProviderCounts(...));
+    }
+
     public function forget(): void
     {
         Cache::forget(self::STATS_KEY);
         Cache::forget(self::TESTIMONIALS_KEY);
+        Cache::forget(self::CATEGORY_PROVIDERS_KEY);
     }
 
     /**
@@ -78,6 +93,35 @@ final class SiteHighlights
             'rating_avg' => $reviews > 0 ? round((float) $row->rating_sum / $reviews, 1) : null,
             'completed_jobs' => (int) ($row->completed_jobs ?? 0),
         ];
+    }
+
+    /**
+     * Teikėjas renkasi 1–3 lygio kategorijas (category_provider_profile), o kortelė rodo 1 lygį, todėl kiekviena
+     * pasirinkta kategorija SQL'e „pakeliama" iki šaknies: 1 lygis – ji pati, 2 lygis – tėvas, 3 lygis – tėvo tėvas
+     * (medis ne gilesnis nei 3 lygiai, docs/DB_SCHEMA.md 2.2). COUNT(DISTINCT …): teikėjas, pasirinkęs kelias tos
+     * pačios srities paslaugas, skaičiuojamas vieną kartą. CASE ir GROUP BY pagal alias veikia ir MySQL, ir SQLite.
+     *
+     * @return array<int, int>
+     */
+    public static function loadCategoryProviderCounts(): array
+    {
+        $rows = DB::table('category_provider_profile as pivot')
+            ->join('categories as category', 'category.id', '=', 'pivot.category_id')
+            ->leftJoin('categories as parent', 'parent.id', '=', 'category.parent_id')
+            // Subužklausa, o ne JOIN su provider_profiles: active() scope'o stulpeliai lieka be lentelės prefikso
+            ->whereIn('pivot.provider_profile_id', ProviderProfile::query()->active()->select('id'))
+            ->selectRaw('CASE WHEN category.parent_id IS NULL THEN category.id WHEN parent.parent_id IS NULL THEN parent.id ELSE parent.parent_id END as root_id')
+            ->selectRaw('COUNT(DISTINCT pivot.provider_profile_id) as providers')
+            ->groupBy('root_id')
+            ->get();
+
+        $counts = [];
+
+        foreach ($rows as $row) {
+            $counts[(int) $row->root_id] = (int) $row->providers;
+        }
+
+        return $counts;
     }
 
     /**

@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\ProviderStatus;
+use App\Models\Category;
 use App\Models\ProviderProfile;
 use App\Models\Review;
 use App\Models\User;
@@ -101,4 +103,32 @@ test('skaičiai ir atsiliepimai laikomi cache valandą', function () use ($longC
     $this->get(route('home'))->assertInertia(fn (Assert $page) => $page
         ->where('stats.providers', 3)
         ->has('testimonials', 1));
+});
+
+test('srities teikėjų skaičius: 2–3 lygio pasirinkimai priskiriami 1 lygiui, teikėjas skaičiuojamas kartą', function () {
+    // sort_order – kad pradžios puslapyje sritys būtų žinoma tvarka
+    $repair = Category::factory()->create(['sort_order' => 1]);
+    $tiles = Category::factory()->childOf($repair)->create();
+    $bathroomTiles = Category::factory()->childOf($tiles)->create();
+    $cleaning = Category::factory()->create(['sort_order' => 2]);
+    $windows = Category::factory()->childOf($cleaning)->create();
+    $garden = Category::factory()->create(['sort_order' => 3]);
+
+    // Dvi tos pačios srities paslaugos (2 ir 3 lygis) – vienas teikėjas
+    catalogProvider([$tiles, $bathroomTiles]);
+    catalogProvider([$repair, $windows]);
+    catalogProvider([$tiles], attributes: ['status' => ProviderStatus::Pending]);
+
+    expect(SiteHighlights::loadCategoryProviderCounts())->toBe([
+        $repair->id => 2,
+        $cleaning->id => 1,
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('categories.0.providers_count', 2)
+            ->where('categories.1.providers_count', 1)
+            ->where('categories.2.slug', $garden->slug)
+            ->where('categories.2.providers_count', 0));
 });
