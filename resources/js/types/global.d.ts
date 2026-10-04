@@ -1,5 +1,6 @@
 import type { Directive } from 'vue';
 import type { Auth } from '@/types/auth';
+import type { SiteLayoutData } from '@/types/catalog';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -24,6 +25,8 @@ declare module '@inertiajs/core' {
             notifications: { unread_count: number } | null;
             /** Etapas 6: neperskaitytos žinutės (HandleInertiaRequests „inbox") */
             inbox: { unread_count: number } | null;
+            /** Etapas 10: poraštės sritys ir miestai, prisijungimo nuotrauka (Inertia::once; paskyros puslapiuose – nėra) */
+            site?: SiteLayoutData;
             [key: string]: unknown;
         };
     }

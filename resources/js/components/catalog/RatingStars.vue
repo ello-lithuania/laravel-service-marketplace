@@ -24,8 +24,8 @@ const filled = computed(() => Math.round(props.rating));
                 cn(
                     props.class,
                     index <= filled
-                        ? 'fill-amber-400 text-amber-400'
-                        : 'text-muted-foreground/40',
+                        ? 'fill-star text-star'
+                        : 'fill-muted text-muted-foreground/30',
                 )
             "
             aria-hidden="true"

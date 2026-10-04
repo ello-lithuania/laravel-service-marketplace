@@ -43,8 +43,8 @@ class CategoryController extends Controller
 
         return Inertia::render('public/categories/Index', [
             'categories' => array_map(fn (CachedCategory $root): array => [
-                ...$root->toLink(),
-                'icon' => $root->icon,
+                // Etapas 10: toCard() – ir nuotrauka (image_url)
+                ...$root->toCard(),
                 'children' => $this->linksWithChildren($tree, $root->id),
             ], $tree->roots()),
             'seo' => $this->seo->categoriesIndex()->toArray(),
@@ -89,6 +89,7 @@ class CategoryController extends Controller
         $filters = $filters->withCity($cityNode);
         $providers = $this->providers->paginate($filters, $tree->relatedIds($node->id));
         $ancestors = $tree->ancestors($node->id);
+        $root = $ancestors[0] ?? null;
 
         return Inertia::render('public/categories/Show', [
             'category' => [
@@ -96,7 +97,10 @@ class CategoryController extends Controller
                 'depth' => $node->depth,
                 'description' => $node->description,
                 // Ikonas turi tik 1 lygis – 2–3 lygiai paveldi savo srities ikoną
-                'icon' => $node->icon ?? ($ancestors[0] ?? null)?->icon,
+                'icon' => $node->icon ?? $root?->icon,
+                // Etapas 10: juosta puslapio viršuje (1600×700) – sava nuotrauka arba srities (1 lygio); null – atsarginis dizainas
+                'image_url' => $node->imageUrl ?? $root?->imageUrl,
+                'image_wide_url' => $node->imageWideUrl ?? $root?->imageWideUrl,
             ],
             'breadcrumbs' => array_map(fn (CachedCategory $ancestor): array => $ancestor->toLink(), $ancestors),
             'subcategories' => $this->subcategories($tree, $node),
@@ -116,7 +120,7 @@ class CategoryController extends Controller
     /**
      * 1 lygis – 2 lygio kategorijos su jų vaikais; 2 lygis – jo vaikai; 3 lygis – „broliai" (to paties tėvo vaikai).
      *
-     * @return list<array{id: int, name: string, slug: string, children: list<array{id: int, name: string, slug: string}>}>
+     * @return list<array{id: int, name: string, slug: string, image_url: string|null, children: list<array{id: int, name: string, slug: string}>}>
      */
     private function subcategories(CategoryTree $tree, CachedCategory $category): array
     {
@@ -127,18 +131,21 @@ class CategoryController extends Controller
         $parentId = $category->depth === Category::MAX_DEPTH ? $category->parentId : $category->id;
 
         return array_map(
-            fn (CachedCategory $child): array => [...$child->toLink(), 'children' => []],
+            fn (CachedCategory $child): array => [...$child->toLink(), 'image_url' => $child->imageUrl, 'children' => []],
             $tree->children($parentId),
         );
     }
 
     /**
-     * @return list<array{id: int, name: string, slug: string, children: list<array{id: int, name: string, slug: string}>}>
+     * Etapas 10: su image_url – 2 lygio grupės kortelėje rodoma nuotrauka, jei administratorius ją įkėlė.
+     *
+     * @return list<array{id: int, name: string, slug: string, image_url: string|null, children: list<array{id: int, name: string, slug: string}>}>
      */
     private function linksWithChildren(CategoryTree $tree, int $parentId): array
     {
         return array_map(fn (CachedCategory $child): array => [
             ...$child->toLink(),
+            'image_url' => $child->imageUrl,
             'children' => array_map(fn (CachedCategory $grandchild): array => $grandchild->toLink(), $tree->children($child->id)),
         ], $tree->children($parentId));
     }

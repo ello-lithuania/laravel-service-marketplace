@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ArrowRight, SearchX } from '@lucide/vue';
-import CatalogPagination from '@/components/catalog/CatalogPagination.vue';
-import ProviderCard from '@/components/catalog/ProviderCard.vue';
-import ProviderFilters from '@/components/catalog/ProviderFilters.vue';
+import { ArrowRight, LayoutGrid } from '@lucide/vue';
+import ProviderResults from '@/components/catalog/ProviderResults.vue';
 import SearchForm from '@/components/catalog/SearchForm.vue';
 import SeoHead from '@/components/catalog/SeoHead.vue';
-import { Button } from '@/components/ui/button';
 import { filtersToQuery, visitWithFilters } from '@/lib/catalog';
-import { plural } from '@/lib/format';
 import { search } from '@/routes';
 import {
     city as categoryCity,
@@ -57,41 +53,51 @@ function applyFilters(next: CatalogFilters): void {
 <template>
     <SeoHead :seo="seo" />
 
-    <div class="mx-auto max-w-6xl px-4 py-8 md:py-12">
-        <!-- key: kitai paieškai (kitas q) forma sukuriama iš naujo su naujomis reikšmėmis -->
-        <SearchForm
-            :key="`${filters.q}|${filters.miestas}`"
-            :cities="cities"
-            :query="filters.q"
-            :city="filters.miestas"
-        />
+    <section
+        class="border-b bg-gradient-to-b from-secondary/70 to-background dark:from-secondary/30"
+    >
+        <div class="page-container pt-8 pb-10 md:pt-10">
+            <p class="text-sm font-medium text-muted-foreground">Paieška</p>
+            <h1
+                class="mt-2 text-3xl leading-tight font-bold text-balance md:text-4xl"
+            >
+                „{{ filters.q }}“
+            </h1>
+            <!-- key: kitai paieškai (kitas q) forma sukuriama iš naujo su naujomis reikšmėmis -->
+            <SearchForm
+                :key="`${filters.q}|${filters.miestas}`"
+                class="mt-6 max-w-3xl"
+                :cities="cities"
+                :query="filters.q"
+                :city="filters.miestas"
+            />
+        </div>
+    </section>
 
-        <h1 class="mt-8 text-2xl font-semibold tracking-tight">
-            Paieška: „{{ filters.q }}"
-        </h1>
-
+    <div class="page-container pt-10 pb-20">
         <section
             v-if="categories.length"
-            class="mt-6"
+            class="mb-12"
             aria-labelledby="found-categories"
         >
-            <h2
-                id="found-categories"
-                class="text-sm font-medium text-muted-foreground"
-            >
+            <h2 id="found-categories" class="text-xl font-semibold">
                 Tinkamos paslaugos
             </h2>
-            <ul class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <li v-for="category in categories" :key="category.id">
                     <Link
                         :href="categoryUrl(category.slug)"
-                        class="group flex h-full items-center justify-between gap-2 rounded-lg border p-3 transition-colors hover:bg-accent"
+                        class="group flex h-full items-center gap-3 rounded-xl border bg-card p-4 shadow-soft transition-[box-shadow,border-color] hover:border-primary/40 hover:shadow-lift"
                     >
-                        <span class="min-w-0">
-                            <span
-                                class="block font-medium group-hover:underline"
-                                >{{ category.name }}</span
-                            >
+                        <span
+                            class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"
+                        >
+                            <LayoutGrid class="size-4.5" aria-hidden="true" />
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block font-medium">{{
+                                category.name
+                            }}</span>
                             <span
                                 v-if="category.path"
                                 class="block truncate text-xs text-muted-foreground"
@@ -99,7 +105,7 @@ function applyFilters(next: CatalogFilters): void {
                             >
                         </span>
                         <ArrowRight
-                            class="size-4 shrink-0 text-muted-foreground"
+                            class="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
                             aria-hidden="true"
                         />
                     </Link>
@@ -107,57 +113,16 @@ function applyFilters(next: CatalogFilters): void {
             </ul>
         </section>
 
-        <section class="mt-10" aria-labelledby="found-providers">
-            <div class="flex flex-wrap items-end justify-between gap-2">
-                <h2 id="found-providers" class="text-xl font-semibold">
-                    Teikėjai
-                </h2>
-                <p class="text-sm text-muted-foreground">
-                    Rasta
-                    {{
-                        plural(providers.meta.total, [
-                            'teikėjas',
-                            'teikėjai',
-                            'teikėjų',
-                        ])
-                    }}
-                </p>
-            </div>
-
-            <ProviderFilters
-                class="mt-4"
-                :filters="filters"
-                :cities="cities"
-                :sort-options="sortOptions"
-                @change="applyFilters"
-            />
-
-            <div v-if="providers.data.length" class="mt-4 grid gap-3">
-                <ProviderCard
-                    v-for="provider in providers.data"
-                    :key="provider.id"
-                    :provider="provider"
-                />
-            </div>
-            <div
-                v-else
-                class="mt-4 flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-12 text-center"
-            >
-                <SearchX
-                    class="size-8 text-muted-foreground"
-                    aria-hidden="true"
-                />
-                <p class="font-medium">Teikėjų pagal šią paiešką neradome</p>
-                <p class="max-w-md text-sm text-muted-foreground">
-                    Pabandykite kitus žodžius arba aprašykite darbą – užklausą
-                    pamatys visi tinkami teikėjai.
-                </p>
-                <Button as-child>
-                    <a :href="createRequestUrl">Sukurti užklausą</a>
-                </Button>
-            </div>
-
-            <CatalogPagination class="mt-6" :paginated="providers" />
-        </section>
+        <ProviderResults
+            title="Teikėjai"
+            :providers="providers"
+            :filters="filters"
+            :cities="cities"
+            :sort-options="sortOptions"
+            :create-request-url="createRequestUrl"
+            empty-title="Teikėjų pagal šią paiešką neradome"
+            empty-text="Pabandykite kitus žodžius arba aprašykite darbą – užklausą pamatys visi tinkami teikėjai."
+            @change="applyFilters"
+        />
     </div>
 </template>

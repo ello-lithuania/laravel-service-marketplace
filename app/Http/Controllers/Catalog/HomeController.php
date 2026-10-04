@@ -10,6 +10,7 @@ use App\Services\Catalog\CachedCity;
 use App\Services\Catalog\CatalogCache;
 use App\Services\Catalog\CatalogSeo;
 use App\Services\Catalog\ProviderListQuery;
+use App\Services\Site\SiteHighlights;
 use App\Services\Site\SitePhotos;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,6 +18,7 @@ use Inertia\Response;
 /**
  * Pradžios puslapis: 1 lygio kategorijos, paieška, populiarūs miestai, geriausiai įvertinti teikėjai.
  * Kategorijos ir miestai – iš cache, todėl DB užklausa reikalinga tik teikėjams.
+ * Etapas 10: nuotraukos, platformos skaičiai ir atsiliepimai – taip pat iš cache.
  */
 class HomeController extends Controller
 {
@@ -27,8 +29,13 @@ class HomeController extends Controller
     /** Kiek 2 lygio kategorijų parodyti po 1 lygio pavadinimu. */
     private const CATEGORY_PREVIEW = 3;
 
-    public function __invoke(CatalogCache $catalog, ProviderListQuery $providers, CatalogSeo $seo, SitePhotos $sitePhotos): Response
-    {
+    public function __invoke(
+        CatalogCache $catalog,
+        ProviderListQuery $providers,
+        CatalogSeo $seo,
+        SitePhotos $sitePhotos,
+        SiteHighlights $highlights,
+    ): Response {
         $tree = $catalog->categories();
         $geography = $catalog->geography();
 
@@ -49,6 +56,9 @@ class HomeController extends Controller
             'seo' => $seo->home()->toArray(),
             // Etapas 10: dizaino nuotraukos (null – nuotraukos nėra, Vue rodo atsarginį dizainą)
             'photos' => $sitePhotos->forPage(SitePhotoKey::Hero, SitePhotoKey::Providers, SitePhotoKey::Request),
+            // Etapas 10: tikri platformos skaičiai ir naujausi 5★ atsiliepimai (cache 1 val.)
+            'stats' => $highlights->stats(),
+            'testimonials' => $highlights->testimonials(),
         ]);
     }
 }

@@ -1,9 +1,12 @@
 @import 'tailwindcss';
 
-/* Šriftas iš npm (Fontsource): įeina latin-ext rinkinys su lietuviškomis raidėmis, kompiliuojant internetas nereikalingas */
+/* Šriftai iš npm (Fontsource): įeina latin-ext rinkinys su lietuviškomis raidėmis, kompiliuojant internetas nereikalingas */
 @import '@fontsource/instrument-sans/400.css';
 @import '@fontsource/instrument-sans/500.css';
 @import '@fontsource/instrument-sans/600.css';
+/* Etapas 10: antraščių šriftas – Bricolage Grotesque (kintamas: storis + optinis dydis). Failai suskirstyti pagal
+   unicode-range, todėl naršyklė parsisiunčia tik latin ir latin-ext dalis (ą č ę ė į š ų ū ž) */
+@import '@fontsource-variable/bricolage-grotesque/opsz.css';
 
 @import 'tw-animate-css';
 
@@ -12,15 +15,30 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Tailwind 4 tema: kiekvienas --color-* tampa klase (bg-primary, text-cta-foreground…), --font-* → font-display,
+  --shadow-* → shadow-soft. „inline" – klasėje lieka var(--primary), todėl tamsus režimas (.dark) pakeičia tik
+  kintamuosius apačioje, o klasės lieka tos pačios. https://tailwindcss.com/docs/theme
+*/
 @theme inline {
     --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+    --font-display:
+        'Bricolage Grotesque Variable', 'Instrument Sans', ui-sans-serif,
+        system-ui, sans-serif;
 
-    --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-2xl: calc(var(--radius) + 8px);
+    --radius-3xl: calc(var(--radius) + 14px);
+
+    --shadow-soft: var(--elevation-1);
+    --shadow-lift: var(--elevation-2);
+    --shadow-float: var(--elevation-3);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -50,6 +68,15 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
+    /* Etapas 10: prekės ženklo spalvos */
+    --color-cta: var(--cta);
+    --color-cta-foreground: var(--cta-foreground);
+    --color-brand-deep: var(--brand-deep);
+    --color-brand-deep-foreground: var(--brand-deep-foreground);
+    --color-brand-deep-muted: var(--brand-deep-muted);
+    --color-star: var(--star);
+    --color-surface: var(--surface);
+
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-3: var(--chart-3);
@@ -67,12 +94,122 @@
 }
 
 /*
+  Spalvos (Etapas 10). Šviesus režimas: šiltas „popieriaus" fonas, gilus pušų žalias (pasitikėjimas, darbas su
+  namais ir gamta) ir šiltas oranžinis tik pagrindiniams veiksmams („Sukurti užklausą"). Kontrastas tikrintas pagal
+  WCAG AA: tekstas ant fono ≥ 4,5:1 (pvz. muted-foreground ant background – 5,5:1, baltas ant primary – 8:1).
+  Pastaba: shadcn --accent yra ne prekės ženklo spalva, o švelnus „hover" fonas (meniu, ghost mygtukai).
+*/
+:root {
+    --background: #f7f5f0;
+    --foreground: #17231e;
+    --surface: #fbfaf7;
+    --card: #ffffff;
+    --card-foreground: #17231e;
+    --popover: #ffffff;
+    --popover-foreground: #17231e;
+    --primary: #0f5b45;
+    --primary-foreground: #ffffff;
+    --secondary: #e6efe9;
+    --secondary-foreground: #123d30;
+    --muted: #efebe3;
+    --muted-foreground: #5b665f;
+    --accent: #e9f0eb;
+    --accent-foreground: #0f3d30;
+    --destructive: #c62828;
+    --destructive-foreground: #ffffff;
+    --border: #e4ded2;
+    --input: #d8d1c4;
+    --ring: #0f5b45;
+
+    --cta: #f28c28;
+    --cta-foreground: #1f1206;
+    --brand-deep: #0b2e25;
+    --brand-deep-foreground: #e6efe9;
+    --brand-deep-muted: #a7c4b6;
+    --star: #f5a524;
+
+    --elevation-1:
+        0 1px 2px rgb(23 35 30 / 0.05), 0 2px 10px -4px rgb(23 35 30 / 0.08);
+    --elevation-2:
+        0 2px 4px rgb(23 35 30 / 0.04), 0 14px 32px -14px rgb(23 35 30 / 0.22);
+    --elevation-3:
+        0 4px 10px rgb(23 35 30 / 0.06), 0 24px 48px -16px rgb(23 35 30 / 0.3);
+
+    --chart-1: #0f5b45;
+    --chart-2: #f28c28;
+    --chart-3: #3f7cac;
+    --chart-4: #8a6d1d;
+    --chart-5: #a2492b;
+    --radius: 0.75rem;
+
+    --sidebar-background: #f1eee7;
+    --sidebar: #f1eee7;
+    --sidebar-foreground: #2c3a33;
+    --sidebar-primary: #0f5b45;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #e3ebe5;
+    --sidebar-accent-foreground: #0f3d30;
+    --sidebar-border: #e2dccf;
+    --sidebar-ring: #0f5b45;
+}
+
+/* Tamsus režimas: žalsvai juodas fonas, šviesesnė mėtų žalia (tamsiame fone tamsi žalia būtų per blanki) */
+.dark {
+    --background: #0e1513;
+    --foreground: #e7eeea;
+    --surface: #111a17;
+    --card: #141d1a;
+    --card-foreground: #e7eeea;
+    --popover: #141d1a;
+    --popover-foreground: #e7eeea;
+    --primary: #3fb68b;
+    --primary-foreground: #04130d;
+    --secondary: #1c2925;
+    --secondary-foreground: #d5e4dc;
+    --muted: #19231f;
+    --muted-foreground: #9aaba3;
+    --accent: #1f2d28;
+    --accent-foreground: #e7eeea;
+    --destructive: #ef5350;
+    --destructive-foreground: #ffffff;
+    --border: #25322d;
+    --input: #2e3c36;
+    --ring: #3fb68b;
+
+    --cta: #f59a3c;
+    --cta-foreground: #1f1206;
+    --brand-deep: #0a1c17;
+    --brand-deep-foreground: #dbe7e0;
+    --brand-deep-muted: #8fb3a3;
+    --star: #f5b041;
+
+    --elevation-1: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 10px -4px rgb(0 0 0 / 0.4);
+    --elevation-2:
+        0 2px 4px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.6);
+    --elevation-3:
+        0 4px 10px rgb(0 0 0 / 0.35), 0 24px 48px -16px rgb(0 0 0 / 0.7);
+
+    --chart-1: #3fb68b;
+    --chart-2: #f59a3c;
+    --chart-3: #6aa6d6;
+    --chart-4: #d4b04a;
+    --chart-5: #e07a55;
+
+    --sidebar-background: #0b120f;
+    --sidebar: #0b120f;
+    --sidebar-foreground: #d5e4dc;
+    --sidebar-primary: #3fb68b;
+    --sidebar-primary-foreground: #04130d;
+    --sidebar-accent: #1a2622;
+    --sidebar-accent-foreground: #e7eeea;
+    --sidebar-border: #1f2b27;
+    --sidebar-ring: #3fb68b;
+}
+
+/*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
   looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
 */
 @layer base {
     *,
@@ -84,94 +221,77 @@
     }
 }
 
-@layer utilities {
-    body,
-    html {
-        --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-            'Noto Color Emoji';
-    }
-}
-
-:root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
-}
-
-.dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
-}
-
 @layer base {
     * {
         @apply border-border outline-ring/50;
     }
+
     body {
         @apply bg-background text-foreground;
     }
+
+    /* Naršyklės valdikliai (select sąrašas, slinkties juosta) – pagal temą */
+    :root {
+        color-scheme: light;
+    }
+
+    .dark {
+        color-scheme: dark;
+    }
+
+    /* Antraštės – charakteringas display šriftas; optinis dydis (opsz) parenkamas pagal raidžių dydį */
+    h1,
+    h2 {
+        font-family: var(--font-display);
+        font-optical-sizing: auto;
+        letter-spacing: -0.02em;
+    }
+
+    ::selection {
+        background-color: color-mix(in oklab, var(--primary) 22%, transparent);
+    }
+}
+
+/* Sklandus slinkimas į #skiltis – tik jei vartotojas neprašė mažinti judesio */
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Puslapio turinio plotis ir šoninės paraštės – vienodos visoje viešoje dalyje */
+@utility page-container {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 80rem;
+    padding-inline: 1rem;
+
+    @media (width >= 48rem) {
+        padding-inline: 1.5rem;
+    }
+
+    @media (width >= 80rem) {
+        padding-inline: 2rem;
+    }
+}
+
+/* Taškų tinklelis atsarginiam (be nuotraukos) dizainui; spalva – currentColor */
+@utility pattern-dots {
+    background-image: radial-gradient(currentColor 1px, transparent 1.4px);
+    background-size: 18px 18px;
+}
+
+/* Skaičiai vienodo pločio (kainos, statistika) */
+@utility numeric {
+    font-variant-numeric: tabular-nums;
 }

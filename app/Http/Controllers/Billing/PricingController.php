@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\SitePhotoKey;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Billing\CreditPackageResource;
 use App\Http\Resources\Billing\SubscriptionPlanResource;
@@ -11,6 +12,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Services\Catalog\SeoMeta;
+use App\Services\Site\SitePhotos;
 use App\Services\Subscriptions\PlanBenefits;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -23,7 +25,7 @@ use Inertia\Response;
  */
 class PricingController extends Controller
 {
-    public function __invoke(Request $request, PlanBenefits $benefits): Response
+    public function __invoke(Request $request, PlanBenefits $benefits, SitePhotos $sitePhotos): Response
     {
         /** @var User|null $user */
         $user = $request->user();
@@ -57,6 +59,8 @@ class PricingController extends Controller
                     .'arba rinkitės mėnesio prenumeratą su kreditais kas mėnesį.',
                 canonical: route('pricing'),
             ))->toArray(),
+            // Etapas 10: kvietimo teikėjams nuotrauka (SitePhotoKey::Providers), null – atsarginis dizainas
+            'photos' => $sitePhotos->forPage(SitePhotoKey::Providers),
         ]);
     }
 

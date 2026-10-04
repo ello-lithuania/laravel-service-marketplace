@@ -20,14 +20,14 @@
             })();
         </script>
 
-        {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+        {{-- Fono spalva iki CSS užsikrovimo – ta pati kaip --background app.css (Etapas 10), kad nebūtų „blyksnio" --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
+                background-color: #f7f5f0;
             }
 
             html.dark {
-                background-color: oklch(0.145 0 0);
+                background-color: #0e1513;
             }
         </style>
 

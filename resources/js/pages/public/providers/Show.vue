@@ -1,31 +1,33 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import {
-    BadgeCheck,
     BriefcaseBusiness,
     CalendarDays,
     ExternalLink,
-    ImageIcon,
     MapPin,
     MessageSquareReply,
+    Plus,
     ShieldCheck,
+    Sparkle,
     Star,
     UserPlus,
 } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import ReportDialog from '@/components/complaints/ReportDialog.vue';
 import CatalogPagination from '@/components/catalog/CatalogPagination.vue';
+import PortfolioGallery from '@/components/catalog/PortfolioGallery.vue';
 import ProBadge from '@/components/catalog/ProBadge.vue';
+import ProviderAvatar from '@/components/catalog/ProviderAvatar.vue';
 import RatingStars from '@/components/catalog/RatingStars.vue';
 import SeoHead from '@/components/catalog/SeoHead.vue';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import VerifiedBadge from '@/components/catalog/VerifiedBadge.vue';
+import PhotoFallback from '@/components/site/PhotoFallback.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getInitials } from '@/composables/useInitials';
+import { toneFor } from '@/lib/brandTones';
 import {
     formatDate,
-    formatMonth,
     formatPriceFrom,
     formatRating,
     plural,
@@ -76,6 +78,31 @@ function bucketPercent(count: number): number {
         : Math.round((count / ratingTotal.value) * 100);
 }
 
+// Viršelio atsarginis dizainas – teikėjo spalvos tonas (toks pat kaip inicialų fono)
+const coverTone = computed(() => toneFor(null, props.provider.display_name));
+
+// Skilčių meniu (nuorodos į #skiltis) – tik tos, kurios puslapyje yra
+const sections = computed(() =>
+    [
+        {
+            id: 'apie',
+            label: 'Apie',
+            show: Boolean(props.provider.description),
+        },
+        { id: 'paslaugos', label: 'Paslaugos ir kainos', show: true },
+        {
+            id: 'darbai',
+            label: `Darbai (${props.portfolio.length})`,
+            show: props.portfolio.length > 0,
+        },
+        {
+            id: 'atsiliepimai',
+            label: `Atsiliepimai (${props.provider.reviews_count})`,
+            show: true,
+        },
+    ].filter((section) => section.show),
+);
+
 // --- Etapas 6: „Pranešti" – tik prisijungusiems; savo profilio skųsti negalima (galutinai tikrina serveris) ---
 const page = usePage();
 // auth.user svečiui yra null, nors tipas to nerodo
@@ -85,154 +112,205 @@ const canReportProfile = computed(
         isLoggedIn.value &&
         page.props.auth.user.provider_profile?.id !== props.provider.id,
 );
+
+// Telefone apačioje lipni juosta su mygtuku – kad ji neuždengtų poraštės, puslapio apačioje paliekam vietos
+const stickyBarPadding = ['pb-20', 'lg:pb-0'];
+
+onMounted(() => document.body.classList.add(...stickyBarPadding));
+onBeforeUnmount(() => document.body.classList.remove(...stickyBarPadding));
 </script>
 
 <template>
     <SeoHead :seo="seo" />
 
-    <div class="mx-auto max-w-6xl px-4 py-8 md:py-12">
+    <div class="page-container pt-6 pb-20 md:pt-8">
         <Breadcrumbs :breadcrumbs="breadcrumbItems" />
 
-        <!-- Viršelio nuotrauka (jei teikėjas įkėlė) -->
-        <img
-            v-if="provider.cover_url"
-            :src="provider.cover_url"
-            :alt="provider.display_name"
-            class="mt-4 aspect-[3/1] w-full rounded-xl object-cover"
-        />
-
-        <!-- Antraštė -->
-        <header
-            class="mt-4 flex flex-col gap-6 rounded-xl border p-5 md:flex-row md:items-start md:justify-between md:p-6"
+        <!-- Viršelis: teikėjo nuotrauka arba spalvinis atsarginis dizainas -->
+        <div
+            class="relative mt-4 aspect-[16/7] overflow-hidden rounded-3xl bg-muted sm:aspect-[16/5] lg:aspect-auto lg:h-72"
         >
-            <div class="flex min-w-0 gap-4">
-                <Avatar class="size-20 shrink-0 rounded-lg">
-                    <AvatarImage
-                        v-if="provider.logo_url"
+            <img
+                v-if="provider.cover_url"
+                :src="provider.cover_url"
+                :alt="`${provider.display_name} – viršelio nuotrauka`"
+                width="1600"
+                height="500"
+                fetchpriority="high"
+                decoding="async"
+                class="absolute inset-0 size-full object-cover"
+            />
+            <PhotoFallback v-else :tone="coverTone" icon-placement="none" />
+        </div>
+
+        <!-- Antraštė: kortelė „užlipa" ant viršelio -->
+        <header
+            class="relative mx-2 -mt-14 rounded-3xl border bg-card p-5 shadow-lift sm:mx-6 sm:-mt-20 sm:p-7 lg:mx-10"
+        >
+            <div
+                class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between"
+            >
+                <div
+                    class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:gap-6"
+                >
+                    <ProviderAvatar
+                        :name="provider.display_name"
                         :src="provider.logo_url"
-                        :alt="provider.display_name"
+                        class="-mt-14 size-24 rounded-2xl shadow-lift ring-4 ring-card sm:-mt-16 sm:size-28"
+                        text-class="text-3xl"
                     />
-                    <AvatarFallback
-                        class="rounded-lg bg-primary/10 text-xl font-semibold text-primary"
-                    >
-                        {{ getInitials(provider.display_name) }}
-                    </AvatarFallback>
-                </Avatar>
-                <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <h1 class="text-2xl font-semibold tracking-tight">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <VerifiedBadge v-if="provider.is_verified" />
+                            <!-- Etapas 9c: prenumeratos ženklelis -->
+                            <ProBadge v-if="provider.has_pro_badge" />
+                            <span
+                                class="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                                >{{ provider.type }}</span
+                            >
+                        </div>
+                        <h1
+                            class="mt-2 text-3xl leading-tight font-bold text-balance sm:text-4xl"
+                        >
                             {{ provider.display_name }}
                         </h1>
-                        <Badge
-                            v-if="provider.is_verified"
-                            variant="secondary"
-                            class="text-emerald-700 dark:text-emerald-400"
+                        <p
+                            v-if="provider.headline"
+                            class="mt-1.5 text-lg text-muted-foreground"
                         >
-                            <BadgeCheck aria-hidden="true" />
-                            Patikrintas
-                        </Badge>
-                        <!-- Etapas 9c: prenumeratos ženklelis -->
-                        <ProBadge v-if="provider.has_pro_badge" />
-                    </div>
-                    <p
-                        v-if="provider.headline"
-                        class="mt-1 text-muted-foreground"
-                    >
-                        {{ provider.headline }}
-                    </p>
+                            {{ provider.headline }}
+                        </p>
 
-                    <div
-                        class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm"
-                    >
-                        <span
-                            v-if="provider.reviews_count > 0"
-                            class="inline-flex items-center gap-1.5"
+                        <div
+                            class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm"
                         >
-                            <RatingStars :rating="provider.rating_avg" />
-                            <span class="font-medium">{{
-                                formatRating(provider.rating_avg)
-                            }}</span>
                             <a
+                                v-if="provider.reviews_count > 0"
                                 href="#atsiliepimai"
-                                class="text-muted-foreground hover:underline"
+                                class="inline-flex items-center gap-1.5 hover:underline"
                             >
-                                ({{
-                                    plural(provider.reviews_count, [
-                                        'atsiliepimas',
-                                        'atsiliepimai',
-                                        'atsiliepimų',
-                                    ])
-                                }})
+                                <RatingStars :rating="provider.rating_avg" />
+                                <span class="font-semibold">{{
+                                    formatRating(provider.rating_avg)
+                                }}</span>
+                                <span class="text-muted-foreground">
+                                    ({{
+                                        plural(provider.reviews_count, [
+                                            'atsiliepimas',
+                                            'atsiliepimai',
+                                            'atsiliepimų',
+                                        ])
+                                    }})
+                                </span>
                             </a>
-                        </span>
-                        <span v-else class="text-muted-foreground"
-                            >Dar nėra atsiliepimų</span
-                        >
-                        <span
-                            class="inline-flex items-center gap-1 text-muted-foreground"
-                        >
-                            <MapPin class="size-4" aria-hidden="true" />
-                            {{ provider.city.name }}
-                        </span>
-                        <span
-                            v-if="provider.completed_jobs_count > 0"
-                            class="inline-flex items-center gap-1 text-muted-foreground"
-                        >
-                            <BriefcaseBusiness
-                                class="size-4"
-                                aria-hidden="true"
-                            />
-                            {{
-                                plural(provider.completed_jobs_count, [
-                                    'atliktas darbas',
-                                    'atlikti darbai',
-                                    'atliktų darbų',
-                                ])
-                            }}
-                        </span>
+                            <span
+                                v-else
+                                class="inline-flex items-center gap-1.5 text-muted-foreground"
+                            >
+                                <Sparkle class="size-4" aria-hidden="true" />
+                                Naujas teikėjas – dar nėra atsiliepimų
+                            </span>
+                            <span
+                                class="inline-flex items-center gap-1.5 text-muted-foreground"
+                            >
+                                <MapPin class="size-4" aria-hidden="true" />
+                                {{ provider.city.name }}
+                            </span>
+                            <span
+                                v-if="provider.completed_jobs_count > 0"
+                                class="inline-flex items-center gap-1.5 text-muted-foreground"
+                            >
+                                <BriefcaseBusiness
+                                    class="size-4"
+                                    aria-hidden="true"
+                                />
+                                {{
+                                    plural(provider.completed_jobs_count, [
+                                        'atliktas darbas',
+                                        'atlikti darbai',
+                                        'atliktų darbų',
+                                    ])
+                                }}
+                            </span>
+                        </div>
                     </div>
+                </div>
+
+                <div
+                    class="hidden shrink-0 flex-col gap-2 lg:flex lg:w-64 lg:items-stretch"
+                >
+                    <Button variant="cta" size="xl" as-child>
+                        <a :href="createRequestUrl">
+                            <Plus class="size-5" aria-hidden="true" />
+                            Sukurti užklausą
+                        </a>
+                    </Button>
+                    <p class="text-center text-xs text-muted-foreground">
+                        Nemokamai gausite pasiūlymus ir iš kitų teikėjų
+                    </p>
                 </div>
             </div>
 
-            <div class="flex shrink-0 flex-col gap-2 md:items-end">
-                <Button size="lg" as-child>
-                    <a :href="createRequestUrl">Sukurti užklausą</a>
-                </Button>
-                <p class="text-xs text-muted-foreground md:text-right">
-                    Nemokamai gausite pasiūlymus ir iš kitų teikėjų
-                </p>
-                <!-- Etapas 6: pranešti apie profilį (prisijungusiems, ne savininkui) -->
-                <ReportDialog
-                    v-if="canReportProfile"
-                    type="provider_profile"
-                    :id="provider.id"
-                />
+            <!-- Etapas 6: pranešti apie profilį (prisijungusiems, ne savininkui) -->
+            <div v-if="canReportProfile" class="mt-4 flex justify-end">
+                <ReportDialog type="provider_profile" :id="provider.id" />
             </div>
         </header>
 
-        <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_20rem]">
-            <div class="min-w-0 space-y-10">
-                <section v-if="provider.description" aria-labelledby="about">
-                    <h2 id="about" class="text-lg font-semibold">Apie</h2>
-                    <p class="mt-3 whitespace-pre-line text-muted-foreground">
+        <!-- Skilčių meniu -->
+        <nav
+            class="sticky top-16 z-30 -mx-4 mt-8 border-b bg-background/90 px-4 backdrop-blur-md md:-mx-6 md:px-6 lg:top-[4.5rem] xl:-mx-8 xl:px-8"
+            aria-label="Profilio skiltys"
+        >
+            <ul class="flex gap-1 overflow-x-auto py-2">
+                <li v-for="section in sections" :key="section.id">
+                    <a
+                        :href="`#${section.id}`"
+                        class="inline-flex rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap text-foreground/75 transition-colors hover:bg-accent hover:text-foreground"
+                        >{{ section.label }}</a
+                    >
+                </li>
+            </ul>
+        </nav>
+
+        <div
+            class="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-12"
+        >
+            <div class="min-w-0 space-y-14">
+                <section
+                    v-if="provider.description"
+                    id="apie"
+                    class="scroll-mt-36"
+                    aria-labelledby="about"
+                >
+                    <h2 id="about" class="text-2xl font-semibold">Apie</h2>
+                    <p
+                        class="mt-4 text-[1.0625rem] leading-relaxed whitespace-pre-line text-foreground/85"
+                    >
                         {{ provider.description }}
                     </p>
                 </section>
 
-                <section aria-labelledby="services">
-                    <h2 id="services" class="text-lg font-semibold">
+                <section
+                    id="paslaugos"
+                    class="scroll-mt-36"
+                    aria-labelledby="services"
+                >
+                    <h2 id="services" class="text-2xl font-semibold">
                         Paslaugos ir kainos
                     </h2>
-                    <ul class="mt-3 divide-y rounded-lg border">
+                    <ul
+                        class="mt-5 divide-y overflow-hidden rounded-2xl border bg-card shadow-soft"
+                    >
                         <li
                             v-for="service in provider.services"
                             :key="service.name"
-                            class="flex items-center justify-between gap-4 px-4 py-3 text-sm"
+                            class="flex items-center justify-between gap-4 px-5 py-4"
                         >
                             <Link
                                 v-if="service.slug"
                                 :href="categoryShow(service.slug)"
-                                class="font-medium hover:underline"
+                                class="font-medium hover:text-primary hover:underline"
                                 >{{ service.name }}</Link
                             >
                             <span v-else class="font-medium">{{
@@ -240,7 +318,7 @@ const canReportProfile = computed(
                             }}</span>
                             <span
                                 v-if="service.price_from_cents !== null"
-                                class="shrink-0 text-right"
+                                class="shrink-0 rounded-full bg-secondary px-3 py-1 text-right text-sm font-semibold text-secondary-foreground numeric"
                             >
                                 {{
                                     formatPriceFrom(
@@ -249,124 +327,103 @@ const canReportProfile = computed(
                                     )
                                 }}
                             </span>
-                            <span v-else class="shrink-0 text-muted-foreground"
+                            <span
+                                v-else
+                                class="shrink-0 text-sm text-muted-foreground"
                                 >Kaina sutartinė</span
                             >
                         </li>
                     </ul>
                 </section>
 
-                <section v-if="portfolio.length" aria-labelledby="portfolio">
-                    <h2 id="portfolio" class="text-lg font-semibold">
+                <section
+                    v-if="portfolio.length"
+                    id="darbai"
+                    class="scroll-mt-36"
+                    aria-labelledby="portfolio"
+                >
+                    <h2 id="portfolio" class="text-2xl font-semibold">
                         Atlikti darbai
                     </h2>
-                    <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                        <article
-                            v-for="item in portfolio"
-                            :key="item.id"
-                            class="overflow-hidden rounded-lg border"
-                        >
-                            <!-- Nuotraukos atsiras Etape 3 (medialibrary); kol kas – vieta paveikslėliui -->
-                            <img
-                                v-if="item.images.length"
-                                :src="item.images[0].thumb_url"
-                                :alt="item.title"
-                                class="aspect-video w-full object-cover"
-                                loading="lazy"
-                            />
-                            <div
-                                v-else
-                                class="flex h-24 items-center justify-center bg-muted"
-                            >
-                                <ImageIcon
-                                    class="size-8 text-muted-foreground/50"
-                                    aria-hidden="true"
-                                />
-                            </div>
-                            <div class="p-4">
-                                <h3 class="font-medium">{{ item.title }}</h3>
-                                <p
-                                    class="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground"
-                                >
-                                    <span v-if="item.category">{{
-                                        item.category
-                                    }}</span>
-                                    <span v-if="item.city">{{
-                                        item.city
-                                    }}</span>
-                                    <span v-if="item.completed_date">{{
-                                        formatMonth(item.completed_date)
-                                    }}</span>
-                                </p>
-                                <p
-                                    v-if="item.description"
-                                    class="mt-2 line-clamp-3 text-sm text-muted-foreground"
-                                >
-                                    {{ item.description }}
-                                </p>
-                            </div>
-                        </article>
-                    </div>
+                    <PortfolioGallery class="mt-5" :items="portfolio" />
                 </section>
 
                 <section
                     id="atsiliepimai"
                     aria-labelledby="reviews"
-                    class="scroll-mt-6"
+                    class="scroll-mt-36"
                 >
-                    <h2 id="reviews" class="text-lg font-semibold">
+                    <h2 id="reviews" class="text-2xl font-semibold">
                         Atsiliepimai
                     </h2>
 
                     <p
                         v-if="!reviews.data.length"
-                        class="mt-3 rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground"
+                        class="mt-5 rounded-2xl border border-dashed bg-card/60 px-4 py-10 text-center text-muted-foreground"
                     >
                         Šis teikėjas dar neturi atsiliepimų.
                     </p>
 
-                    <ul v-else class="mt-3 space-y-4">
+                    <ul v-else class="mt-5 space-y-4">
                         <li
                             v-for="review in reviews.data"
                             :key="review.id"
-                            class="rounded-lg border p-4"
+                            class="rounded-2xl border bg-card p-5 shadow-soft sm:p-6"
                         >
-                            <div
-                                class="flex flex-wrap items-center justify-between gap-2"
-                            >
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <RatingStars :rating="review.rating" />
-                                    <span class="font-medium">{{
-                                        review.author_name
-                                    }}</span>
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex min-w-0 items-center gap-3">
+                                    <ProviderAvatar
+                                        :name="review.author_name"
+                                        :src="null"
+                                        class="size-10 rounded-full"
+                                        text-class="text-sm"
+                                    />
+                                    <div class="min-w-0">
+                                        <p class="font-semibold">
+                                            {{ review.author_name }}
+                                        </p>
+                                        <div
+                                            class="flex flex-wrap items-center gap-x-2 gap-y-1"
+                                        >
+                                            <RatingStars
+                                                :rating="review.rating"
+                                                class="size-3.5"
+                                            />
+                                            <time
+                                                v-if="review.published_at"
+                                                :datetime="review.published_at"
+                                                class="text-xs text-muted-foreground"
+                                                >{{
+                                                    formatDate(
+                                                        review.published_at,
+                                                    )
+                                                }}</time
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-1">
                                     <Badge
                                         v-if="review.is_verified"
                                         variant="outline"
-                                        class="font-normal"
+                                        class="hidden font-normal sm:inline-flex"
                                     >
-                                        <ShieldCheck aria-hidden="true" />
+                                        <ShieldCheck
+                                            class="text-primary"
+                                            aria-hidden="true"
+                                        />
                                         Užsakyta per platformą
                                     </Badge>
                                     <!-- Etapas 6: darbas atliktas ne per platformą – teikėjo pakvietimu -->
                                     <Badge
                                         v-else
                                         variant="outline"
-                                        class="font-normal text-muted-foreground"
+                                        class="hidden font-normal text-muted-foreground sm:inline-flex"
                                         title="Buvęs klientas, pakviestas teikėjo. Darbas užsakytas ne per platformą."
                                     >
                                         <UserPlus aria-hidden="true" />
                                         Pagal pakvietimą
                                     </Badge>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <time
-                                        v-if="review.published_at"
-                                        :datetime="review.published_at"
-                                        class="text-xs text-muted-foreground"
-                                        >{{
-                                            formatDate(review.published_at)
-                                        }}</time
-                                    >
                                     <!-- Etapas 6: pranešti apie atsiliepimą -->
                                     <ReportDialog
                                         v-if="isLoggedIn"
@@ -376,18 +433,27 @@ const canReportProfile = computed(
                                     />
                                 </div>
                             </div>
-                            <p class="mt-2 text-sm whitespace-pre-line">
+                            <p class="mt-4 leading-relaxed whitespace-pre-line">
                                 {{ review.comment }}
+                            </p>
+                            <p
+                                class="mt-3 text-xs text-muted-foreground sm:hidden"
+                            >
+                                {{
+                                    review.is_verified
+                                        ? 'Užsakyta per platformą'
+                                        : 'Pagal pakvietimą'
+                                }}
                             </p>
                             <div
                                 v-if="review.provider_reply"
-                                class="mt-3 rounded-md bg-muted/60 p-3 text-sm"
+                                class="mt-4 rounded-xl border-l-4 border-primary/40 bg-secondary/60 p-4 text-sm"
                             >
                                 <p
-                                    class="flex items-center gap-1.5 font-medium"
+                                    class="flex items-center gap-1.5 font-semibold"
                                 >
                                     <MessageSquareReply
-                                        class="size-4"
+                                        class="size-4 text-primary"
                                         aria-hidden="true"
                                     />
                                     Teikėjo atsakymas
@@ -403,7 +469,7 @@ const canReportProfile = computed(
 
                     <!-- Dalinis perkrovimas: keičiant puslapį iš serverio imami tik atsiliepimai -->
                     <CatalogPagination
-                        class="mt-6"
+                        class="mt-8"
                         :paginated="reviews"
                         :only="['reviews']"
                         preserve-scroll
@@ -411,146 +477,201 @@ const canReportProfile = computed(
                 </section>
             </div>
 
-            <aside class="space-y-6">
-                <section
-                    v-if="provider.reviews_count > 0"
-                    class="rounded-lg border p-4"
-                    aria-labelledby="rating-summary"
-                >
-                    <h2 id="rating-summary" class="font-semibold">
-                        Įvertinimas
-                    </h2>
-                    <div class="mt-2 flex items-center gap-3">
-                        <span class="text-4xl font-semibold">{{
-                            formatRating(provider.rating_avg)
-                        }}</span>
-                        <div>
-                            <RatingStars :rating="provider.rating_avg" />
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    plural(provider.reviews_count, [
-                                        'atsiliepimas',
-                                        'atsiliepimai',
-                                        'atsiliepimų',
-                                    ])
-                                }}
-                            </p>
-                        </div>
-                    </div>
-                    <ul class="mt-4 space-y-1.5">
-                        <li
-                            v-for="bucket in ratingDistribution"
-                            :key="bucket.rating"
-                            class="flex items-center gap-2 text-xs"
+            <aside class="space-y-5">
+                <div class="space-y-5 lg:sticky lg:top-36">
+                    <section
+                        v-if="provider.reviews_count > 0"
+                        class="rounded-2xl border bg-card p-5 shadow-soft"
+                        aria-labelledby="rating-summary"
+                    >
+                        <h2
+                            id="rating-summary"
+                            class="font-sans text-base font-semibold tracking-normal"
                         >
-                            <span class="inline-flex w-6 items-center gap-0.5">
-                                {{ bucket.rating }}
-                                <Star
-                                    class="size-3 fill-amber-400 text-amber-400"
-                                    aria-hidden="true"
-                                />
-                            </span>
+                            Įvertinimas
+                        </h2>
+                        <div class="mt-3 flex items-center gap-4">
                             <span
-                                class="h-2 flex-1 overflow-hidden rounded-full bg-muted"
+                                class="font-display text-5xl font-semibold tracking-tight numeric"
+                                >{{ formatRating(provider.rating_avg) }}</span
+                            >
+                            <div>
+                                <RatingStars :rating="provider.rating_avg" />
+                                <p class="mt-1 text-xs text-muted-foreground">
+                                    {{
+                                        plural(provider.reviews_count, [
+                                            'atsiliepimas',
+                                            'atsiliepimai',
+                                            'atsiliepimų',
+                                        ])
+                                    }}
+                                </p>
+                            </div>
+                        </div>
+                        <ul class="mt-5 space-y-2">
+                            <li
+                                v-for="bucket in ratingDistribution"
+                                :key="bucket.rating"
+                                class="flex items-center gap-2.5 text-xs"
                             >
                                 <span
-                                    class="block h-full rounded-full bg-amber-400"
-                                    :style="{
-                                        width: `${bucketPercent(bucket.count)}%`,
-                                    }"
-                                />
-                            </span>
-                            <span
-                                class="w-8 text-right text-muted-foreground"
-                                >{{ bucket.count }}</span
-                            >
-                        </li>
-                    </ul>
-                </section>
-
-                <section class="rounded-lg border p-4" aria-labelledby="areas">
-                    <h2 id="areas" class="font-semibold">
-                        Aptarnaujamos vietos
-                    </h2>
-                    <p
-                        v-if="provider.serves_whole_country"
-                        class="mt-2 text-sm text-muted-foreground"
-                    >
-                        Visa Lietuva
-                    </p>
-                    <ul v-else class="mt-2 flex flex-wrap gap-1.5">
-                        <li
-                            v-for="area in provider.service_areas"
-                            :key="area.slug"
-                        >
-                            <Badge variant="outline" class="font-normal">{{
-                                area.name
-                            }}</Badge>
-                        </li>
-                    </ul>
-                </section>
-
-                <section
-                    class="rounded-lg border p-4"
-                    aria-labelledby="details"
-                >
-                    <h2 id="details" class="font-semibold">Informacija</h2>
-                    <dl class="mt-2 space-y-2 text-sm">
-                        <div class="flex justify-between gap-4">
-                            <dt class="text-muted-foreground">Teikėjas</dt>
-                            <dd>{{ provider.type }}</dd>
-                        </div>
-                        <div
-                            v-if="provider.years_experience"
-                            class="flex justify-between gap-4"
-                        >
-                            <dt class="text-muted-foreground">Patirtis</dt>
-                            <dd>{{ provider.years_experience }} m.</dd>
-                        </div>
-                        <div
-                            v-if="provider.member_since"
-                            class="flex justify-between gap-4"
-                        >
-                            <dt
-                                class="inline-flex items-center gap-1 text-muted-foreground"
-                            >
-                                <CalendarDays
-                                    class="size-4"
-                                    aria-hidden="true"
-                                />
-                                Platformoje nuo
-                            </dt>
-                            <dd>{{ provider.member_since }} m.</dd>
-                        </div>
-                        <div
-                            v-if="provider.website"
-                            class="flex justify-between gap-4"
-                        >
-                            <dt class="text-muted-foreground">Svetainė</dt>
-                            <dd class="min-w-0">
-                                <!-- nofollow ugc: vartotojų nuorodos neperduoda mūsų svetainės SEO „svorio" -->
-                                <a
-                                    :href="provider.website"
-                                    target="_blank"
-                                    rel="nofollow ugc noopener noreferrer"
-                                    class="inline-flex max-w-full items-center gap-1 text-primary hover:underline"
+                                    class="inline-flex w-7 items-center gap-0.5 font-medium"
                                 >
-                                    <span class="truncate">{{
-                                        provider.website.replace(
-                                            /^https?:\/\//,
-                                            '',
-                                        )
-                                    }}</span>
-                                    <ExternalLink
-                                        class="size-3.5 shrink-0"
+                                    {{ bucket.rating }}
+                                    <Star
+                                        class="size-3 fill-star text-star"
                                         aria-hidden="true"
                                     />
-                                </a>
-                            </dd>
-                        </div>
-                    </dl>
-                </section>
+                                </span>
+                                <span
+                                    class="h-2 flex-1 overflow-hidden rounded-full bg-muted"
+                                >
+                                    <span
+                                        class="block h-full rounded-full bg-star"
+                                        :style="{
+                                            width: `${bucketPercent(bucket.count)}%`,
+                                        }"
+                                    />
+                                </span>
+                                <span
+                                    class="w-8 text-right text-muted-foreground numeric"
+                                    >{{ bucket.count }}</span
+                                >
+                            </li>
+                        </ul>
+                    </section>
+
+                    <section
+                        class="rounded-2xl border bg-card p-5 shadow-soft"
+                        aria-labelledby="areas"
+                    >
+                        <h2
+                            id="areas"
+                            class="font-sans text-base font-semibold tracking-normal"
+                        >
+                            Aptarnaujamos vietos
+                        </h2>
+                        <p
+                            v-if="provider.serves_whole_country"
+                            class="mt-3 inline-flex items-center gap-1.5 text-sm"
+                        >
+                            <MapPin
+                                class="size-4 text-primary"
+                                aria-hidden="true"
+                            />
+                            Visa Lietuva
+                        </p>
+                        <ul v-else class="mt-3 flex flex-wrap gap-1.5">
+                            <li
+                                v-for="area in provider.service_areas"
+                                :key="area.slug"
+                                class="rounded-full bg-muted px-2.5 py-0.5 text-xs"
+                            >
+                                {{ area.name }}
+                            </li>
+                        </ul>
+                    </section>
+
+                    <section
+                        class="rounded-2xl border bg-card p-5 shadow-soft"
+                        aria-labelledby="details"
+                    >
+                        <h2
+                            id="details"
+                            class="font-sans text-base font-semibold tracking-normal"
+                        >
+                            Informacija
+                        </h2>
+                        <dl class="mt-3 space-y-2.5 text-sm">
+                            <div class="flex justify-between gap-4">
+                                <dt class="text-muted-foreground">Teikėjas</dt>
+                                <dd>{{ provider.type }}</dd>
+                            </div>
+                            <div
+                                v-if="provider.years_experience"
+                                class="flex justify-between gap-4"
+                            >
+                                <dt class="text-muted-foreground">Patirtis</dt>
+                                <dd>{{ provider.years_experience }} m.</dd>
+                            </div>
+                            <div
+                                v-if="provider.member_since"
+                                class="flex justify-between gap-4"
+                            >
+                                <dt
+                                    class="inline-flex items-center gap-1 text-muted-foreground"
+                                >
+                                    <CalendarDays
+                                        class="size-4"
+                                        aria-hidden="true"
+                                    />
+                                    Platformoje nuo
+                                </dt>
+                                <dd>{{ provider.member_since }} m.</dd>
+                            </div>
+                            <div
+                                v-if="provider.website"
+                                class="flex justify-between gap-4"
+                            >
+                                <dt class="text-muted-foreground">Svetainė</dt>
+                                <dd class="min-w-0">
+                                    <!-- nofollow ugc: vartotojų nuorodos neperduoda mūsų svetainės SEO „svorio" -->
+                                    <a
+                                        :href="provider.website"
+                                        target="_blank"
+                                        rel="nofollow ugc noopener noreferrer"
+                                        class="inline-flex max-w-full items-center gap-1 text-primary hover:underline"
+                                    >
+                                        <span class="truncate">{{
+                                            provider.website.replace(
+                                                /^https?:\/\//,
+                                                '',
+                                            )
+                                        }}</span>
+                                        <ExternalLink
+                                            class="size-3.5 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                    </a>
+                                </dd>
+                            </div>
+                        </dl>
+                    </section>
+                </div>
             </aside>
+        </div>
+    </div>
+
+    <!-- Telefone: lipni juosta apačioje su pagrindiniu veiksmu -->
+    <div
+        class="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 px-4 py-3 shadow-float backdrop-blur-md lg:hidden"
+    >
+        <div class="mx-auto flex max-w-xl items-center gap-3">
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold">
+                    {{ provider.display_name }}
+                </p>
+                <p
+                    v-if="provider.reviews_count > 0"
+                    class="flex items-center gap-1 text-xs text-muted-foreground"
+                >
+                    <Star
+                        class="size-3 fill-star text-star"
+                        aria-hidden="true"
+                    />
+                    {{ formatRating(provider.rating_avg) }} ·
+                    {{
+                        plural(provider.reviews_count, [
+                            'atsiliepimas',
+                            'atsiliepimai',
+                            'atsiliepimų',
+                        ])
+                    }}
+                </p>
+            </div>
+            <Button variant="cta" size="lg" as-child>
+                <a :href="createRequestUrl">Sukurti užklausą</a>
+            </Button>
         </div>
     </div>
 </template>
