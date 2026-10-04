@@ -26,6 +26,9 @@ export default defineConfig({
         }),
     ]),
     server: {
+        // „localhost", o ne Node parinktas adresas: Windows'e jis būna IPv6 [::1], o tokio adreso negalima
+        // įrašyti į saugos antraštę (CSP) – naršyklė tada blokuoja CSS ir JS (app/Http/Middleware/SecurityHeaders.php)
+        host: 'localhost',
         watch: {
             ignored: [
                 '**/.agents/**',

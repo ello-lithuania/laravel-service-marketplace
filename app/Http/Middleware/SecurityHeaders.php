@@ -106,13 +106,20 @@ class SecurityHeaders
             'frame-ancestors' => ["'none'"],
         ];
 
-        // Dev'e (npm run dev) skriptai, stiliai ir HMR websocket'as ateina iš Vite serverio (pvz. http://[::1]:5173)
+        // Dev'e (npm run dev) skriptai, stiliai ir HMR websocket'as ateina iš Vite serverio (pvz. http://localhost:5173)
         if ($dev !== null) {
+            // CSP neleidžia IPv6 adresų: naršyklė šaltinį „http://[::1]:5173" ignoruoja ir blokuoja Vite failus
+            // (Windows'e Node „localhost" paverčia ::1). Tokiu atveju lokaliai leidžiam visą http:/ws: schemą.
+            // vite.config.ts nurodo host „localhost", todėl dažniausiai adresas būna užrašomas be IPv6.
+            $isIpv6 = str_contains($dev, '[');
+            $sources = $isIpv6 ? ['http:', 'https:'] : [$dev];
+            $sockets = $isIpv6 ? ['ws:', 'wss:'] : [(string) preg_replace('#^http#', 'ws', $dev)];
+
             foreach (['script-src', 'style-src', 'img-src', 'font-src'] as $directive) {
-                $directives[$directive][] = $dev;
+                array_push($directives[$directive], ...$sources);
             }
-            $directives['connect-src'][] = $dev;
-            $directives['connect-src'][] = preg_replace('#^http#', 'ws', $dev);
+
+            array_push($directives['connect-src'], ...$sources, ...$sockets);
         }
 
         $policy = [];

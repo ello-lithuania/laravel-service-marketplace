@@ -62,20 +62,34 @@ test('report-only režimas ir papildomi šaltiniai iš konfigūracijos', functio
         ->toContain('report-uri https://report.example.test/csp');
 });
 
-test('dev\'e su Vite serveriu leidžiamas jo adresas ir HMR websocket\'as', function () {
+/**
+ * CSP antraštė, kai veikia Vite dev serveris su nurodytu adresu (public/hot turinys).
+ */
+function cspWithViteDevServer(string $url): string
+{
     $hot = storage_path('framework/testing-vite.hot');
-    File::put($hot, 'http://[::1]:5173');
+    File::put($hot, $url);
     Vite::useHotFile($hot);
 
     try {
-        $csp = (string) $this->get('/login')->headers->get('Content-Security-Policy');
+        return (string) test()->get('/login')->headers->get('Content-Security-Policy');
     } finally {
         File::delete($hot);
     }
+}
 
-    expect($csp)->toContain("script-src 'self' 'nonce-")
-        ->toContain('http://[::1]:5173')
-        ->toContain('ws://[::1]:5173');
+test('dev\'e su Vite serveriu leidžiamas jo adresas ir HMR websocket\'as', function () {
+    expect(cspWithViteDevServer('http://localhost:5173'))
+        ->toContain("script-src 'self' 'nonce-")
+        ->toContain("style-src 'self' 'unsafe-inline' http://localhost:5173")
+        ->toContain('ws://localhost:5173');
+});
+
+test('Vite IPv6 adresas ([::1], Windows) į CSP neįrašomas – naršyklė jį atmestų ir užblokuotų CSS', function () {
+    expect(cspWithViteDevServer('http://[::1]:5173'))
+        ->not->toContain('[::1]')
+        ->toContain("style-src 'self' 'unsafe-inline' http: https:")
+        ->toContain('ws: wss:');
 });
 
 test('antraštes gauna ir JSON bei klaidų atsakymai', function () {

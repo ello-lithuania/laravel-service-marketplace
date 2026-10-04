@@ -2072,6 +2072,7 @@ iškviestas `Illuminate\Support\Carbon` yra kintamas.
 
 ### Dažnos klaidos
 
+- **Windows'e su `composer run dev` puslapis be stilių (didžiulės ikonos)** – Vite dev serveris savo adresą užrašė kaip IPv6 `http://[::1]:5173`, o CSP antraštėje IPv6 adreso nurodyti negalima: naršyklė tokį šaltinį ignoruoja ir blokuoja CSS. Sprendimas: `vite.config.ts` → `server.host: 'localhost'`, o `SecurityHeaders` IPv6 atveju lokaliai leidžia `http:`/`ws:`. Kaip pastebėti: naršyklės konsolėje (F12) – „contains an invalid source… Refused to load the stylesheet".
 - **Įterptas skriptas be `nonce`** – įjungus CSP tamsaus režimo skriptas `app.blade.php` nustoja veikti (konsolėje
   „Refused to execute inline script").
 - **Filament su griežtu CSP** – be `'unsafe-eval'` Alpine.js neveikia: neatsidaro modalai, nesiunčiamos formos.
