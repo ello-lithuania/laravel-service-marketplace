@@ -4,6 +4,7 @@ use App\Actions\Payments\RefundPayment;
 use App\Models\CreditPackage;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\Privacy\UserDataExporter;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Support\Billing;
@@ -43,6 +44,19 @@ test('mokėjimų sąraše – grąžinimas ir kreditinės sąskaitos nuoroda tik
             ->where('payments.data.1.refund.credits_reversed', 30)
             ->missing('payments.data.1.refund.refunded_by_id')
             ->etc());
+});
+
+test('BDAR duomenų archyve – grąžinimai (be administratoriaus)', function () {
+    $data = app(UserDataExporter::class)->collect($this->owner);
+
+    expect($data['grazinimai'])->toHaveCount(1)
+        ->and($data['grazinimai'][0])->toMatchArray([
+            'mokejimas' => $this->payment->uuid,
+            'amount_cents' => 2420,
+            'reason' => 'Nupirkta per klaidą',
+            'credit_note_number' => $this->refund->credit_note_number,
+        ])
+        ->and($data['grazinimai'][0])->not->toHaveKey('refunded_by_id');
 });
 
 test('mokėjimo puslapis: grąžinimo data, priežastis, atimti kreditai', function () {
