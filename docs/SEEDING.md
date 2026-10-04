@@ -1,7 +1,7 @@
 # Seed'ų (testinių duomenų) planas
 
 > **Etapas 2 · būsena: įgyvendinta.** Kodas – `database/seeders/DemoDataSeeder.php` ir `database/seeders/Demo/`.
-> Kiekiai ir laikai lentelėse – išmatuoti (2026-10-03).
+> Kiekiai ir laikai lentelėse – išmatuoti (2026-10-03). **Etapas 9:** demo paveikslėliai (`SEED_MEDIA=true`, 7 sk.).
 
 **Sąvokos:**
 
@@ -68,7 +68,7 @@ todėl nurodyti apytiksliai (≈).
 | `credit_transactions`       |      ≈ 368 000 |          ≈ 18 600 | po vieną kiekvienam pasiūlymui + pirkimai, dovanos, prenumeratos |
 | `notifications`             |      ≈ 230 000 |          ≈ 10 500 | tik paskutinių 60 dienų įvykiai                                  |
 | `complaints`                |          3 000 |               150 |                                                                  |
-| `media`                     |              0 |                 0 | lentelė sukurta Etape 3; demo nuotraukų dar nėra (`SEED_MEDIA`)  |
+| `media`                     |        ≈ 2 640 |             ≈ 140 | tik su `SEED_MEDIA=true` (7 sk.); be jo – 0                      |
 | **Iš viso**                 | **≈ 1,9 mln.** |          ≈ 95 000 |                                                                  |
 
 Pranešimų išėjo daugiau nei planuota (≈ 100 000): paskutinėmis 60 dienomis yra visos atviros ir vykdomos
@@ -111,9 +111,11 @@ generatorių klasės `database/seeders/Demo/`. Jis dirba dviem fazėmis:
 | 9   | `NotificationGenerator`   | pranešimai apie paskutinių 60 dienų įvykius                                                                   |
 | 10  | `ComplaintGenerator`      | skundai                                                                                                       |
 | 11  | `CounterSync`             | perskaičiuoja denormalizuotus skaitliukus (`DB_SCHEMA.md` 2.10) vienu `UPDATE` lentelei                       |
+| 12  | `MediaGenerator`          | tik su `SEED_MEDIA=true`: logotipai, viršeliai ir portfolio nuotraukos per medialibrary (7 sk.)               |
+| –   | `ImagePainter`            | abstraktūs paveikslėliai su PHP GD (spalvų perėjimai, figūros, inicialai)                                     |
 | –   | `WeightedPicker`          | svertinis atsitiktinis parinkimas (miestai pagal gyventojus, kategorijos pagal populiarumą)                   |
 
-Paveikslėlių (`MediaSeeder`, `SEED_MEDIA`) dar nėra: `media` lentelė sukurta Etape 3, o demo nuotraukos – vėliau.
+`MediaGenerator` – paskutinis žingsnis, nes teikėjus „populiarumo" tvarka renkasi pagal jau suskaičiuotus atsiliepimus.
 
 ---
 
@@ -260,7 +262,7 @@ Kategorijų pavadinimai rašomi vardininku, todėl tinka pavadinimams („Plytel
 | Įmonių pavadinimai          | Faker `company()`, kurie paremti dažnomis pavardėmis. Taisyklė ta pati.                                                                                                                   |
 | Adresai                     | Faker `streetAddress()` (netikros gatvės) + mūsų savivaldybė                                                                                                                              |
 | Svetainės                   | `https://{slug}.example.test`                                                                                                                                                             |
-| Nuotraukos                  | tik mūsų sugeneruoti abstraktūs paveikslėliai iš `database/data/images/`, be žmonių. Iš interneto nieko nesiunčiam.                                                                       |
+| Nuotraukos                  | tik abstraktūs paveikslėliai, kuriuos seed'o metu nupiešia `ImagePainter` (PHP GD): spalvos, figūros, inicialai. Be žmonių, iš interneto nieko nesiunčiam.                                |
 | Slaptažodžiai               | visiems `password` (**tik dev!**)                                                                                                                                                         |
 | Apskritys, savivaldybės     | tikri **vieši administraciniai** duomenys. Tai ne asmens duomenys, ir be jų svetainė neveiktų.                                                                                            |
 | Kategorijos, kainos, planai | sugalvoti mūsų                                                                                                                                                                            |
@@ -314,9 +316,58 @@ produkcijos serveryje bus panašiai arba greičiau. Lėčiausios vietos – lent
 `PRAGMA cache_size` (256 MB DB puslapių atmintyje). Be jų pilnas seed'as truko 71 s. Seed'ui patikimumas
 nesvarbus – jei kompiuteris užlūš, DB vis tiek kuriama iš naujo. `memory_limit` seed'o metu pakeliamas iki 2 GB.
 
-**`SEED_MEDIA=true`** (planuojama; `media` lentelė jau yra nuo Etapo 3): prie ≈ 1 000 portfolio darbų ir ≈ 500 profilių
-prisegami paveikslėliai iš `database/data/images/`. Pagal nutylėjimą išjungta: medialibrary kiekvienam įrašui
-kopijuoja failą ir daro miniatiūras, o tai lėta ir užima vietos.
+### Demo paveikslėliai (`SEED_MEDIA=true`, Etapas 9)
+
+```bash
+SEED_MEDIA=true php artisan migrate:fresh --seed
+```
+
+**Kas sukuriama** (`SEED_SCALE=1`; mažesniam masteliui – proporcingai, bet ne mažiau kaip po 3):
+
+| Kam                    | Kiek                     | Kolekcija, miniatiūros      | Paveikslėlis                                                                      |
+| ---------------------- | ------------------------ | --------------------------- | --------------------------------------------------------------------------------- |
+| teikėjų profiliai      | 500 logotipų             | `logo` → `thumb` 256×256    | 400×400 PNG: fono spalva, figūra, inicialai („UAB Urbonas ir Sakalauskas" → „US") |
+| tų pačių profilių 40 % | ≈ 200 viršelių           | `cover` → `wide` 1200×400   | 1200×400 JPEG: sulieti spalvų ratai ir „bangos"                                   |
+| portfolio darbai       | 1 000 darbų × 1–3 nuotr. | `images` → `thumb`, `large` | 960×720 JPEG: sulietas fonas ir permatomos figūros                                |
+
+- **Tik aktyvūs teikėjai**, „populiarumo" tvarka: svertinis atsitiktinis rikiavimas be pasikartojimų (Efraimidis–Spirakis),
+  svoris (1 + atsiliepimai)². Veiklesni teikėjai dažniau turi logotipą, todėl katalogo pirmame puslapyje paveikslėlių
+  matyti, o toliau – vis mažiau (kaip tikrovėje). Portfolio nuotraukos – tų pačių teikėjų darbams.
+- **Spalvos pagal sritį:** kiekviena 1 lygio kategorija turi 4 spalvų paletę (statyba – oranžinė, santechnika – mėlyna,
+  sodas – žalia…). Naujai sričiai paletė parenkama pagal slug'o maišos reikšmę.
+- **Greitis – bendras rinkinys.** Portfolio ir viršelių failų nupiešiama ne daugiau kaip 72 (12 sričių × 5 portfolio
+  variantai + 12 viršelių), logotipai – pagal inicialų, paletės ir formos derinį. Failai piešiami laikiname kataloge ir
+  prisegami su `addMedia($kelias)->preservingOriginal()`: medialibrary nukopijuoja failą į `{media id}/`, o originalas
+  lieka kitiems įrašams. Piešti kiekvienam įrašui atskirai būtų ~25 ms × 2 600.
+- **Atkartojamumas:** planas (kas ir ką gauna) – iš `SEED_FAKER_SEED` sėklos, kiekvienas paveikslėlis – su savo sėkla
+  `crc32(sėkla:raktas)`, todėl jo turinys nepriklauso nuo `SEED_SCALE` ir kiek atsitiktinių skaičių sunaudojo kiti
+  žingsniai. Patikrinta: du paleidimai iš eilės duoda baitas į baitą tuos pačius failus (`md5sum`).
+- **Seniai sukurti failai.** Po `migrate:fresh` `media` lentelė tuščia, o ankstesnio seed'o `{id}/` katalogai liko
+  diske. Jų nebenurodo jokia eilutė, todėl `MediaGenerator` juos ištrina (tik skaitmeninius katalogus media diske ir tik
+  kai `media` lentelė tuščia).
+- **Modelių įvykiai išjungti** (`WithoutModelEvents`), o medialibrary `uuid` ir `order_column` priskiria `creating`
+  įvykyje. Todėl `MediaGenerator` juos nurodo pats (`withAttributes(['uuid' => …])`, `setOrder()`), UUID – deterministinis.
+
+**Miniatiūros: eilėje ar iškart?** Logotipo ir viršelio miniatiūros projekte visada daromos iškart (`nonQueued()`),
+o portfolio – eilėje (įkeliant 10 nuotraukų puslapis nelaukia). Seed'o metu `MediaGenerator` laikinai nustato
+`media-library.queue_connection_name = sync`, todėl **visos miniatiūros padaromos seed'o metu, nesvarbu, ar
+`QUEUE_CONNECTION=database`, ar `sync`**, o po to nustatymas atstatomas. Kodėl:
+
+- po seed'o viskas paruošta: nereikia eilės darbuotojo, ir `migrate:fresh --seed` rezultatas visada tas pats;
+- eilė neužkemšama: su `database` seed'as įdėtų ≈ 2 000 darbų (`jobs`), ir tikri pranešimai lauktų už jų;
+- kaina – laikas: miniatiūros yra didžioji `media` žingsnio dalis (spatie/image su GD: `thumb` ≈ 18 ms, `large` ≈ 23 ms).
+  Paliekant eilei `SEED_SCALE=0.05` `media` žingsnis truktų ≈ 2 s vietoj ≈ 7 s, bet portfolio miniatiūros atsirastų tik
+  tada, kai jas padarys `queue:work` (iki tol `imageUrls()` rodo originalą).
+
+**Išmatuota** (SQLite, Claude cloud konteineris, 4 branduoliai; dirbo ir kiti procesai, todėl laikai apytiksliai):
+
+| `SEED_SCALE` | `media` eilučių | Failų diske (su miniatiūromis) | `media` žingsnis |   Visas `migrate:fresh --seed` |
+| -----------: | --------------: | -----------------------------: | ---------------: | -----------------------------: |
+|         0.05 |             140 |                    ≈ 380, 9 MB |            7–8 s | ≈ 10 s (be `SEED_MEDIA` ≈ 3 s) |
+|            1 |           2 642 |                ≈ 7 200, 168 MB |        ≈ 4,3 min |                        ≈ 5 min |
+
+Todėl pagal nutylėjimą `SEED_MEDIA=false`: kasdieniam darbui paveikslėlių nereikia, o pilnam našumo seed'ui jie tik
+pailgintų laiką ir užimtų vietos.
 
 ---
 
@@ -336,6 +387,9 @@ Pest testas `tests/Feature/Seeding/SeedIntegrityTest.php`, paleidžiamas su `SEE
 - [x] `rating_avg`, `reviews_count`, `completed_jobs_count`, `offers_count`, `last_message_at` sutampa su perskaičiuotais.
 - [x] Žinutės siuntėjas yra pokalbio dalyvis, žinučių laikas didėja.
 - [x] Visi el. paštai baigiasi `@example.test`, visi telefonai prasideda `+3700`.
+- [x] `SEED_MEDIA=true` (`tests/Feature/Seeding/SeedMediaTest.php`, netikras diskas): kiekiai, trumpi morph map vardai,
+      tik aktyvūs teikėjai, UUID ir eilės numeriai, originalai ir miniatiūros diske, eilėje nieko nelieka; be
+      `SEED_MEDIA` – jokių failų; ta pati sėkla – tas pats paveikslėlis.
 
 ---
 
@@ -347,7 +401,7 @@ Pest testas `tests/Feature/Seeding/SeedIntegrityTest.php`, paleidžiamas su `SEE
 | `SEED_CHUNK`                 | `1000`   | kiek eilučių įterpiama vienu INSERT                        |
 | `SEED_FAKER_SEED`            | `2026`   | atsitiktinumo „sėkla" atkartojamumui                       |
 | `SEED_DEMO`                  | `true`   | ar kurti demo duomenis (`false` – tik žinyniniai)          |
-| `SEED_MEDIA`                 | `false`  | ar prisegti paveikslėlius (Etapas 3)                       |
+| `SEED_MEDIA`                 | `false`  | ar sukurti demo paveikslėlius (Etapas 9, 7 sk.)            |
 | `SEED_VERIFIED_REVIEW_RATIO` | `0.9`    | kokia dalis atliktų užklausų gauna patvirtintą atsiliepimą |
 
 Kintamieji skaitomi per `config/seeding.php`. Testuose (`phpunit.xml`) – `SEED_DEMO=false`, `SEED_SCALE=0.01`. Kode niekada nekviečiam `env()` tiesiogiai už config failų ribų,
@@ -357,6 +411,7 @@ nes po `php artisan config:cache` `env()` grąžina `null`.
 php artisan migrate:fresh --seed                     # pilnas seed'as (MySQL)
 SEED_SCALE=0.05 php artisan migrate:fresh --seed     # mažas ir greitas (SQLite dev)
 SEED_DEMO=false php artisan migrate:fresh --seed     # tik žinyniniai duomenys
+SEED_MEDIA=true php artisan migrate:fresh --seed     # su demo paveikslėliais (lėčiau, 7 sk.)
 php artisan db:seed --class=CategorySeeder           # vienas seeder'is (kai priklausomybės jau yra)
 php artisan db:show --counts                         # visos lentelės su eilučių skaičiumi
 php artisan db:table service_requests                # lentelės stulpeliai, indeksai, FK
