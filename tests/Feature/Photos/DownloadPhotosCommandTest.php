@@ -312,6 +312,21 @@ test('portfolio rinkinys: N nuotraukų su credits.json, nuotraukos su žmonėmis
     Http::assertNothingSent();
 });
 
+test('nepavykus įrašyti į biblioteką – aiški klaida, kitos vietos tęsiamos', function () {
+    config(['services.pexels.key' => 'pexels-test-key']);
+    pexelsFake(array_map(fn (int $id) => StockPhotos::pexelsPhoto($id), range(1, 6)));
+    // Failas vietoj katalogo „categories" – įrašyti į jį neįmanoma (kaip pilnas diskas ar be teisių)
+    Storage::disk('stock-photos')->put('categories', 'ne katalogas');
+
+    $this->artisan('photos:download', ['--only' => 'categories,site'])
+        ->expectsOutputToContain('nepavyko įrašyti')
+        ->assertSuccessful();
+
+    expect($this->root->fresh()?->getMedia('image'))->toBeEmpty()
+        // Svetainės nuotraukos (kitas katalogas) – atsisiųstos
+        ->and(SitePhoto::query()->where('key', SitePhotoKey::Hero)->firstOrFail()->getFirstMedia('photo'))->not->toBeNull();
+});
+
 test('Windows SSL klaida (cURL error 60) – patarimas, kaip pataisyti php.ini', function () {
     config(['services.pexels.key' => 'pexels-test-key']);
     Category::factory()->childOf($this->root)->create(['name' => 'Grindys', 'slug' => 'grindys']);

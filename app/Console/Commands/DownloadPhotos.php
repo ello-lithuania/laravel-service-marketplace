@@ -210,7 +210,15 @@ class DownloadPhotos extends Command
             return;
         }
 
-        $photo = $this->library->store($directory, $name, $fetched, $spec->maxDimension);
+        try {
+            $photo = $this->library->store($directory, $name, $fetched, $spec->maxDimension);
+        } catch (Throwable $e) {
+            // Pvz. GD nesugeba perskaityti neįprasto JPEG ar diske nėra vietos – kitos vietos vis tiek bandomos
+            $this->failed($label, 'nepavyko įrašyti: '.mb_strimwidth($e->getMessage(), 0, 120, '…'));
+
+            return;
+        }
+
         $this->used[$photo->stockId] = true;
 
         $this->attachOrFail($label, fn () => $this->attach->handle($model, $collection, $photo), 'downloaded', $this->creditLine($photo->credit->source, $photo->credit->author));
@@ -282,13 +290,22 @@ class DownloadPhotos extends Command
 
             $added = 0;
             $index = 1;
+            $storeProblems = [];
 
             foreach ($this->fetcher->photos($queries, $spec, $this->used) as $fetched) {
                 while (isset($existing[$name = sprintf('%s-%02d', $root->slug, $index)])) {
                     $index++;
                 }
 
-                $existing[$name] = $this->library->store($directory, $name, $fetched, $spec->maxDimension);
+                try {
+                    $existing[$name] = $this->library->store($directory, $name, $fetched, $spec->maxDimension);
+                } catch (Throwable $e) {
+                    // Vienas sugadintas failas rinkinio nesustabdo – imamas kitas rezultatas
+                    $storeProblems[] = $fetched->stock->stockId().': nepavyko įrašyti – '.mb_strimwidth($e->getMessage(), 0, 120, '…');
+
+                    continue;
+                }
+
                 $this->used[$fetched->stock->stockId()] = true;
 
                 if (++$added >= $missing) {
@@ -300,7 +317,7 @@ class DownloadPhotos extends Command
             $have = count($existing);
 
             if ($added < $missing) {
-                $this->failed($root->name, "{$have}/{$perCategory} – trūksta ".($perCategory - $have), $this->fetcher->problems());
+                $this->failed($root->name, "{$have}/{$perCategory} – trūksta ".($perCategory - $have), [...$this->fetcher->problems(), ...$storeProblems]);
 
                 continue;
             }

@@ -4,6 +4,7 @@ namespace App\Services\Photos;
 
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Spatie\Image\Enums\Fit;
 use Spatie\Image\Image;
 
@@ -80,7 +81,11 @@ final class StockPhotoLibrary
             $disk->delete($directory.'/'.$previous);
         }
 
-        $disk->put($path, $file->bytes);
+        // Diskas sukonfigūruotas su throw = false: nepavykus put() grąžina false, todėl tikrinam patys
+        if (! $disk->put($path, $file->bytes)) {
+            throw new RuntimeException("Nepavyko įrašyti {$path} į nuotraukų biblioteką ({$disk->path('')})");
+        }
+
         [$width, $height] = [$file->width, $file->height];
 
         if ($resize) {
