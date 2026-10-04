@@ -1136,6 +1136,21 @@ skaičiuojamas vien iš indekso (4 ms → 0,2 ms, `docs/PERFORMANCE.md`). Senas 
 nereikalingas.
 → https://laravel.com/docs/13.x/notifications#database-notifications
 
+#### `site_photos`
+
+> **Etapas 10.** Svetainės dizaino nuotraukos (pradžios puslapio viršus, kvietimas teikėjams ir pan.), kurias
+> administratorius gali pakeisti nekeisdamas kodo.
+
+| Stulpelis | Tipas               | Pastaba                                               |
+| --------- | ------------------- | ----------------------------------------------------- |
+| id        | `id`                |                                                       |
+| key       | `string(40)` UNIQUE | enum `SitePhotoKey`: `hero`, `providers`, `request` … |
+| alt       | `string(200)?`      | alternatyvusis tekstas (prieinamumas, SEO)            |
+|           | `timestamps`        |                                                       |
+
+Pats failas – medialibrary kolekcija `photo` (single file). Kodėl atskira lentelė, o ne failai `public/images`:
+nuotrauką galima pakeisti per admin panelę, ji turi miniatiūras ir autoriaus duomenis kaip visi kiti failai.
+
 #### `media` (spatie/laravel-medialibrary)
 
 > **Sukurta Etape 3:** `spatie/laravel-medialibrary` 11, migracija `2026_10_03_170615_create_media_table`
@@ -1155,6 +1170,8 @@ Migraciją sukuria paketas. Svarbiausi stulpeliai: `model_type`/`model_id` (morp
 | ServiceRequest  | `photos`      | iki 8      | `thumb` 480×360 `Fit::Crop`, `large` iki 1600 px `Fit::Max` | eilėje (queued)      | 6      |
 | Message         | `attachments` | iki 5      | `thumb` 480×360 `Fit::Crop` (tik nuotraukoms, ne PDF)       | eilėje (queued)      | 6      |
 | Complaint       | `evidence`    |            | (kol kas nedaroma – skundui užtenka aprašymo)               |                      | –      |
+| Category        | `image`       | 1 (single) | `card` 800×600 `Fit::Crop`, `wide` 1600×700 `Fit::Crop`     | iškart (`nonQueued`) | 10     |
+| SitePhoto       | `photo`       | 1 (single) | `large` iki 1920 px `Fit::Max`, `card` 800×600 `Fit::Crop`  | iškart (`nonQueued`) | 10     |
 
 - **Privatus diskas (Etapas 6).** Užklausos nuotraukos ir žinučių priedai saugomi `local` diske
   (`storage/app/private`), o ne `public`: juos gali matyti tik užklausos klientas, tinkami teikėjai ar pokalbio
@@ -1172,6 +1189,12 @@ Migraciją sukuria paketas. Svarbiausi stulpeliai: `model_type`/`model_id` (morp
   (`acceptsMimeTypes`). PHP `upload_max_filesize` (numatytai 2 MB) produkcijoje reikia padidinti iki ≥ 5 MB,
   `post_max_size` – iki ≥ 64 MB (10 nuotraukų vienu kartu).
 - Ištrynus modelį, medialibrary ištrina ir jo failus (soft delete atveju – ne).
+- **Svetainės nuotraukos (Etapas 10).** Kategorijų nuotraukos (`Category` → `image`) ir svetainės dizaino nuotraukos
+  (`SitePhoto` → `photo`, žr. `site_photos`) laikomos tame pačiame `public` diske. Jas gali įkelti administratorius
+  arba automatiškai atsisiųsti komanda iš nemokamų nuotraukų bankų.
+- **Nuotraukos autorius (`custom_properties.credit`).** Jei nuotrauka ne sava, prie media įrašo saugom:
+  `{"author": "…", "author_url": "…", "source": "Pexels|Openverse|…", "source_url": "…", "license": "…", "license_url": "…"}`.
+  Iš jų sudaromas puslapis „Nuotraukų autoriai" (kai kurios licencijos, pvz. CC BY, autorių nurodyti reikalauja).
 
 ---
 
@@ -1260,6 +1283,7 @@ datą failo pavadinime.
 | 32  | `tune_indexes_after_explain`                           | **Etapas 8**: indeksų korekcijos pagal `EXPLAIN` (`docs/PERFORMANCE.md`)              |
 | 33  | `add_series_to_invoice_sequences_table`                | **Etapas 9**: numeracijos serijos, pirminis raktas `(series, year)`                   |
 | 34  | `create_refunds_table`                                 | **Etapas 9**: grąžinimai ir kreditinės sąskaitos                                      |
+| 35  | `create_site_photos_table`                             | **Etapas 10**: svetainės dizaino nuotraukos (`SitePhotoKey`)                          |
 
 **Kodėl `city_id` pridedam atskirai:** numatytoji `users` migracija turi seniausią datą (`0001_01_01_…`), todėl
 vykdoma pirma, kai `cities` dar nėra. Galima būtų pakeisti datas, bet atskira `add_…` migracija aiškiau parodo

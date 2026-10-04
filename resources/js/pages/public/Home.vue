@@ -24,6 +24,7 @@ import type {
     ProviderCard as ProviderCardType,
     RootCategory,
     SeoMeta,
+    SitePhotoData,
 } from '@/types';
 
 // Pradžios puslapis: duomenys ateina iš HomeController (kategorijos ir miestai – iš cache).
@@ -33,6 +34,11 @@ defineProps<{
     cities: CityOption[];
     featuredProviders: ProviderCardType[];
     seo: SeoMeta;
+    photos: {
+        hero: SitePhotoData;
+        providers: SitePhotoData;
+        request: SitePhotoData;
+    };
 }>();
 
 // Užklausos kūrimo puslapis atsiras Etape 5, todėl kol kas paprasta nuoroda, ne Wayfinder funkcija

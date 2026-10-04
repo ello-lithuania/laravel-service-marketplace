@@ -3,6 +3,7 @@
 namespace App\Services\Catalog;
 
 use App\Models\Category;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Visas matomas kategorijų medis atmintyje (docs/DB_SCHEMA.md 2.2: adjacency list + cache).
@@ -42,10 +43,12 @@ final class CategoryTree
     /**
      * Duomenys cache'ui: tik skaliarai masyvuose (jokių modelių ar Carbon objektų).
      *
-     * @return list<array{id: int, parent_id: int|null, depth: int, name: string, slug: string, icon: string|null, description: string|null, meta_title: string|null, meta_description: string|null}>
+     * @return list<array{id: int, parent_id: int|null, depth: int, name: string, slug: string, icon: string|null, description: string|null, meta_title: string|null, meta_description: string|null, image_url: string|null, image_wide_url: string|null}>
      */
     public static function loadRows(): array
     {
+        $images = self::loadImageUrls();
+
         return array_values(Category::query()
             ->active()
             ->orderBy('depth')
@@ -62,12 +65,39 @@ final class CategoryTree
                 'description' => $category->description,
                 'meta_title' => $category->meta_title,
                 'meta_description' => $category->meta_description,
+                'image_url' => $images[$category->id]['card'] ?? null,
+                'image_wide_url' => $images[$category->id]['wide'] ?? null,
             ])
             ->all());
     }
 
     /**
-     * @param  list<array{id: int, parent_id: int|null, depth: int, name: string, slug: string, icon: string|null, description: string|null, meta_title: string|null, meta_description: string|null}>  $rows
+     * Etapas 10: kategorijų nuotraukų URL viena užklausa (category id => [card, wide]).
+     * Miniatiūros dar nėra (pvz. ką tik įkelta) – rodomas originalas.
+     *
+     * @return array<int, array{card: string, wide: string}>
+     */
+    private static function loadImageUrls(): array
+    {
+        $urls = [];
+
+        $media = Media::query()
+            ->where('model_type', (new Category)->getMorphClass())
+            ->where('collection_name', 'image')
+            ->get();
+
+        foreach ($media as $item) {
+            $urls[(int) $item->model_id] = [
+                'card' => $item->hasGeneratedConversion('card') ? $item->getUrl('card') : $item->getUrl(),
+                'wide' => $item->hasGeneratedConversion('wide') ? $item->getUrl('wide') : $item->getUrl(),
+            ];
+        }
+
+        return $urls;
+    }
+
+    /**
+     * @param  list<array{id: int, parent_id: int|null, depth: int, name: string, slug: string, icon: string|null, description: string|null, meta_title: string|null, meta_description: string|null, image_url: string|null, image_wide_url: string|null}>  $rows
      */
     public static function fromRows(array $rows): self
     {

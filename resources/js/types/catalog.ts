@@ -13,7 +13,12 @@ export type CategoryWithChildren = CategoryLink & {
 /** 1 lygio kategorija su keliais 2 lygio pavyzdžiais (pradžios puslapis). */
 export type RootCategory = CategoryWithChildren & {
     icon: string | null;
+    /** Etapas 10: kategorijos nuotrauka (800×600), null – nuotraukos nėra */
+    image_url: string | null;
 };
+
+/** Etapas 10: svetainės dizaino nuotrauka (SitePhotoKey); null – rodomas atsarginis dizainas. */
+export type SitePhotoData = { url: string; alt: string | null } | null;
 
 /** 1 lygio kategorija su visu pomedžiu (visų paslaugų puslapis). */
 export type CategoryTreeRoot = CategoryLink & {

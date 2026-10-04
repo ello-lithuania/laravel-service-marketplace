@@ -187,3 +187,19 @@ skaičiai žodžiais, prenumeratos privalumai (feature flags), administratoriaus
 - [x] Pranešimas teikėjui, kai administratorius pakeičia profilio būseną (patikrintas, paslėptas, užblokuotas, aktyvuotas)
 - [x] Testai (SQLite ir MySQL)
 - [x] `docs/LEARNING.md`: Etapas 9 + santrauka vartotojui
+
+---
+
+## Etapas 10 – Dizainas ir nuotraukos
+
+**Tikslas:** svetainė atrodo kaip tikra, gyva paslaugų platforma, o ne šablonas: savas stilius ir tikros nuotraukos.
+**Sąvokos:** dizaino sistema (spalvos, tipografija, Tailwind tema), nuotraukų API (Pexels, Openverse), licencijos ir
+autorių nurodymas, medialibrary kitiems modeliams, Artisan komandos su HTTP klientu.
+
+- [x] Pagrindas: kategorijos nuotrauka (`Category` → `image`), svetainės nuotraukos (`site_photos`, `SitePhotoKey`), cache
+- [ ] Komanda nuotraukoms atsisiųsti (Pexels su raktu, Openverse be rakto) + autorių puslapis
+- [ ] Demo portfolio – tikros nuotraukos (jei atsisiųstos), kitaip – sugeneruoti paveikslėliai
+- [ ] Filament: kategorijos nuotrauka, svetainės nuotraukų puslapis
+- [ ] Naujas viešos dalies dizainas: spalvos, tipografija, pradžios puslapis, kategorijos, teikėjai, profilis, poraštė
+- [ ] Paskyros ir prisijungimo puslapių stilius pagal naują dizainą
+- [ ] Testai, `docs/LEARNING.md`: Etapas 10

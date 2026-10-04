@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * 3 lygių paslaugų medis: parent_id + depth (docs/DB_SCHEMA.md 2.2).
@@ -24,10 +27,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 // Pakeitus įrašą išvalomas katalogo cache (Etapas 4)
 #[ObservedBy([CatalogCacheObserver::class])]
-class Category extends Model
+class Category extends Model implements HasMedia
 {
     /** @use HasFactory<CategoryFactory> */
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     public const MAX_DEPTH = 3;
 
@@ -114,5 +117,29 @@ class Category extends Model
     protected function roots(Builder $query): void
     {
         $query->whereNull('parent_id');
+    }
+
+    // --- Etapas 10: kategorijos nuotrauka (docs/DB_SCHEMA.md → media) -----------------
+
+    /**
+     * Viena nuotrauka kategorijai: kortelė (card) ir plati juosta kategorijos puslapio viršuje (wide).
+     * Iškart (nonQueued) – nuotraukų mažai, o administratorius rezultatą nori matyti tuoj pat.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('image')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->registerMediaConversions(function (): void {
+                $this->addMediaConversion('card')->nonQueued()->fit(Fit::Crop, 800, 600);
+                $this->addMediaConversion('wide')->nonQueued()->fit(Fit::Crop, 1600, 700);
+            });
+    }
+
+    public function imageUrl(string $conversion = 'card'): ?string
+    {
+        $url = $this->getFirstMediaUrl('image', $conversion);
+
+        return $url !== '' ? $url : null;
     }
 }

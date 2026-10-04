@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\Cache;
 #[Scoped]
 final class CatalogCache
 {
-    public const CATEGORIES_KEY = 'catalog:categories:v1';
+    // v2 – Etapas 10: eilutėse yra ir nuotraukų URL
+    public const CATEGORIES_KEY = 'catalog:categories:v2';
 
     public const GEOGRAPHY_KEY = 'catalog:geography:v1';
 

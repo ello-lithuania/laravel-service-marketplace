@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Catalog;
 
+use App\Enums\SitePhotoKey;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Catalog\ProviderCardResource;
 use App\Services\Catalog\CachedCategory;
@@ -9,6 +10,7 @@ use App\Services\Catalog\CachedCity;
 use App\Services\Catalog\CatalogCache;
 use App\Services\Catalog\CatalogSeo;
 use App\Services\Catalog\ProviderListQuery;
+use App\Services\Site\SitePhotos;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,15 +27,14 @@ class HomeController extends Controller
     /** Kiek 2 lygio kategorijų parodyti po 1 lygio pavadinimu. */
     private const CATEGORY_PREVIEW = 3;
 
-    public function __invoke(CatalogCache $catalog, ProviderListQuery $providers, CatalogSeo $seo): Response
+    public function __invoke(CatalogCache $catalog, ProviderListQuery $providers, CatalogSeo $seo, SitePhotos $sitePhotos): Response
     {
         $tree = $catalog->categories();
         $geography = $catalog->geography();
 
         return Inertia::render('public/Home', [
             'categories' => array_map(fn (CachedCategory $root): array => [
-                ...$root->toLink(),
-                'icon' => $root->icon,
+                ...$root->toCard(),
                 'children' => array_map(
                     fn (CachedCategory $child): array => $child->toLink(),
                     array_slice($tree->children($root->id), 0, self::CATEGORY_PREVIEW),
@@ -46,6 +47,8 @@ class HomeController extends Controller
             'cities' => $geography->cityOptions(),
             'featuredProviders' => ProviderCardResource::collection($providers->topRated(self::FEATURED_PROVIDERS))->resolve(),
             'seo' => $seo->home()->toArray(),
+            // Etapas 10: dizaino nuotraukos (null – nuotraukos nėra, Vue rodo atsarginį dizainą)
+            'photos' => $sitePhotos->forPage(SitePhotoKey::Hero, SitePhotoKey::Providers, SitePhotoKey::Request),
         ]);
     }
 }

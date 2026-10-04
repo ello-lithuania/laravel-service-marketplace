@@ -16,9 +16,12 @@ use App\Models\ProviderProfile;
 use App\Models\Region;
 use App\Models\Review;
 use App\Models\ServiceRequest;
+use App\Models\SitePhoto;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
+use App\Observers\MediaCacheObserver;
+use App\Services\Site\SitePhotos;
 use App\Support\TooManyAttempts;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -30,6 +33,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -50,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureModels();
         // --- Etapas 6 ---
         $this->configureRateLimiting();
+        $this->configureMediaCache();
     }
 
     /**
@@ -80,6 +85,7 @@ class AppServiceProvider extends ServiceProvider
             'credit_transaction' => CreditTransaction::class,
             'payment' => Payment::class,
             'complaint' => Complaint::class,
+            'site_photo' => SitePhoto::class,
         ]);
     }
 
@@ -146,5 +152,20 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('reviews', fn (Request $request): array => $limits(
             $request, 'reviews', Limit::perHour(10), Limit::perDay(30),
         ));
+    }
+
+    // --- Etapas 10 ---
+
+    /**
+     * Kategorijų ir svetainės nuotraukų cache išvalymas (MediaCacheObserver). Media – paketo modelis,
+     * todėl #[ObservedBy] atributo jam uždėti negalim ir observer'į registruojam čia.
+     */
+    protected function configureMediaCache(): void
+    {
+        Media::observe(MediaCacheObserver::class);
+
+        // Pakeitus alt tekstą ar ištrynus vietą – taip pat iš naujo
+        SitePhoto::saved(fn () => app(SitePhotos::class)->forget());
+        SitePhoto::deleted(fn () => app(SitePhotos::class)->forget());
     }
 }
