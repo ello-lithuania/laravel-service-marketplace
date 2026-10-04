@@ -17,7 +17,6 @@ import {
     ThumbsUp,
 } from '@lucide/vue';
 import { computed } from 'vue';
-import CategoryIcon from '@/components/catalog/CategoryIcon.vue';
 import ProviderCard from '@/components/catalog/ProviderCard.vue';
 import SearchForm from '@/components/catalog/SearchForm.vue';
 import SeoHead from '@/components/catalog/SeoHead.vue';
@@ -27,8 +26,8 @@ import FaqList from '@/components/site/FaqList.vue';
 import PhotoSlot from '@/components/site/PhotoSlot.vue';
 import SectionHeading from '@/components/site/SectionHeading.vue';
 import { Button } from '@/components/ui/button';
-import { brandTones, toneFor } from '@/lib/brandTones';
-import { formatNumber, formatRating, pluralWord } from '@/lib/format';
+import { toneFor } from '@/lib/brandTones';
+import { formatNumber, formatRating, plural, pluralWord } from '@/lib/format';
 import { pricing, register } from '@/routes';
 import {
     index as categoriesIndex,
@@ -47,7 +46,8 @@ import type {
 
 // Pradžios puslapis: duomenys ateina iš HomeController (kategorijos, miestai, nuotraukos, skaičiai – iš cache).
 const props = defineProps<{
-    categories: RootCategory[];
+    /** Etapas 11: providers_count – aktyvių teikėjų skaičius srityje (SiteHighlights, cache 1 val.) */
+    categories: (RootCategory & { providers_count: number })[];
     popularCities: CityOption[];
     cities: CityOption[];
     featuredProviders: ProviderCardType[];
@@ -77,10 +77,15 @@ const showStats = computed(
     () => props.stats.providers >= 10 && props.stats.reviews >= 10,
 );
 
+// Etapas 11: keturi skaičiai vienoje eilėje (variantas A)
 const statItems = computed(() => [
     {
         value: formatNumber(props.stats.providers),
-        label: `${pluralWord(props.stats.providers, ['aktyvus teikėjas', 'aktyvūs teikėjai', 'aktyvių teikėjų'])}`,
+        label: pluralWord(props.stats.providers, [
+            'aktyvus meistras',
+            'aktyvūs meistrai',
+            'aktyvių meistrų',
+        ]),
     },
     {
         value: formatNumber(props.stats.reviews),
@@ -98,20 +103,8 @@ const statItems = computed(() => [
         label: 'vidutinis įvertinimas',
     },
     {
-        value: formatNumber(props.stats.completed_jobs),
-        label: pluralWord(props.stats.completed_jobs, [
-            'atliktas darbas',
-            'atlikti darbai',
-            'atliktų darbų',
-        ]),
-    },
-    {
         value: formatNumber(props.cities.length),
-        label: pluralWord(props.cities.length, [
-            'savivaldybė',
-            'savivaldybės',
-            'savivaldybių',
-        ]),
+        label: `${pluralWord(props.cities.length, ['savivaldybė', 'savivaldybės', 'savivaldybių'])} visoje Lietuvoje`,
     },
 ]);
 
@@ -166,142 +159,108 @@ const faq = [
 <template>
     <SeoHead :seo="seo" />
 
-    <!-- ===== Viršus: antraštė, paieška ir nuotrauka ===== -->
-    <section class="relative overflow-hidden" aria-labelledby="hero-title">
+    <!-- ===== Viršus (variantas A): mėlynas fonas tęsia antraštę, paieška ir nuotrauka ===== -->
+    <section
+        class="relative bg-brand text-brand-foreground"
+        aria-labelledby="hero-title"
+    >
         <div
-            class="pointer-events-none absolute inset-x-0 top-0 h-[85%] bg-gradient-to-b from-secondary/70 to-transparent dark:from-secondary/30"
-            aria-hidden="true"
-        />
-        <div
-            class="relative page-container grid items-center gap-12 pt-10 pb-14 md:pt-14 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14 lg:pt-16 lg:pb-20 xl:gap-20"
+            class="page-container grid items-center gap-12 pt-8 pb-28 sm:pt-12 lg:grid-cols-12 lg:gap-8 lg:pt-14 lg:pb-36"
         >
-            <div>
+            <div class="lg:col-span-7">
                 <p
-                    class="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card/80 py-1 pr-3 pl-1.5 text-sm shadow-soft"
+                    class="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold"
                 >
-                    <span
-                        class="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground"
-                    >
-                        <ShieldCheck class="size-3.5" aria-hidden="true" />
-                        Nemokamai
-                    </span>
-                    <span class="text-muted-foreground"
-                        >Klientams – be jokių mokesčių</span
-                    >
+                    <ShieldCheck class="size-4 text-cta" aria-hidden="true" />
+                    Klientams – visiškai nemokamai
                 </p>
 
                 <h1
                     id="hero-title"
-                    class="mt-6 text-[2.5rem] leading-[1.04] font-bold text-balance sm:text-5xl lg:text-[3.6rem] xl:text-[4rem]"
+                    class="mt-6 text-[2.75rem] leading-[0.98] font-black tracking-[-0.035em] text-balance text-white sm:text-6xl lg:text-[4.25rem] xl:text-[4.75rem]"
                 >
-                    Aprašykite darbą&nbsp;–
-                    <span class="relative whitespace-nowrap text-primary">
-                        meistrai patys
-                        <svg
-                            class="absolute -bottom-2 left-0 h-3 w-full text-cta"
-                            viewBox="0 0 300 12"
-                            preserveAspectRatio="none"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M2 9c60-6 140-8 296-4"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="4"
-                                stroke-linecap="round"
-                            />
-                        </svg>
-                    </span>
-                    pasiūlys kainą
+                    Meistras jūsų darbui&nbsp;–
+                    <span class="block text-cta">per kelias minutes</span>
                 </h1>
                 <p
-                    class="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground"
+                    class="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-brand-muted sm:text-xl"
                 >
-                    Santechnikai, elektrikai, valytojai, kraustytojai ir dar
-                    šimtai specialistų visoje Lietuvoje. Palyginkite pasiūlymus
-                    bei atsiliepimus ir išsirinkite tinkamiausią.
+                    Aprašykite, ką reikia padaryti. Meistrai iš jūsų miesto
+                    patys atsiųs pasiūlymus su kainomis – jums lieka tik
+                    išsirinkti.
                 </p>
 
                 <SearchForm
                     :cities="cities"
                     size="hero"
-                    class="mt-8 max-w-2xl"
+                    class="mt-8 max-w-3xl"
                 />
 
                 <div
                     v-if="popularServices.length"
-                    class="mt-4 flex flex-wrap items-center gap-2 text-sm"
+                    class="mt-5 flex flex-wrap items-center gap-2 text-[0.9375rem]"
                 >
-                    <span class="text-muted-foreground">Populiaru:</span>
+                    <span class="text-brand-muted">Dažniausiai ieško:</span>
                     <Link
                         v-for="service in popularServices"
                         :key="service.id"
                         :href="categoryShow(service.slug)"
-                        class="rounded-full border bg-card/70 px-3 py-1 text-foreground/80 transition-colors hover:border-primary/40 hover:text-foreground"
+                        class="rounded-full bg-white/12 px-3.5 py-1.5 text-white transition-colors hover:bg-white/20 focus-visible:ring-[3px] focus-visible:ring-white/50 focus-visible:outline-none"
                         >{{ service.name }}</Link
                     >
                 </div>
 
-                <div
-                    class="mt-8 flex flex-col gap-4 border-t pt-8 sm:flex-row sm:items-center"
+                <!-- Telefone antraštės mygtukas paslėptas (per siaura), todėl pagrindinis veiksmas – čia -->
+                <Button
+                    variant="cta"
+                    size="xl"
+                    class="mt-6 w-full rounded-xl sm:hidden"
+                    as-child
                 >
-                    <Button variant="cta" size="xl" as-child>
-                        <a :href="createRequestUrl">
-                            <Plus class="size-5" aria-hidden="true" />
-                            Sukurti užklausą
-                        </a>
-                    </Button>
-                    <ul
-                        class="flex flex-col gap-1 text-sm text-muted-foreground"
-                    >
-                        <li class="flex items-center gap-2">
-                            <Check
-                                class="size-4 text-primary"
-                                aria-hidden="true"
-                            />
-                            Užtruks porą minučių
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <Check
-                                class="size-4 text-primary"
-                                aria-hidden="true"
-                            />
-                            Jokių įsipareigojimų
-                        </li>
-                    </ul>
-                </div>
+                    <a :href="createRequestUrl">
+                        <Plus class="size-5" aria-hidden="true" />
+                        Sukurti užklausą
+                    </a>
+                </Button>
             </div>
 
             <HeroVisual
                 :photo="photos.hero"
                 :providers="featuredProviders"
-                :stats="stats"
-                class="lg:ml-4"
+                class="lg:col-span-5"
             />
         </div>
     </section>
 
-    <!-- ===== Skaičiai iš DB (cache 1 val.) ===== -->
-    <section class="page-container" aria-label="Platforma skaičiais">
+    <!-- ===== Skaičiai iš DB (cache 1 val.): balta kortelė užlenda ant mėlyno viršaus ===== -->
+    <section
+        class="relative z-10 page-container -mt-16 lg:-mt-20"
+        aria-label="Platforma skaičiais"
+    >
         <dl
             v-if="showStats"
-            class="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-border shadow-soft sm:grid-cols-6 lg:grid-cols-5"
+            class="grid grid-cols-2 gap-y-6 rounded-3xl bg-card py-6 shadow-float lg:grid-cols-4 lg:py-8"
         >
             <div
                 v-for="(item, index) in statItems"
                 :key="item.label"
-                class="flex flex-col bg-card px-5 py-5 lg:col-span-1 lg:px-6 lg:py-6"
-                :class="[
-                    // Telefone 2 stulpeliai (paskutinis per visą plotį), planšetėje 3 + 2, kompiuteryje 5 vienoje eilėje
-                    index === statItems.length - 1 ? 'col-span-2' : '',
-                    index < 3 ? 'sm:col-span-2' : 'sm:col-span-3',
-                ]"
+                class="flex flex-col px-5 sm:px-8"
+                :class="
+                    // Telefone 2 stulpeliai (linija po 1 ir 3), kompiuteryje 4 (linija po visų, išskyrus paskutinį)
+                    index % 2 === 0
+                        ? 'border-r'
+                        : index < statItems.length - 1
+                          ? 'lg:border-r'
+                          : ''
+                "
             >
-                <dt class="order-2 mt-1 text-sm text-muted-foreground">
+                <dt
+                    class="order-2 mt-1 text-sm text-muted-foreground sm:text-base"
+                >
                     {{ item.label }}
                 </dt>
                 <dd
-                    class="order-1 font-display text-3xl font-semibold tracking-tight numeric lg:text-[2.1rem]"
+                    class="order-1 text-3xl font-black tracking-[-0.02em] text-primary numeric sm:text-4xl lg:text-[2.75rem]"
                 >
                     {{ item.value }}
                 </dd>
@@ -309,7 +268,7 @@ const faq = [
         </dl>
         <ul
             v-else
-            class="grid gap-px overflow-hidden rounded-2xl border bg-border shadow-soft sm:grid-cols-3"
+            class="grid gap-px overflow-hidden rounded-3xl bg-border shadow-float sm:grid-cols-3"
         >
             <li
                 v-for="point in [
@@ -321,7 +280,7 @@ const faq = [
                     { icon: Star, text: 'Atsiliepimus rašo tik klientai' },
                 ]"
                 :key="point.text"
-                class="flex items-center gap-3 bg-card px-5 py-5 font-medium"
+                class="flex items-center gap-3 bg-card px-6 py-6 font-semibold"
             >
                 <component
                     :is="point.icon"
@@ -333,7 +292,7 @@ const faq = [
         </ul>
     </section>
 
-    <!-- ===== Kategorijos (su nuotraukomis arba spalviniu atsarginiu dizainu) ===== -->
+    <!-- ===== Kategorijos: nuotrauka viršuje, pavadinimas ir teikėjų skaičius apačioje ===== -->
     <section
         id="kategorijos"
         class="page-container scroll-mt-24 py-20 lg:py-24"
@@ -342,127 +301,67 @@ const faq = [
         <SectionHeading
             id="categories-title"
             eyebrow="Paslaugos"
-            title="Ko šiandien reikia?"
-            description="Nuo užsikimšusios kriauklės iki buto remonto ar šventės – pasirinkite sritį ir pamatysite ją teikiančius meistrus."
+            title="Ką šiandien sutvarkysime?"
         >
             <template #action>
-                <Button variant="outline" as-child>
-                    <Link :href="categoriesIndex()">
-                        Visos paslaugos
-                        <ArrowRight aria-hidden="true" />
-                    </Link>
-                </Button>
+                <Link
+                    :href="categoriesIndex()"
+                    class="group inline-flex items-center gap-2 text-[1.0625rem] font-bold text-primary underline-offset-4 hover:underline"
+                >
+                    Visos paslaugos
+                    <ArrowRight
+                        class="size-[1.125rem] transition-transform group-hover:translate-x-0.5"
+                        aria-hidden="true"
+                    />
+                </Link>
             </template>
         </SectionHeading>
 
-        <!-- Fiksuotas eilučių aukštis (auto-rows): visos kortelės vienodo aukščio, o pirmoji plačiame ekrane
-             užima 2 × 2 langelius („bento" tinklelis) -->
         <ul
-            class="mt-10 grid auto-rows-[10.5rem] grid-cols-2 gap-3 sm:auto-rows-[12rem] sm:gap-4 md:grid-cols-3 lg:auto-rows-[13.5rem] lg:grid-cols-4"
+            class="mt-8 grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:mt-10 lg:grid-cols-4 lg:gap-6"
         >
-            <li
-                v-for="(category, index) in categories"
-                :key="category.id"
-                :class="
-                    index === 0
-                        ? 'col-span-2 row-span-2 sm:row-span-1 lg:row-span-2'
-                        : ''
-                "
-            >
+            <li v-for="category in categories" :key="category.id">
                 <Link
                     :href="categoryShow(category.slug)"
-                    class="group relative isolate flex h-full flex-col justify-end overflow-hidden rounded-2xl bg-muted p-4 text-white shadow-soft transition-shadow duration-300 hover:shadow-lift focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none sm:p-5"
+                    class="group flex h-full flex-col overflow-hidden rounded-[1.375rem] border bg-card transition-[box-shadow,transform,border-color] duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lift focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
                 >
-                    <PhotoSlot
-                        :src="category.image_url"
-                        :alt="category.name"
-                        :tone="toneFor(category.icon, category.slug)"
-                        :icon="category.icon"
-                        :sizes="
-                            index === 0
-                                ? '(min-width: 1024px) 50vw, 100vw'
-                                : '(min-width: 1024px) 25vw, 50vw'
-                        "
-                    >
-                    </PhotoSlot>
-                    <!-- Tamsus perėjimas apačioje – baltas tekstas įskaitomas ant bet kokios nuotraukos -->
                     <div
-                        class="absolute inset-0 bg-gradient-to-t to-transparent"
-                        :class="
-                            category.image_url
-                                ? 'from-black/75 via-black/25'
-                                : 'from-black/40 via-black/5'
-                        "
-                        aria-hidden="true"
-                    />
-                    <div class="relative">
+                        class="relative aspect-[16/10] overflow-hidden bg-muted"
+                    >
+                        <!-- alt="" – pavadinimas parašytas po nuotrauka, ekrano skaitytuvui jo nekartojam -->
+                        <PhotoSlot
+                            :src="category.image_url"
+                            alt=""
+                            :tone="toneFor(category.icon, category.slug)"
+                            :icon="category.icon"
+                            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                        />
+                    </div>
+                    <div
+                        class="flex flex-1 flex-col gap-1 p-3.5 sm:px-5 sm:py-4"
+                    >
                         <span
-                            class="mb-3 flex size-9 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur-sm"
-                            :class="index === 0 ? 'sm:size-11' : ''"
-                        >
-                            <CategoryIcon
-                                :name="category.icon"
-                                :class="
-                                    index === 0 ? 'size-5 sm:size-6' : 'size-5'
-                                "
-                            />
-                        </span>
-                        <span
-                            class="block font-display leading-tight font-semibold tracking-tight"
-                            :class="
-                                index === 0
-                                    ? 'text-xl sm:text-3xl'
-                                    : 'text-base sm:text-lg'
-                            "
+                            class="text-base leading-tight font-extrabold tracking-[-0.01em] sm:text-lg lg:text-[1.1875rem]"
                             >{{ category.name }}</span
                         >
                         <span
-                            v-if="category.children.length"
-                            class="mt-1 text-sm text-white/80"
-                            :class="
-                                index === 0
-                                    ? 'line-clamp-1'
-                                    : 'hidden sm:line-clamp-1'
-                            "
+                            class="line-clamp-1 text-sm text-muted-foreground sm:text-[0.9375rem]"
                         >
-                            {{
+                            <template v-if="category.providers_count > 0">{{
+                                plural(category.providers_count, [
+                                    'meistras',
+                                    'meistrai',
+                                    'meistrų',
+                                ])
+                            }}</template>
+                            <template v-else>{{
                                 category.children
                                     .map((child) => child.name)
                                     .join(' · ')
-                            }}
-                        </span>
-                        <span
-                            v-if="index === 0"
-                            class="mt-4 hidden items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand-deep transition-colors group-hover:bg-cta group-hover:text-cta-foreground lg:inline-flex"
-                        >
-                            Rasti meistrą
-                            <ArrowRight class="size-4" aria-hidden="true" />
+                            }}</template>
                         </span>
                     </div>
                 </Link>
-            </li>
-            <!-- Paskutinė kortelė – kvietimas, jei tinkamos srities nėra -->
-            <li class="col-span-2 md:col-span-3 lg:col-span-1">
-                <a
-                    :href="createRequestUrl"
-                    class="group flex h-full flex-col justify-between gap-3 rounded-2xl border-2 border-dashed border-primary/25 bg-secondary/50 p-5 transition-colors hover:border-primary/50 hover:bg-secondary"
-                >
-                    <span
-                        class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground"
-                    >
-                        <Plus class="size-5" aria-hidden="true" />
-                    </span>
-                    <span>
-                        <span
-                            class="block font-display text-lg font-semibold tracking-tight"
-                            >Neradote savo darbo?</span
-                        >
-                        <span class="mt-1 block text-sm text-muted-foreground"
-                            >Aprašykite jį savais žodžiais – tinkami teikėjai
-                            atsilieps.</span
-                        >
-                    </span>
-                </a>
             </li>
         </ul>
     </section>
@@ -493,10 +392,7 @@ const faq = [
                         <template #fallback>
                             <!-- Be nuotraukos: užklausos formos iliustracija -->
                             <div
-                                class="absolute inset-0 flex items-center justify-center p-6 sm:p-10"
-                                :style="{
-                                    backgroundImage: `linear-gradient(135deg, ${brandTones.pine.from}, ${brandTones.teal.to})`,
-                                }"
+                                class="absolute inset-0 flex items-center justify-center bg-brand p-6 sm:p-10"
                                 aria-hidden="true"
                             >
                                 <div

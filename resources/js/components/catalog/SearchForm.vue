@@ -8,6 +8,7 @@ import type { CityOption } from '@/types';
 
 // Paieška: tekstas + miestas → /paieska?q=…&miestas=…
 // Etapas 10: viena „sujungta" juosta (kaip didelėse platformose) – laukai atskirti linija, o ne atskiri rėmeliai.
+// Etapas 11: hero dydis – balta kortelė su gilesniu šešėliu mėlyname fone ir geltonu mygtuku „Rasti meistrą".
 const props = withDefaults(
     defineProps<{
         cities: CityOption[];
@@ -37,11 +38,11 @@ function submit(): void {
 <template>
     <form
         role="search"
-        class="flex flex-col gap-1.5 border border-border/80 bg-card p-1.5 sm:flex-row sm:items-center sm:gap-0"
+        class="flex flex-col gap-1.5 bg-card sm:flex-row sm:items-center sm:gap-0"
         :class="
             size === 'hero'
-                ? 'rounded-2xl shadow-lift'
-                : 'rounded-xl shadow-soft'
+                ? 'rounded-[1.25rem] p-2 text-card-foreground shadow-[0_24px_60px_-12px_rgb(8_20_90/0.45)]'
+                : 'rounded-xl border border-border/80 p-1.5 shadow-soft'
         "
         @submit.prevent="submit"
     >
@@ -50,7 +51,8 @@ function submit(): void {
         >
             <span class="sr-only">Paslauga ar meistras</span>
             <Search
-                class="pointer-events-none absolute left-3.5 size-5 text-primary"
+                class="pointer-events-none absolute left-3.5 text-primary"
+                :class="size === 'hero' ? 'left-4 size-[1.375rem]' : 'size-5'"
                 aria-hidden="true"
             />
             <input
@@ -58,9 +60,11 @@ function submit(): void {
                 type="search"
                 name="q"
                 maxlength="100"
-                class="w-full rounded-xl bg-transparent pr-3 pl-11 outline-none placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/30"
+                class="w-full rounded-xl bg-transparent pr-3 outline-none placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/30"
                 :class="
-                    size === 'hero' ? 'h-13 text-base' : 'h-11 text-[0.9375rem]'
+                    size === 'hero'
+                        ? 'h-14 pl-13 text-lg'
+                        : 'h-11 pl-11 text-[0.9375rem]'
                 "
                 placeholder="Pvz. plytelių klijavimas"
             />
@@ -71,7 +75,10 @@ function submit(): void {
             aria-hidden="true"
         />
 
-        <label class="relative flex items-center sm:w-56">
+        <label
+            class="relative flex items-center"
+            :class="size === 'hero' ? 'sm:w-60' : 'sm:w-56'"
+        >
             <span class="sr-only">Miestas ar rajonas</span>
             <MapPin
                 class="pointer-events-none absolute left-3.5 size-5 text-muted-foreground"
@@ -82,7 +89,7 @@ function submit(): void {
                 v-model="city"
                 class="w-full appearance-none rounded-xl bg-transparent pr-9 pl-11 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/30"
                 :class="
-                    size === 'hero' ? 'h-13 text-base' : 'h-11 text-[0.9375rem]'
+                    size === 'hero' ? 'h-14 text-lg' : 'h-11 text-[0.9375rem]'
                 "
             >
                 <option value="">Visa Lietuva</option>
@@ -101,10 +108,14 @@ function submit(): void {
         </label>
 
         <Button
+            v-if="size === 'hero'"
             type="submit"
-            class="rounded-xl"
-            :class="size === 'hero' ? 'h-13 px-7 text-base' : 'h-11 px-5'"
+            variant="cta"
+            class="h-14 rounded-xl px-8 text-lg font-extrabold"
         >
+            Rasti meistrą
+        </Button>
+        <Button v-else type="submit" class="h-11 rounded-xl px-5">
             <Search class="size-4 sm:hidden" aria-hidden="true" />
             Ieškoti
         </Button>

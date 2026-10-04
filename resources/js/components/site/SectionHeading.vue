@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 
 // Skilties antraštė: mažas „eyebrow" užrašas, antraštė, aprašymas ir (nebūtinai) nuoroda dešinėje (slot „action").
 // id – aria-labelledby skilčiai (<section aria-labelledby="…">).
+// Etapas 11 (variantas A): ryškus mėlynas „eyebrow" didžiosiomis raidėmis ir labai stora (font-black) antraštė.
 const props = withDefaults(
     defineProps<{
         id?: string;
@@ -34,19 +35,14 @@ const props = withDefaults(
         <div class="max-w-2xl">
             <p
                 v-if="eyebrow"
-                class="mb-3 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.14em] uppercase"
+                class="mb-2.5 text-sm font-bold tracking-[0.08em] uppercase"
                 :class="tone === 'light' ? 'text-cta' : 'text-primary'"
             >
-                <span
-                    class="h-px w-6"
-                    :class="tone === 'light' ? 'bg-cta' : 'bg-primary'"
-                    aria-hidden="true"
-                />
                 {{ eyebrow }}
             </p>
             <h2
                 :id="id"
-                class="text-3xl leading-[1.1] font-semibold text-balance md:text-4xl"
+                class="text-[2rem] leading-[1.05] font-black tracking-[-0.03em] text-balance md:text-5xl"
                 :class="tone === 'light' ? 'text-white' : 'text-foreground'"
             >
                 {{ title }}

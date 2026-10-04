@@ -2,16 +2,16 @@
 import { CalendarClock, CircleCheck, MapPin, Star, Wallet } from '@lucide/vue';
 import ProviderAvatar from '@/components/catalog/ProviderAvatar.vue';
 import PhotoSlot from '@/components/site/PhotoSlot.vue';
-import { formatRating, plural } from '@/lib/format';
-import type { ProviderCard, SitePhotoData, SiteStats } from '@/types';
+import { formatPriceFrom, formatRating, plural } from '@/lib/format';
+import type { ProviderCard, SitePhotoData } from '@/types';
 
-// Pradžios puslapio viršaus vaizdas. Su nuotrauka – nuotrauka ir „plaukiojančios" kortelės su tikrais duomenimis
-// (geriausiai įvertintas teikėjas, vidutinis įvertinimas). Be nuotraukos – iliustracija iš sąsajos elementų:
+// Pradžios puslapio viršaus vaizdas mėlyname fone (Etapas 11, variantas A).
+// Su nuotrauka – didelė suapvalinta nuotrauka ir „plaukiojančios" kortelės: geltonas ženklelis ir geriausiai
+// įvertinto teikėjo kortelė su tikrais duomenimis. Be nuotraukos – iliustracija iš sąsajos elementų:
 // užklausa ir į ją atsakę teikėjai. Abu variantai iš karto parodo, kaip platforma veikia.
 defineProps<{
     photo: SitePhotoData;
     providers: ProviderCard[];
-    stats: SiteStats;
 }>();
 </script>
 
@@ -20,93 +20,73 @@ defineProps<{
         <!-- Su nuotrauka -->
         <template v-if="photo">
             <div
-                class="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] bg-muted shadow-float md:aspect-[16/10] lg:aspect-[4/5]"
+                class="relative aspect-[4/3] overflow-hidden rounded-[2.25rem] bg-white/10 shadow-[0_30px_80px_-24px_rgb(8_20_90/0.6)] sm:aspect-[16/10] lg:aspect-auto lg:h-[35rem]"
             >
                 <PhotoSlot
                     :src="photo.url"
-                    :alt="photo.alt ?? 'Meistras dirba kliento namuose'"
+                    :alt="photo.alt ?? 'Meistras su įrankiais kliento namuose'"
                     :width="1600"
                     :height="2000"
                     eager
                     sizes="(min-width: 1024px) 40vw, 100vw"
                 />
-                <div
-                    class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/45 to-transparent"
-                    aria-hidden="true"
-                />
-            </div>
-
-            <div
-                v-if="stats.rating_avg !== null && stats.reviews > 0"
-                class="absolute top-5 -left-3 flex items-center gap-3 rounded-2xl border bg-card/95 px-4 py-3 shadow-float backdrop-blur sm:-left-6 lg:top-10"
-            >
-                <span
-                    class="flex size-10 items-center justify-center rounded-xl bg-star/15"
-                >
-                    <Star
-                        class="size-5 fill-star text-star"
-                        aria-hidden="true"
-                    />
-                </span>
-                <span>
-                    <span
-                        class="block font-display text-xl leading-none font-semibold numeric"
-                        >{{ formatRating(stats.rating_avg) }}
-                        <span class="text-sm font-normal text-muted-foreground"
-                            >/ 5</span
-                        ></span
-                    >
-                    <span class="mt-1 block text-xs text-muted-foreground"
-                        >vidutinis klientų įvertinimas</span
-                    >
-                </span>
             </div>
 
             <div
                 v-if="providers[0]"
-                class="absolute -right-2 bottom-5 w-[17rem] rounded-2xl border bg-card/95 p-4 shadow-float backdrop-blur sm:-right-5 lg:right-auto lg:bottom-12 lg:-left-10"
+                class="absolute right-4 bottom-4 left-4 rounded-2xl bg-card p-4 text-card-foreground shadow-float sm:right-auto sm:w-80 lg:bottom-16 lg:-left-12 lg:p-5"
             >
                 <p
-                    class="flex items-center gap-1.5 text-xs font-semibold text-primary"
+                    class="text-xs font-bold tracking-[0.06em] text-primary uppercase"
                 >
-                    <span class="relative flex size-2">
-                        <span
-                            class="absolute inline-flex size-full animate-ping rounded-full bg-primary/50"
-                        />
-                        <span
-                            class="relative inline-flex size-2 rounded-full bg-primary"
-                        />
-                    </span>
-                    Geriausiai įvertintas teikėjas
+                    Geriausiai įvertintas
                 </p>
-                <div class="mt-3 flex items-center gap-3">
+                <div class="mt-2.5 flex items-center gap-3">
                     <ProviderAvatar
                         :name="providers[0].display_name"
                         :src="providers[0].logo_url"
-                        class="size-11 rounded-xl"
+                        class="size-11 rounded-full"
                         text-class="text-sm"
                     />
                     <div class="min-w-0">
-                        <p class="truncate text-sm font-semibold">
+                        <p class="truncate font-bold">
                             {{ providers[0].display_name }}
                         </p>
-                        <p
-                            class="flex items-center gap-1 text-xs text-muted-foreground"
-                        >
-                            <Star
-                                class="size-3 fill-star text-star"
-                                aria-hidden="true"
-                            />
-                            {{ formatRating(providers[0].rating_avg) }} ·
-                            {{
-                                plural(providers[0].reviews_count, [
-                                    'atsiliepimas',
-                                    'atsiliepimai',
-                                    'atsiliepimų',
-                                ])
-                            }}
+                        <p class="truncate text-sm text-muted-foreground">
+                            <template v-if="providers[0].categories[0]"
+                                >{{ providers[0].categories[0].name }} ·
+                            </template>
+                            {{ providers[0].city }}
                         </p>
                     </div>
+                </div>
+                <div class="mt-3 flex items-center justify-between gap-3">
+                    <span
+                        v-if="providers[0].price_from"
+                        class="text-lg font-extrabold whitespace-nowrap numeric"
+                        >{{
+                            formatPriceFrom(
+                                providers[0].price_from.cents,
+                                providers[0].price_from.unit,
+                            )
+                        }}</span
+                    >
+                    <span
+                        class="ml-auto inline-flex items-center gap-1 rounded-lg bg-cta/25 px-2.5 py-1.5 text-sm font-semibold whitespace-nowrap"
+                    >
+                        <Star
+                            class="size-3.5 fill-star text-star"
+                            aria-hidden="true"
+                        />
+                        {{ formatRating(providers[0].rating_avg) }} ·
+                        {{
+                            plural(providers[0].reviews_count, [
+                                'atsiliepimas',
+                                'atsiliepimai',
+                                'atsiliepimų',
+                            ])
+                        }}
+                    </span>
                 </div>
             </div>
         </template>
@@ -114,16 +94,16 @@ defineProps<{
         <!-- Be nuotraukos: iliustracija iš sąsajos elementų -->
         <div
             v-else
-            class="relative overflow-hidden rounded-[1.75rem] bg-brand-deep p-5 text-brand-deep-foreground shadow-float sm:p-8"
+            class="relative overflow-hidden rounded-[2.25rem] bg-white/10 p-5 ring-1 ring-white/15 sm:p-8"
             aria-hidden="true"
         >
             <div
-                class="pointer-events-none absolute inset-0 pattern-dots text-white/[0.07]"
+                class="pointer-events-none absolute inset-0 pattern-dots text-white/[0.08]"
             />
 
             <div class="relative">
                 <div
-                    class="rounded-2xl bg-card p-5 text-card-foreground shadow-lift"
+                    class="rounded-2xl bg-card p-5 text-card-foreground shadow-float"
                 >
                     <div class="flex items-center justify-between gap-3">
                         <span
@@ -134,9 +114,7 @@ defineProps<{
                             >prieš 12 min.</span
                         >
                     </div>
-                    <p
-                        class="mt-3 font-display text-lg font-semibold tracking-tight"
-                    >
+                    <p class="mt-3 text-lg font-extrabold tracking-tight">
                         Vonios plytelių klijavimas
                     </p>
                     <ul
@@ -158,7 +136,7 @@ defineProps<{
                 </div>
 
                 <p
-                    class="mt-6 mb-3 text-xs font-semibold tracking-[0.14em] text-brand-deep-muted uppercase"
+                    class="mt-6 mb-3 text-xs font-bold tracking-[0.12em] text-brand-muted uppercase"
                 >
                     Gauti pasiūlymai
                 </p>
@@ -166,23 +144,21 @@ defineProps<{
                     <li
                         v-for="(provider, index) in providers.slice(0, 3)"
                         :key="provider.id"
-                        class="flex items-center gap-3 rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/10"
-                        :class="index === 0 ? 'bg-white/[0.12]' : ''"
+                        class="flex items-center gap-3 rounded-xl p-3 ring-1 ring-white/15"
+                        :class="index === 0 ? 'bg-white/[0.18]' : 'bg-white/10'"
                     >
                         <ProviderAvatar
                             :name="provider.display_name"
                             :src="provider.logo_url"
-                            class="size-10 rounded-lg"
+                            class="size-10 rounded-full"
                             text-class="text-sm"
                         />
                         <div class="min-w-0 flex-1">
-                            <p
-                                class="truncate text-sm font-semibold text-white"
-                            >
+                            <p class="truncate text-sm font-bold text-white">
                                 {{ provider.display_name }}
                             </p>
                             <p
-                                class="flex items-center gap-1 text-xs text-brand-deep-muted"
+                                class="flex items-center gap-1 text-xs text-brand-muted"
                             >
                                 <Star class="size-3 fill-star text-star" />
                                 {{ formatRating(provider.rating_avg) }} ·
@@ -197,5 +173,13 @@ defineProps<{
                 </ul>
             </div>
         </div>
+
+        <!-- Geltonas ženklelis – kaip greitai ateina pasiūlymai (tas pats teiginys kaip DUK skiltyje) -->
+        <p
+            class="absolute -top-4 right-4 rounded-2xl bg-cta px-4 py-3 text-sm font-extrabold text-cta-foreground shadow-float sm:-top-5 sm:text-base"
+            :class="photo ? 'lg:top-10 lg:-right-4' : ''"
+        >
+            Pasiūlymai – dažnai tą pačią dieną
+        </p>
     </div>
 </template>
