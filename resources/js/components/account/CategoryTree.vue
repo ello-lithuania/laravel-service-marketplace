@@ -97,17 +97,11 @@ function isDisabled(node: CategoryNode): boolean {
 }
 
 function toggle(node: CategoryNode, value: boolean | 'indeterminate'): void {
-    if (value === true && !canSelect(node)) {
-        return;
-    }
-
-    const next = value === true ? withNode(node) : new Set(selected.value);
-
     if (value !== true) {
-        next.delete(node.id);
+        remove(node.id);
+    } else if (canSelect(node)) {
+        selected.value = [...withNode(node)];
     }
-
-    selected.value = [...next];
 }
 
 function remove(id: number): void {
