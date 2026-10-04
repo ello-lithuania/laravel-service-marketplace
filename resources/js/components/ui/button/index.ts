@@ -19,11 +19,18 @@ export const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Etapas 10: pagrindinis veiksmas („Sukurti užklausą") – šilta oranžinė su tamsiu tekstu (kontrastas 7,5:1)
+        cta:
+          "bg-cta text-cta-foreground font-semibold shadow-soft hover:bg-cta/90 hover:shadow-lift",
+        // Etapas 10: ant tamsaus (brand-deep) fono arba nuotraukos
+        "on-dark":
+          "border border-white/25 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20",
       },
       size: {
         "default": "h-9 px-4 py-2 has-[>svg]:px-3",
         "sm": "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
         "lg": "h-10 rounded-md px-6 has-[>svg]:px-4",
+        "xl": "h-12 rounded-lg px-6 text-base has-[>svg]:px-5",
         "icon": "size-9",
         "icon-sm": "size-8",
         "icon-lg": "size-10",

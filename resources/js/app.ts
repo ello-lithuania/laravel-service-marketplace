@@ -32,8 +32,9 @@ void createInertiaApp({
             },
         });
     },
+    // Etapas 10: progreso juosta – prekės ženklo oranžinė (matosi ir šviesiame, ir tamsiame fone)
     progress: {
-        color: '#4B5563',
+        color: '#F28C28',
     },
 });
 

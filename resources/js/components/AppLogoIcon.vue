@@ -13,16 +13,21 @@ defineProps<Props>();
 </script>
 
 <template>
-    <!-- Laikinas logotipas (namelis) – bus pakeistas, kai bus galutinis dizainas -->
+    <!-- Etapas 10: ženklas – stogas su varnele („patikimas darbas namuose"). Linijos, ne užpildas,
+         todėl gerai matosi ir mažas (16 px), o spalva – currentColor (paveldima iš tėvo) -->
     <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.4"
+        stroke-linecap="round"
+        stroke-linejoin="round"
         :class="className"
         v-bind="$attrs"
+        aria-hidden="true"
     >
-        <path
-            fill="currentColor"
-            d="M12 2.5 1.5 11h3v10.5h6v-6.5h3v6.5h6V11h3L12 2.5Z"
-        />
+        <path d="M3.5 11.5 12 4.25l8.5 7.25" />
+        <path d="m8.25 14.25 2.75 2.75 5-5.25" />
     </svg>
 </template>
